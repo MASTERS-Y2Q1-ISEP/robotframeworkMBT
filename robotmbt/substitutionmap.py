@@ -41,9 +41,10 @@ class SubstitutionMap:
     constraints. solve() takes the current set of example values and assigns
     a unique concrete value to each.
     """
+
     def __init__(self):
-        self.substitutions = {} # {example_value:Constraint}
-        self.solution = {}      # {example_value:solution_value}
+        self.substitutions: dict[str, Constraint] = {}  # {example_value:Constraint}
+        self.solution: dict[str, int | str] = {}  # {example_value:solution_value}
 
     def __str__(self):
         src = self.solution or self.substitutions
@@ -51,20 +52,20 @@ class SubstitutionMap:
 
     def copy(self):
         new = SubstitutionMap()
-        new.substitutions = {k: v.copy() for k,v in self.substitutions.items()}
+        new.substitutions = {k: v.copy() for k, v in self.substitutions.items()}
         new.solution = self.solution.copy()
         return new
 
-    def substitute(self, example_value, constraint):
+    def substitute(self, example_value: str, constraint: list[int]):
         self.solution = {}
         if example_value in self.substitutions:
             self.substitutions[example_value].add_constraint(constraint)
         else:
             self.substitutions[example_value] = Constraint(constraint)
 
-    def solve(self):
+    def solve(self) -> dict[str, str]:
         self.solution = {}
-        solution = dict()
+        solution: dict[str, str] = dict()
         substitutions = self.copy().substitutions
         unsolved_subs = list(substitutions)
         subs_stack = []
@@ -115,12 +116,12 @@ class Constraint:
         try:
             # Keep the items in optionset unique. Refrain from using Python sets
             # due to non-deterministic behaviour when using random seeding.
-            self.optionset = list(dict.fromkeys(constraint))
+            self.optionset: list | None = list(dict.fromkeys(constraint))
         except:
-            self.optionset = None
+            self.optionset: list | None = None
         if not self.optionset or isinstance(constraint, str):
             raise ValueError(f"Invalid option set for initial constraint: {constraint}")
-        self.removed_stack = []
+        self.removed_stack: list[str | Placeholder] = []
 
     def __repr__(self):
         return f'Constraint([{", ".join([str(e) for e in self.optionset])}])'
@@ -137,7 +138,7 @@ class Constraint:
         if not len(self.optionset):
             raise ValueError('No options left after adding constraint')
 
-    def remove_option(self, option):
+    def remove_option(self, option: str):
         try:
             self.optionset.remove(option)
             self.removed_stack.append(option)

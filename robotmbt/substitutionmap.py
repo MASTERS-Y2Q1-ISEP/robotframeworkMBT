@@ -31,6 +31,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import random
+from typing import Self
 
 
 class SubstitutionMap:
@@ -50,7 +51,7 @@ class SubstitutionMap:
         src = self.solution or self.substitutions
         return ", ".join([f"{k} ⤝ {v}" for k, v in src.items()])
 
-    def copy(self):
+    def copy(self) -> Self:
         new = SubstitutionMap()
         new.substitutions = {k: v.copy() for k, v in self.substitutions.items()}
         new.solution = self.solution.copy()
@@ -129,7 +130,7 @@ class Constraint:
     def __iter__(self):
         return iter(self.optionset)
 
-    def copy(self):
+    def copy(self) -> Self:
         return Constraint(self.optionset)
 
     def add_constraint(self, constraint):

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from typing import Self
 
 # BSD 3-Clause License
 #
@@ -30,7 +31,9 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from robot.libraries.BuiltIn import BuiltIn;Robot = BuiltIn()
+from robot.libraries.BuiltIn import BuiltIn;
+
+Robot = BuiltIn()
 from robot.api.deco import keyword
 from robot.api import logger
 import robot.running.model as rmodel
@@ -38,32 +41,34 @@ import robot.running.model as rmodel
 from .suiteprocessors import SuiteProcessors
 from .suitedata import Suite, Scenario, Step
 
-class SuiteReplacer:
-    ROBOT_LIBRARY_SCOPE = 'GLOBAL'
-    ROBOT_LISTENER_API_VERSION = 3
 
-    def __init__(self, processor='process_test_suite', processor_lib=None):
-        self.ROBOT_LIBRARY_LISTENER = self
-        self.current_suite = None
-        self.robot_suite = None
-        self.processor_lib_name = processor_lib
-        self.processor_name = processor
-        self._processor_lib = None
+class SuiteReplacer:
+    ROBOT_LIBRARY_SCOPE: str = 'GLOBAL'
+    ROBOT_LISTENER_API_VERSION: int = 3
+
+    def __init__(self, processor: str = 'process_test_suite', processor_lib: str | None = None):
+        self.ROBOT_LIBRARY_LISTENER: Self = self
+        self.current_suite: Suite | None = None
+        self.robot_suite: Suite | None = None
+        self.processor_lib_name: str | None = processor_lib
+        self.processor_name: str = processor
+        self._processor_lib: SuiteProcessors | None = None
         self._processor_method = None
         self.processor_options = {}
 
     @property
-    def processor_lib(self):
+    def processor_lib(self) -> SuiteProcessors:
         if self._processor_lib is None:
             self._processor_lib = SuiteProcessors() if self.processor_lib_name is None \
-                                                    else Robot.get_library_instance(self.processor_lib_name)
+                else Robot.get_library_instance(self.processor_lib_name)
         return self._processor_lib
 
     @property
     def processor_method(self):
         if self._processor_method is None:
             if not hasattr(self.processor_lib, self.processor_name):
-                Robot.fail(f"Processor '{self.processor_name}' not available for model-based processor library {self.processor_lib_name}")
+                Robot.fail(
+                    f"Processor '{self.processor_name}' not available for model-based processor library {self.processor_lib_name}")
             self._processor_method = getattr(self._processor_lib, self.processor_name)
         return self._processor_method
 
@@ -104,7 +109,7 @@ class SuiteReplacer:
         """
         self.processor_options.update(kwargs)
 
-    def __process_robot_suite(self, in_suite, parent):
+    def __process_robot_suite(self, in_suite: Suite, parent: Suite | None) -> Suite:
         out_suite = Suite(in_suite.name, parent)
         out_suite.filename = in_suite.source
 
@@ -113,7 +118,7 @@ class SuiteReplacer:
             step_info.add_robot_dependent_data(Robot._namespace.get_runner(step_info.org_step).keyword)
             out_suite.setup = step_info
         if in_suite.teardown and parent is not None:
-            step_info =Step(in_suite.teardown.name, *in_suite.teardown.args, parent=out_suite)
+            step_info = Step(in_suite.teardown.name, *in_suite.teardown.args, parent=out_suite)
             step_info.add_robot_dependent_data(Robot._namespace.get_runner(step_info.org_step).keyword)
             out_suite.teardown = step_info
         for st in in_suite.suites:
@@ -146,11 +151,11 @@ class SuiteReplacer:
             out_suite.scenarios.append(scenario)
         return out_suite
 
-    def __clearTestSuite(self, suite):
+    def __clearTestSuite(self, suite: Suite):
         suite.tests.clear()
         suite.suites.clear()
 
-    def __generateRobotSuite(self, suite_model, target_suite):
+    def __generateRobotSuite(self, suite_model: Suite, target_suite):
         for subsuite in suite_model.suites:
             new_suite = target_suite.suites.create(name=subsuite.name)
             new_suite.resource = target_suite.resource
@@ -166,22 +171,22 @@ class SuiteReplacer:
         for tc in suite_model.scenarios:
             new_tc = target_suite.tests.create(name=tc.name)
             if tc.setup:
-                new_tc.setup= rmodel.Keyword(name=tc.setup.keyword,
-                                             args=tc.setup.posnom_args_str,
-                                             type='setup')
+                new_tc.setup = rmodel.Keyword(name=tc.setup.keyword,
+                                              args=tc.setup.posnom_args_str,
+                                              type='setup')
             if tc.teardown:
-                new_tc.teardown= rmodel.Keyword(name=tc.teardown.keyword,
-                                                args=tc.teardown.posnom_args_str,
-                                                type='teardown')
+                new_tc.teardown = rmodel.Keyword(name=tc.teardown.keyword,
+                                                 args=tc.teardown.posnom_args_str,
+                                                 type='teardown')
             for step in tc.steps:
                 if step.keyword == 'VAR':
                     new_tc.body.create_var(step.posnom_args_str[0], step.posnom_args_str[1:])
                 else:
                     new_tc.body.create_keyword(name=step.keyword, assign=step.assign, args=step.posnom_args_str)
 
-    def _start_suite(self, suite, result):
+    def _start_suite(self, suite: Suite | None, result):
         self.current_suite = suite
 
-    def _end_suite(self, suite, result):
+    def _end_suite(self, suite: Suite | None, result):
         if suite == self.robot_suite:
             self.robot_suite = None

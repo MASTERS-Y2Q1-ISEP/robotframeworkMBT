@@ -39,14 +39,15 @@ from robot.utils import is_list_like
 from .substitutionmap import SubstitutionMap
 from .modelspace import ModelSpace
 from .suitedata import Suite, Scenario, Step
-from .tracestate import TraceState
+from .tracestate import TraceState, TraceSnapShot
 from .steparguments import StepArgument, StepArguments
+
 
 class SuiteProcessors:
     def echo(self, in_suite):
         return in_suite
 
-    def flatten(self, in_suite):
+    def flatten(self, in_suite: Suite) -> Suite:
         """
         Takes a Suite as input and returns a Suite as output. The output Suite does not
         have any sub-suites, only scenarios. The scenarios do not have a setup. Any setup
@@ -74,7 +75,7 @@ class SuiteProcessors:
         out_suite.suites = []
         return out_suite
 
-    def process_test_suite(self, in_suite, *, seed='new'):
+    def process_test_suite(self, in_suite: Suite, *, seed: any = 'new') -> Suite:
         self.out_suite = Suite(in_suite.name)
         self.out_suite.filename = in_suite.filename
         self.out_suite.parent = in_suite.parent
@@ -85,7 +86,7 @@ class SuiteProcessors:
             scenario.src_id = id
         self.scenarios = self.flat_suite.scenarios[:]
         logger.debug("Use these numbers to reference scenarios from traces\n\t" +
-                "\n\t".join([f"{s.src_id}: {s.name}" for s in self.scenarios]))
+                     "\n\t".join([f"{s.src_id}: {s.name}" for s in self.scenarios]))
 
         self._init_randomiser(seed)
         random.shuffle(self.scenarios)
@@ -103,7 +104,7 @@ class SuiteProcessors:
         self._report_tracestate_wrapup()
         return self.out_suite
 
-    def _try_to_reach_full_coverage(self, allow_duplicate_scenarios):
+    def _try_to_reach_full_coverage(self, allow_duplicate_scenarios: bool):
         self.tracestate = TraceState(len(self.scenarios))
         self.active_model = ModelSpace()
         while not self.tracestate.coverage_reached():
@@ -113,7 +114,7 @@ class SuiteProcessors:
                     break
                 tail = self._rewind()
                 logger.debug("Having to roll back up to "
-                            f"{tail.scenario.name if tail else 'the beginning'}")
+                             f"{tail.scenario.name if tail else 'the beginning'}")
                 self._report_tracestate_to_user()
             else:
                 self.active_model.new_scenario_scope()
@@ -131,33 +132,33 @@ class SuiteProcessors:
                         self._report_tracestate_to_user()
                         logger.debug(f"last state:\n{self.active_model.get_status_text()}")
 
-    def __last_candidate_changed_nothing(self):
+    def __last_candidate_changed_nothing(self) -> bool:
         if len(self.tracestate) < 2:
             return False
         if self.tracestate[-1].id != self.tracestate[-2].id:
             return False
         return self.tracestate[-1].model == self.tracestate[-2].model
 
-    def _scenario_with_repeat_counter(self, index):
+    def _scenario_with_repeat_counter(self, index: int) -> Scenario:
         """Fetches the scenario by index and, if this scenario is already used in the trace,
         adds a repetition counter to its name."""
         candidate = self.scenarios[index]
         rep_count = self.tracestate.count(index)
         if rep_count:
             candidate = candidate.copy()
-            candidate.name = f"{candidate.name} (rep {rep_count+1})"
+            candidate.name = f"{candidate.name} (rep {rep_count + 1})"
         return candidate
 
     @staticmethod
-    def _fail_on_step_errors(suite):
+    def _fail_on_step_errors(suite: Suite):
         error_list = suite.steps_with_errors()
         if error_list:
             err_msg = "Steps with errors in their model info found:\n"
             err_msg += '\n'.join([f"{s.keyword} [{s.model_info['error']}] used in {s.parent.name}"
-                                      for s in error_list])
+                                  for s in error_list])
             raise Exception(err_msg)
 
-    def _try_to_fit_in_scenario(self, index, candidate, retry_flag):
+    def _try_to_fit_in_scenario(self, index: int, candidate: Scenario, retry_flag: bool) -> bool:
         candidate = self._generate_scenario_variant(candidate, self.active_model)
         if not candidate:
             self.active_model.end_scenario_scope()
@@ -178,7 +179,7 @@ class SuiteProcessors:
         part1, part2 = self._split_candidate_if_refinement_needed(candidate, self.active_model)
         if part2:
             exit_conditions = part2.steps[1].model_info['OUT']
-            part1.name = f"{part1.name} (part {self.tracestate.highest_part(index)+1})"
+            part1.name = f"{part1.name} (part {self.tracestate.highest_part(index) + 1})"
             part1, new_model = self._process_scenario(part1, self.active_model)
             self.tracestate.push_partial_scenario(index, part1, new_model)
             self.active_model = new_model
@@ -193,7 +194,8 @@ class SuiteProcessors:
                 return False
             while i_refine is not None:
                 self.active_model.new_scenario_scope()
-                m_inserted = self._try_to_fit_in_scenario(i_refine, self._scenario_with_repeat_counter(i_refine), retry_flag)
+                m_inserted = self._try_to_fit_in_scenario(i_refine, self._scenario_with_repeat_counter(i_refine),
+                                                          retry_flag)
                 if m_inserted:
                     insert_valid_here = True
                     try:
@@ -201,8 +203,8 @@ class SuiteProcessors:
                         model_scratchpad = self.active_model.copy()
                         for expr in exit_conditions:
                             if model_scratchpad.process_expression(expr, part2.steps[1].args) is False:
-                                 insert_valid_here = False
-                                 break
+                                insert_valid_here = False
+                                break
                     except Exception:
                         insert_valid_here = False
                     if insert_valid_here:
@@ -225,7 +227,7 @@ class SuiteProcessors:
         self._report_tracestate_to_user()
         return False
 
-    def _rewind(self, drought_recovery=False):
+    def _rewind(self, drought_recovery: bool = False) -> TraceSnapShot | None:
         tail = self.tracestate.rewind()
         while drought_recovery and self.tracestate.coverage_drought:
             tail = self.tracestate.rewind()
@@ -233,7 +235,8 @@ class SuiteProcessors:
         return tail
 
     @staticmethod
-    def _split_candidate_if_refinement_needed(scenario, model):
+    def _split_candidate_if_refinement_needed(scenario: Scenario, model: ModelSpace) \
+            -> tuple[Scenario, Scenario | None]:
         m = model.copy()
         scenario = scenario.copy()
         no_split = (scenario, None)
@@ -261,7 +264,8 @@ class SuiteProcessors:
                         return no_split
                     if refine_here:
                         front, back = scenario.split_at_step(scenario.steps.index(step))
-                        remaining_steps = '\n\t'.join([step.full_keyword, '- '*35] + [s.full_keyword for s in back.steps[1:]])
+                        remaining_steps = '\n\t'.join(
+                            [step.full_keyword, '- ' * 35] + [s.full_keyword for s in back.steps[1:]])
                         remaining_steps = SuiteProcessors.escape_robot_vars(remaining_steps)
                         edge_step = Step('Log', f"Refinement follows for step:\n\t{remaining_steps}", parent=scenario)
                         edge_step.gherkin_kw = step.gherkin_kw
@@ -276,13 +280,13 @@ class SuiteProcessors:
         return no_split
 
     @staticmethod
-    def escape_robot_vars(text):
+    def escape_robot_vars(text: str) -> str:
         for seq in ("${", "@{", "%{", "&{", "*{"):
             text = text.replace(seq, "\\" + seq)
         return text
 
     @staticmethod
-    def _process_scenario(scenario, model):
+    def _process_scenario(scenario: Scenario, model: ModelSpace) -> tuple[Scenario, ModelSpace] | tuple[None, None]:
         m = model.copy()
         scenario = scenario.copy()
         for step in scenario.steps:
@@ -300,9 +304,9 @@ class SuiteProcessors:
         return scenario, m
 
     @staticmethod
-    def _relevant_expressions(step):
+    def _relevant_expressions(step: Step) -> list[str | list[str]]:
         if step.gherkin_kw is None and not step.model_info:
-            return [] # model info is optional for action keywords
+            return []  # model info is optional for action keywords
         expressions = []
         if 'IN' not in step.model_info or 'OUT' not in step.model_info:
             raise Exception(f"Model info incomplete for step: {step}")
@@ -312,7 +316,7 @@ class SuiteProcessors:
             expressions += step.model_info['OUT']
         return expressions
 
-    def _generate_scenario_variant(self, scenario, model):
+    def _generate_scenario_variant(self, scenario: Scenario, model: ModelSpace) -> Scenario | None:
         m = model.copy()
         scenario = scenario.copy()
         scenarios_in_refinement = self.tracestate.find_scenarios_with_active_refinement()
@@ -333,7 +337,7 @@ class SuiteProcessors:
                             raise ValueError("Modifers are currently only supported for embedded arguments.")
                         org_example = step.args[modded_arg].org_value
                         if step.gherkin_kw == 'then':
-                            constraint = None # No new constraints are processed for then-steps
+                            constraint = None  # No new constraints are processed for then-steps
                             if org_example not in subs.substitutions:
                                 # if a then-step signals the first use of an example value, it is considered a new definition
                                 subs.substitute(org_example, [org_example])
@@ -341,7 +345,7 @@ class SuiteProcessors:
                         if not constraint and org_example not in subs.substitutions:
                             raise ValueError(f"No options to choose from at first assignment to {org_example}")
                         if constraint and constraint != '.*':
-                            options =  m.process_expression(constraint, step.args)
+                            options = m.process_expression(constraint, step.args)
                             if options == 'exec':
                                 raise ValueError(f"Invalid constraint for argument substitution: {expr}")
                             if not options:
@@ -359,7 +363,8 @@ class SuiteProcessors:
         try:
             subs.solve()
         except ValueError as err:
-            logger.debug(f"Unable to insert scenario {scenario.src_id}, {scenario.name}, due to modifier\n    {err}: {subs}")
+            logger.debug(
+                f"Unable to insert scenario {scenario.src_id}, {scenario.name}, due to modifier\n    {err}: {subs}")
             return None
 
         # Update scenario with generated values
@@ -375,13 +380,13 @@ class SuiteProcessors:
         return scenario
 
     @staticmethod
-    def _parse_modifier_expression(expression, args):
+    def _parse_modifier_expression(expression: str, args: StepArguments) -> tuple[str, str]:
         if expression.startswith('${'):
             for var in args:
                 if expression.casefold().startswith(var.arg.casefold()):
                     assignment_expr = expression.replace(var.arg, '', 1).strip()
                     if not assignment_expr.startswith('=') or assignment_expr.startswith('=='):
-                        break # not an assignment
+                        break  # not an assignment
                     constraint = assignment_expr.replace('=', '', 1).strip()
                     return var.arg, constraint
         raise ValueError(f"Invalid argument substitution: {expression}")
@@ -402,11 +407,12 @@ class SuiteProcessors:
             logger.debug(f"model\n{step.model.get_status_text()}\n")
 
     @staticmethod
-    def _init_randomiser(seed):
+    def _init_randomiser(seed: any):
         if isinstance(seed, str):
             seed = seed.strip()
         if str(seed).lower() == 'none':
-            logger.debug(f"Using system's random seed for trace generation. This trace cannot be rerun. Use `seed=new` to generate a reusable seed.")
+            logger.debug(
+                f"Using system's random seed for trace generation. This trace cannot be rerun. Use `seed=new` to generate a reusable seed.")
         elif str(seed).lower() == 'new':
             new_seed = SuiteProcessors._generate_seed()
             logger.debug(f"seed={new_seed} (use seed to rerun this trace)")
@@ -416,17 +422,18 @@ class SuiteProcessors:
             random.seed(seed)
 
     @staticmethod
-    def _generate_seed():
+    def _generate_seed() -> str:
         """Creates a random string of 5 words between 3 and 6 letters long"""
         vowels = ['a', 'e', 'i', 'o', 'u', 'y']
-        consonants = ['b', 'c', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 'q', 'r', 's', 't', 'v', 'w', 'x', 'z']
+        consonants = ['b', 'c', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 'q', 'r', 's', 't', 'v', 'w', 'x',
+                      'z']
 
         words = []
         for word in range(5):
             prior_choice = random.choice([vowels, consonants])
-            last_choice =  random.choice([vowels, consonants])
-            string = random.choice(prior_choice) + random.choice(last_choice) # add first two letters
-            for letter in range(random.randint(1, 4)):                        # add 1 to 4 more letters
+            last_choice = random.choice([vowels, consonants])
+            string = random.choice(prior_choice) + random.choice(last_choice)  # add first two letters
+            for letter in range(random.randint(1, 4)):  # add 1 to 4 more letters
                 if prior_choice is last_choice:
                     new_choice = consonants if prior_choice is vowels else vowels
                 else:

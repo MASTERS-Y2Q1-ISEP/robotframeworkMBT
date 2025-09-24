@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from robotmbt.suitedata import Scenario
+
 
 # BSD 3-Clause License
 #
@@ -31,9 +33,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class TraceSnapShot:
-    def __init__(self, id: int, inserted_scenario: str, model_state: dict[str, int], drought: int = 0):
-        self.id: int = id
-        self.scenario: str = inserted_scenario
+    def __init__(self, id: str, inserted_scenario: str| Scenario, model_state: dict[str, int], drought: int = 0):
+        self.id: str = id
+        self.scenario: str | Scenario = inserted_scenario
         self.model: dict[str, int] = model_state.copy()
         self.coverage_drought: int = drought
 
@@ -95,7 +97,7 @@ class TraceState:
     def _is_refinement_active(self, index: int) -> bool:
         return self.highest_part(index) != 0
 
-    def find_scenarios_with_active_refinement(self) -> list[str]:
+    def find_scenarios_with_active_refinement(self) -> list[str | Scenario]:
         scenarios = []
         for i in self._open_refinements:
             index = -self._trace[::-1].index(f'{i}.1')-1

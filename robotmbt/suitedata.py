@@ -31,9 +31,12 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import copy
+from typing import Self
+
 from robot.running.arguments.argumentvalidator import ArgumentValidator
 
 from .steparguments import StepArgument, StepArguments
+from .substitutionmap import SubstitutionMap
 
 
 class Suite:
@@ -64,37 +67,37 @@ class Suite:
 
 
 class Scenario:
-    def __init__(self, name, parent=None):
-        self.name = name
-        self.parent = parent  # Parent scenario for easy searching, processing and referencing
+    def __init__(self, name: str, parent=None):
+        self.name: str = name
+        self.parent: Suite | None = parent  # Parent scenario for easy searching, processing and referencing
         # after steps and scenarios have been potentially moved around
-        self.setup = None  # Can be a single step or None
-        self.teardown = None  # Can be a single step or None
-        self.steps = []
-        self.src_id = None
-        self.data_choices = {}
+        self.setup: Step | None = None  # Can be a single step or None, may also be a str in tests
+        self.teardown: Step | None = None  # Can be a single step or None, may also be a str in tests
+        self.steps: list[Step] = []
+        self.src_id: int | None = None
+        self.data_choices: dict | SubstitutionMap = {}  # may be Dummy type in a test
 
     @property
-    def longname(self):
+    def longname(self) -> str:
         return f"{self.parent.longname}.{self.name}" if self.parent else self.name
 
-    def has_error(self):
+    def has_error(self) -> bool:
         return ((self.setup.has_error() if self.setup else False)
                 or any([s.has_error() for s in self.steps])
                 or (self.teardown.has_error() if self.teardown else False))
 
-    def steps_with_errors(self):
+    def steps_with_errors(self):  # list[Step | None]
         return (([self.setup] if self.setup and self.setup.has_error() else [])
                 + [s for s in self.steps if s.has_error()]
                 + ([self.teardown] if self.teardown and self.teardown.has_error() else []))
 
-    def copy(self):
+    def copy(self) -> Self:
         duplicate = copy.copy(self)
         duplicate.steps = [step.copy() for step in self.steps]
         duplicate.data_choices = self.data_choices.copy()
         return duplicate
 
-    def split_at_step(self, stepindex):
+    def split_at_step(self, stepindex: int) -> tuple[Self, Self]:
         """Returns 2 partial scenarios.
 
         With stepindex 0 the first part has no steps and all steps are in the last part. With
@@ -111,20 +114,21 @@ class Scenario:
 
 
 class Step:
-    def __init__(self, steptext, *args, parent, assign=(), prev_gherkin_kw=None):
-        self.org_step = steptext  # first keyword cell of the Robot line, including step_kw,
+    def __init__(self, steptext: str, *args, parent: Suite | Scenario, assign: tuple[str] = (),
+                 prev_gherkin_kw: str | None = None):
+        self.org_step: str = steptext  # first keyword cell of the Robot line, including step_kw,
         # excluding positional args, excluding variable assignment.
         self.org_pn_args = args  # positional and named arguments as parsed from Robot text ('posA' , 'posB', 'named1=namedA')
-        self.parent = parent  # Parent scenario for easy searching and processing.
-        self.assign = assign  # For when a keyword's return value is assigned to a variable.
+        self.parent: Suite | Scenario = parent  # Parent scenario for easy searching and processing.
+        self.assign: tuple[str] = assign  # For when a keyword's return value is assigned to a variable.
         # Taken directly from Robot.
-        self.gherkin_kw = self.step_kw if str(self.step_kw).lower() in ['given', 'when', 'then',
-                                                                        'none'] else prev_gherkin_kw
+        self.gherkin_kw: str | None = self.step_kw if str(self.step_kw).lower() in ['given', 'when', 'then',
+                                                                                    'none'] else prev_gherkin_kw
         # 'given', 'when', 'then' or None for non-bdd keywords.
-        self.signature = None  # Robot keyword with its embedded arguments in ${...} notation.
-        self.args = StepArguments()  # embedded arguments list of StepArgument objects.
-        self.detached = False  # Decouples StepArguments from the step text (refinement use case)
-        self.model_info = dict()  # Modelling information is available as a dictionary.
+        self.signature: str | None = None  # Robot keyword with its embedded arguments in ${...} notation.
+        self.args: StepArguments = StepArguments()  # embedded arguments list of StepArgument objects.
+        self.detached: bool = False  # Decouples StepArguments from the step text (refinement use case)
+        self.model_info: dict[str, str | list[str]] = dict()  # Modelling information is available as a dictionary.
         # The standard format is dict(IN=[], OUT=[]) and can
         # optionally contain an error field.
         # IN and OUT are lists of Python evaluatable expressions.
@@ -139,7 +143,7 @@ class Step:
     def __repr__(self):
         return f"Step: '{self}' with model info: {self.model_info}"
 
-    def copy(self):
+    def copy(self) -> Self:
         cp = Step(self.org_step, *self.org_pn_args, parent=self.parent, assign=self.assign)
         cp.gherkin_kw = self.gherkin_kw
         cp.signature = self.signature
@@ -148,30 +152,30 @@ class Step:
         cp.model_info = self.model_info.copy()
         return cp
 
-    def has_error(self):
+    def has_error(self) -> bool:
         return 'error' in self.model_info
 
-    def get_error(self):
+    def get_error(self) -> str | None:
         return self.model_info.get('error')
 
     @property
-    def full_keyword(self):
+    def full_keyword(self) -> str:
         """The full keyword text, quad space separated, including its arguments and return value assignment"""
         return "    ".join(str(p) for p in (*self.assign, self.keyword, *self.posnom_args_str))
 
     @property
-    def keyword(self):
+    def keyword(self) -> str:
         if not self.signature:
             return self.org_step
         s = f"{self.step_kw} {self.signature}" if self.step_kw else self.signature
         return self.args.fill_in_args(s)
 
     @property
-    def posnom_args_str(self):
+    def posnom_args_str(self) -> tuple[any]:
         """A tuple with all arguments in Robot accepted text format ('posA' , 'posB', 'named1=namedA')"""
         if self.detached or not self.args.modified:
             return self.org_pn_args
-        result = []
+        result: list[any] = []
         for arg in self.args:
             if arg.kind == arg.POSITIONAL:
                 result.append(arg.value)
@@ -188,20 +192,20 @@ class Step:
         return tuple(result)
 
     @property
-    def gherkin_kw(self):
+    def gherkin_kw(self) -> str | None:
         return self._gherkin_kw
 
     @gherkin_kw.setter
-    def gherkin_kw(self, value):
+    def gherkin_kw(self, value: str | None):
         self._gherkin_kw = value.lower() if value else None
 
     @property
-    def step_kw(self):
+    def step_kw(self) -> str | None:
         first_word = self.org_step.split()[0]
         return first_word if first_word.lower() in ['given', 'when', 'then', 'and', 'but'] else None
 
     @property
-    def kw_wo_gherkin(self):
+    def kw_wo_gherkin(self) -> str:
         """The keyword without its Gherkin keyword. I.e., as it is known in Robot framework."""
         return self.keyword.replace(self.step_kw, '', 1).strip() if self.step_kw else self.keyword
 
@@ -222,7 +226,7 @@ class Step:
         except Exception as ex:
             self.model_info['error'] = str(ex)
 
-    def __handle_non_embedded_arguments(self, robot_argspec):
+    def __handle_non_embedded_arguments(self, robot_argspec) -> list[StepArgument]:
         result = []
         p_args, n_args = robot_argspec.map([a for a in self.org_pn_args if '=' not in a or r'\=' in a],
                                            [a.split('=', 1) for a in self.org_pn_args if '=' in a and r'\=' not in a])
@@ -251,7 +255,7 @@ class Step:
             result += [StepArgument(argument_names[-1], free, kind=StepArgument.FREE_NAMED)]
         return result
 
-    def __parse_model_info(self, docu):
+    def __parse_model_info(self, docu: str) -> dict[str, list[str]]:
         model_info = dict()
         mi_index = docu.find("*model info*")
         if mi_index == -1:

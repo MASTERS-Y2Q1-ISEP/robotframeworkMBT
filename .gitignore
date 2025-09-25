@@ -7,8 +7,8 @@ __pycache__/
 *.so
 
 # VPP (Visual Paradigm) files
-.vpp.bak_*
-.vpp.lck
+*.vpp.bak_*
+*.vpp.lck
 
 # Distribution / packaging
 .Python

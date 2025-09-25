@@ -33,18 +33,26 @@ from robotmbt.suitedata import Scenario
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class TraceSnapShot:
-    def __init__(self, id: str, inserted_scenario: str| Scenario, model_state: dict[str, int], drought: int = 0):
+    def __init__(self, id: str, inserted_scenario: str | Scenario, model_state: dict[str, int], drought: int = 0):
         self.id: str = id
         self.scenario: str | Scenario = inserted_scenario
         self.model: dict[str, int] = model_state.copy()
         self.coverage_drought: int = drought
 
+
 class TraceState:
     def __init__(self, n_scenarios: int):
-        self._c_pool: list[bool] = [False] * n_scenarios # coverage pool: True means scenario is in trace
-        self._tried: list[list[int]] = [[]]   # Keeps track of the scenarios already tried at each step in the trace
-        self._trace: list[str] = []     # Choice trace, when was which scenario inserted (e.g. ['1', '2.1', '3', '2.0'])
-        self._snapshots: list[TraceSnapShot] = [] # Keeps details for elements in trace
+        # coverage pool: True means scenario is in trace
+        self._c_pool: list[bool] = [False] * n_scenarios
+        
+        # Keeps track of the scenarios already tried at each step in the trace
+        self._tried: list[list[int]] = [[]]
+        
+        # Choice trace, when was which scenario inserted (e.g. ['1', '2.1', '3', '2.0'])
+        self._trace: list[str] = []
+        
+        # Keeps details for elements in trace
+        self._snapshots: list[TraceSnapShot] = []
         self._open_refinements: list[int] = []
 
     @property
@@ -72,11 +80,14 @@ class TraceState:
         for i in range(len(self._c_pool)):
             if i not in self._tried[-1] and not self._is_refinement_active(i) and self.count(i) == 0:
                 return i
+        
         if not retry:
             return None
+        
         for i in range(len(self._c_pool)):
             if i not in self._tried[-1] and not self._is_refinement_active(i):
                 return i
+        
         return None
 
     def count(self, index: int) -> int:
@@ -90,8 +101,10 @@ class TraceState:
         for i in range(1, len(self._trace)+1):
             if self._trace[-i] == f'{index}':
                 return 0
+            
             if self._trace[-i].startswith(f'{index}.'):
                 return int(self._trace[-i].split('.')[1])
+        
         return 0
 
     def _is_refinement_active(self, index: int) -> bool:
@@ -102,6 +115,7 @@ class TraceState:
         for i in self._open_refinements:
             index = -self._trace[::-1].index(f'{i}.1')-1
             scenarios.append(self._snapshots[index].scenario)
+        
         return scenarios
 
     def reject_scenario(self, i_scenario: int):
@@ -114,6 +128,7 @@ class TraceState:
             c_drought = 0
         else:
             c_drought = self.coverage_drought+1
+        
         if self._is_refinement_active(index):
             id = f"{index}.0"
             self._open_refinements.pop()
@@ -121,19 +136,22 @@ class TraceState:
             id = str(index)
             self._tried[-1].append(index)
             self._tried.append([])
+        
         self._trace.append(id)
         self._snapshots.append(TraceSnapShot(id, scenario, model, c_drought))
 
     def push_partial_scenario(self, index: int, scenario: str, model: dict[str, int]):
         if self._is_refinement_active(index):
             id = f"{index}.{self.highest_part(index)+1}"
+        
         else:
             id = f"{index}.1"
             self._tried[-1].append(index)
             self._tried.append([])
             self._open_refinements.append(index)
         self._trace.append(id)
-        self._snapshots.append(TraceSnapShot(id, scenario, model, self.coverage_drought))
+        self._snapshots.append(TraceSnapShot(
+            id, scenario, model, self.coverage_drought))
 
     def can_rewind(self) -> bool:
         return len(self._trace) > 0
@@ -153,8 +171,10 @@ class TraceState:
             if self.count(index) == 0:
                 self._c_pool[index] = False
             self._tried.pop()
+            
             if id.endswith('.1'):
                 self._open_refinements.pop()
+        
         return self._snapshots[-1] if self._snapshots else None
 
     def __iter__(self):

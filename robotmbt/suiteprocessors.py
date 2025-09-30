@@ -37,15 +37,16 @@ from robot.api import logger
 
 from . import modeller
 from .modelspace import ModelSpace
-from .suitedata import Suite
-from .tracestate import TraceState
+from .suitedata import Suite, Scenario, Step
+from .tracestate import TraceState, TraceSnapShot
+from .steparguments import StepArgument, StepArguments
 
 
 class SuiteProcessors:
     def echo(self, in_suite):
         return in_suite
 
-    def flatten(self, in_suite):
+    def flatten(self, in_suite: Suite) -> Suite:
         """
         Takes a Suite as input and returns a Suite as output. The output Suite does not
         have any sub-suites, only scenarios. The scenarios do not have a setup. Any setup
@@ -60,6 +61,7 @@ class SuiteProcessors:
             if scenario.teardown:
                 scenario.steps.append(scenario.teardown)
                 scenario.teardown = None
+
         out_suite.scenarios = []
         for suite in in_suite.suites:
             subsuite = self.flatten(suite)
@@ -69,11 +71,12 @@ class SuiteProcessors:
                 if subsuite.teardown:
                     scenario.steps.append(subsuite.teardown)
             out_suite.scenarios.extend(subsuite.scenarios)
+
         out_suite.scenarios.extend(outer_scenarios)
         out_suite.suites = []
         return out_suite
 
-    def process_test_suite(self, in_suite, *, seed='new'):
+    def process_test_suite(self, in_suite: Suite, *, seed: any = 'new') -> Suite:
         self.out_suite = Suite(in_suite.name)
         self.out_suite.filename = in_suite.filename
         self.out_suite.parent = in_suite.parent
@@ -103,7 +106,7 @@ class SuiteProcessors:
         self._report_tracestate_wrapup(tracestate)
         return self.out_suite
 
-    def _try_to_reach_full_coverage(self, allow_duplicate_scenarios):
+    def _try_to_reach_full_coverage(self, allow_duplicate_scenarios: bool) -> TraceState:
         tracestate = TraceState(self.shuffled)
         while not tracestate.coverage_reached():
             candidate_id = tracestate.next_candidate(retry=allow_duplicate_scenarios)
@@ -136,19 +139,19 @@ class SuiteProcessors:
         return tracestate
 
     @staticmethod
-    def __last_candidate_changed_nothing(tracestate):
+    def __last_candidate_changed_nothing(tracestate: TraceState) -> bool:
         if len(tracestate) < 2:
             return False
         if tracestate[-1].id != tracestate[-2].id:
             return False
         return tracestate[-1].model == tracestate[-2].model
 
-    def _select_scenario_variant(self, candidate_id, tracestate):
+    def _select_scenario_variant(self, candidate_id: int, tracestate: TraceState):
         candidate = self._scenario_with_repeat_counter(candidate_id, tracestate)
         candidate = modeller.generate_scenario_variant(candidate, tracestate.model or ModelSpace())
         return candidate
 
-    def _scenario_with_repeat_counter(self, index, tracestate):
+    def _scenario_with_repeat_counter(self, index: int, tracestate: TraceState):
         """
         Fetches the scenario by index and, if this scenario is already
         used in the trace, adds a repetition counter to its name.
@@ -157,12 +160,13 @@ class SuiteProcessors:
         rep_count = tracestate.count(index)
         if rep_count:
             candidate = candidate.copy()
-            candidate.name = f"{candidate.name} (rep {rep_count+1})"
+            candidate.name = f"{candidate.name} (rep {rep_count + 1})"
         return candidate
 
     @staticmethod
-    def _fail_on_step_errors(suite):
+    def _fail_on_step_errors(suite: Suite):
         error_list = suite.steps_with_errors()
+
         if error_list:
             err_msg = "Steps with errors in their model info found:\n"
             err_msg += '\n'.join([f"{s.keyword} [{s.model_info['error']}] used in {s.parent.name}"
@@ -170,21 +174,22 @@ class SuiteProcessors:
             raise Exception(err_msg)
 
     @staticmethod
-    def _report_tracestate_to_user(tracestate):
+    def _report_tracestate_to_user(tracestate: TraceState):
         user_trace = f"[{', '.join(tracestate.id_trace)}]"
         logger.debug(f"Trace: {user_trace} Reject: {list(tracestate.tried)}")
 
     @staticmethod
-    def _report_tracestate_wrapup(tracestate):
+    def _report_tracestate_wrapup(tracestate: TraceState):
         logger.info("Trace composed:")
         for progression in tracestate:
             logger.info(progression.scenario.name)
             logger.debug(f"model\n{progression.model.get_status_text()}\n")
 
     @staticmethod
-    def _init_randomiser(seed):
+    def _init_randomiser(seed: any):
         if isinstance(seed, str):
             seed = seed.strip()
+        
         if str(seed).lower() == 'none':
             logger.info(
                 f"Using system's random seed for trace generation. This trace cannot be rerun. Use `seed=new` to generate a reusable seed.")
@@ -197,7 +202,7 @@ class SuiteProcessors:
             random.seed(seed)
 
     @staticmethod
-    def _generate_seed():
+    def _generate_seed() -> str:
         """Creates a random string of 5 words between 3 and 6 letters long"""
         vowels = ['a', 'e', 'i', 'o', 'u', 'y']
         consonants = ['b', 'c', 'd', 'f', 'g', 'h', 'j', 'k', 'l',
@@ -213,9 +218,12 @@ class SuiteProcessors:
                     new_choice = consonants if prior_choice is vowels else vowels
                 else:
                     new_choice = random.choice([vowels, consonants])
+                
                 prior_choice = last_choice
                 last_choice = new_choice
                 string += random.choice(new_choice)
+            
             words.append(string)
+       
         seed = '-'.join(words)
         return seed

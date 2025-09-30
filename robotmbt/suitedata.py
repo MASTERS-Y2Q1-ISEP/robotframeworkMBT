@@ -68,6 +68,12 @@ class Suite:
                                   self.scenarios) for e in s]
                 + ([self.teardown] if self.teardown and self.teardown.has_error() else []))
 
+    def __repr__(self) -> str:
+        return f"Suite(name='{self.name}', parent='{self.parent}')"
+    
+    def __str__(self) -> str:
+        return self.__repr__()
+
 
 class Scenario:
     def __init__(self, name: str, parent=None):
@@ -119,6 +125,11 @@ class Scenario:
         back.setup = None
         return front, back
 
+    def __str__(self) -> str:
+        return self.__repr__()
+
+    def __repr__(self) -> str:
+        return f"Scenario(name='{self.name}', parent={self.parent})"
 
 class Step:
     def __init__(self, steptext: str, *args, parent: Suite | Scenario, assign: tuple[str] = (),

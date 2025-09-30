@@ -185,3 +185,6 @@ class TraceState:
 
     def __len__(self):
         return len(self._snapshots)
+
+    def __repr__(self) -> str:
+        return f"TraceState({self._trace})"

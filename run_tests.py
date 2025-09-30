@@ -2,6 +2,7 @@ import os
 import sys
 import unittest
 import robot
+from robotmbt.visualisation.visualiser import Visualiser
 
 if __name__ == '__main__':
     if '-h' in sys.argv or '--help' in sys.argv:
@@ -33,6 +34,12 @@ if __name__ == '__main__':
             sys.exit(1)
 
     if atest:
+        visualisations = False
+        # TODO refactor this piece of garbage (manual argv shit - maybe try out the `click` library or something.)
+        if 'visualise' in sys.argv:
+            visualisations = True
+            sys.argv.remove('visualise')
+
         if 'atest' in sys.argv:
             sys.argv.remove('atest')
         sys.argv.append(os.path.join(THIS_DIR, 'atest'))
@@ -43,5 +50,9 @@ if __name__ == '__main__':
         robot.run_cli(['--outputdir', OUTPUT_ROOT,
                        '--pythonpath', THIS_DIR]
                        + sys.argv[1:], exit=False)
+
         if utest:
             print(f"Also ran {utestrun.result.testsRun} unit tests")
+
+        if visualisations:
+            print(f"Visualiser says: {Visualiser.visualise()}")

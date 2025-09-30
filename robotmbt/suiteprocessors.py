@@ -32,6 +32,8 @@
 
 import copy
 import random
+import atexit # for declaring a custom destructor
+import weakref # for adding class references 'n stuff
 
 from robot.api import logger
 from robot.utils import is_list_like
@@ -44,6 +46,15 @@ from .steparguments import StepArgument, StepArguments
 
 
 class SuiteProcessors:
+    instances : list['SuiteProcessors'] = [] # static list of all instances
+    
+    def __init__(self):
+        self.__class__.instances.append(weakref.proxy(self)) # add a reference to myself 
+        atexit.register(self.__destruct__)
+
+    def __destruct__(self):
+        self.instances.remove(self)
+
     def echo(self, in_suite):
         return in_suite
 

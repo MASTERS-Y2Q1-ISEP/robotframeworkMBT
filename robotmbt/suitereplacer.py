@@ -1,10 +1,4 @@
 # -*- coding: utf-8 -*-
-from .suitedata import Suite, Scenario, Step
-from .suiteprocessors import SuiteProcessors
-import robot.running.model as rmodel
-from robot.api import logger
-from robot.api.deco import keyword
-from typing import Self
 
 # BSD 3-Clause License
 #
@@ -36,10 +30,16 @@ from typing import Self
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from .suitedata import Suite, Scenario, Step
+from .suiteprocessors import SuiteProcessors
+from .visualizer import ModelVisualizer
+import robot.running.model as rmodel
+from robot.api import logger
+from robot.api.deco import keyword
+from typing import Self
 from robot.libraries.BuiltIn import BuiltIn
 
 Robot = BuiltIn()
-
 
 class SuiteReplacer:
     ROBOT_LIBRARY_SCOPE: str = 'GLOBAL'
@@ -54,6 +54,7 @@ class SuiteReplacer:
         self._processor_lib: SuiteProcessors | None = None
         self._processor_method = None
         self.processor_options = {}
+        self.generate_visualization = True  # NEW: Control visualization generation
 
     @property
     def processor_lib(self) -> SuiteProcessors:
@@ -98,8 +99,42 @@ class SuiteReplacer:
         modelbased_suite = self.processor_method(
             master_suite, **self.processor_options)
         
+        # NEW: Generate visualization if enabled
+        if self.generate_visualization:
+            self._generate_visualization(master_suite, modelbased_suite)
+        
         self.__clearTestSuite(self.robot_suite)
         self.__generateRobotSuite(modelbased_suite, self.robot_suite)
+
+    def _generate_visualization(self, master_suite: Suite, modelbased_suite: Suite):
+        """Generates the MBT visualization graph"""
+        try:
+            logger.info("Generating MBT visualization...")
+            
+            visualizer = ModelVisualizer()
+            
+            # Build graph from original suite (all available scenarios)
+            visualizer.build_graph_from_suite(master_suite)
+            
+            # Extract executed path from the generated suite
+            executed_ids = []
+            for scenario in modelbased_suite.scenarios:
+                if scenario.src_id is not None:
+                    executed_ids.append(scenario.src_id)
+            
+            visualizer.set_executed_path(executed_ids)
+            
+            # Get output directory from Robot Framework
+            output_dir = Robot.get_variable_value("${OUTPUTDIR}", ".")
+            output_file = f"{output_dir}/mbt_visualization.html"
+            
+            # Generate the visualization
+            visualizer.generate_plotly_html(output_file)
+            
+            logger.info(f"MBT visualization saved to: {output_file}")
+            
+        except Exception as e:
+            logger.warn(f"MBT visualization generation failed: {str(e)}")
 
     @keyword("Set model-based options")
     def set_model_based_options(self, **kwargs):
@@ -116,6 +151,16 @@ class SuiteReplacer:
         model-based processor. Keeps any previously set options.
         """
         self.processor_options.update(kwargs)
+
+    @keyword("Enable MBT visualization")
+    def enable_visualization(self):
+        """Enables generation of MBT visualization graphs"""
+        self.generate_visualization = True
+
+    @keyword("Disable MBT visualization") 
+    def disable_visualization(self):
+        """Disables generation of MBT visualization graphs"""
+        self.generate_visualization = False
 
     def __process_robot_suite(self, in_suite: Suite, parent: Suite | None) -> Suite:
         out_suite = Suite(in_suite.name, parent)

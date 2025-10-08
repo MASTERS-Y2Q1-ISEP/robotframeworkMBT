@@ -32,6 +32,7 @@
 
 import copy
 import random
+from itertools import permutations
 
 from robot.api import logger
 from robot.utils import is_list_like
@@ -82,6 +83,14 @@ class SuiteProcessors:
         self._init_randomiser(seed)
         random.shuffle(self.scenarios)
         return self.__start_process_test_suite()
+
+    def process_all_seeds_test_suite(self, in_suite: Suite) -> list[Suite]:
+        self.__setup_test_suite(in_suite)
+        result = []
+        for perm in permutations(self.scenarios, len(self.scenarios)):
+            self.scenarios: list[Scenario] = list(perm)
+            result.append(self.__start_process_test_suite())
+        return result
 
     def __setup_test_suite(self, in_suite: Suite):
         """Initialize SuiteProcessor self for processing of the given test Suite."""
@@ -392,11 +401,11 @@ class SuiteProcessors:
                     for expr in step.model_info['MOD']:
                         modded_arg, constraint = self._parse_modifier_expression(
                             expr, step.args)
-                        
+
                         if step.args[modded_arg].kind != StepArgument.EMBEDDED:
                             raise ValueError(
                                 "Modifers are currently only supported for embedded arguments.")
-                        
+
                         org_example = step.args[modded_arg].org_value
                         if step.gherkin_kw == 'then':
                             constraint = None  # No new constraints are processed for then-steps
@@ -404,31 +413,31 @@ class SuiteProcessors:
                                 # if a then-step signals the first use of an example value, it is considered a new definition
                                 subs.substitute(org_example, [org_example])
                                 continue
-                        
+
                         if not constraint and org_example not in subs.substitutions:
                             raise ValueError(
                                 f"No options to choose from at first assignment to {org_example}")
-                        
+
                         if constraint and constraint != '.*':
                             options = m.process_expression(
                                 constraint, step.args)
                             if options == 'exec':
                                 raise ValueError(
                                     f"Invalid constraint for argument substitution: {expr}")
-                            
+
                             if not options:
                                 raise ValueError(
                                     f"Constraint on modifer did not yield any options: {expr}")
-                            
+
                             if not is_list_like(options):
                                 raise ValueError(
                                     f"Constraint on modifer did not yield a set of options: {expr}")
-                        
+
                         else:
                             options = None
-                        
+
                         subs.substitute(org_example, options)
-        
+
         except Exception as err:
             logger.debug(f"Unable to insert scenario {scenario.src_id}, {scenario.name}, due to modifier\n"
                          f"    In step {step}: {err}")
@@ -445,9 +454,9 @@ class SuiteProcessors:
         if subs.solution:
             logger.debug(
                 f"Example variant generated with argument substitution: {subs}")
-        
+
         scenario.data_choices = subs
-        
+
         for step in scenario.steps:
             if 'MOD' in step.model_info:
                 for expr in step.model_info['MOD']:
@@ -455,7 +464,7 @@ class SuiteProcessors:
                         expr, step.args)
                     org_example = step.args[modded_arg].org_value
                     step.args[modded_arg].value = subs.solution[org_example]
-        
+
         return scenario
 
     @staticmethod
@@ -465,13 +474,13 @@ class SuiteProcessors:
                 if expression.casefold().startswith(var.arg.casefold()):
                     assignment_expr = expression.replace(
                         var.arg, '', 1).strip()
-                    
+
                     if not assignment_expr.startswith('=') or assignment_expr.startswith('=='):
                         break  # not an assignment
-                    
+
                     constraint = assignment_expr.replace('=', '', 1).strip()
                     return var.arg, constraint
-        
+
         raise ValueError(f"Invalid argument substitution: {expression}")
 
     def _report_tracestate_to_user(self):
@@ -479,7 +488,7 @@ class SuiteProcessors:
         for snapshot in self.tracestate:
             part = f".{snapshot.id.split('.')[1]}" if '.' in snapshot.id else ""
             user_trace += f"{snapshot.scenario.src_id}{part}, "
-        
+
         user_trace = user_trace[:-2] + "]" if ',' in user_trace else "[]"
         reject_trace = [
             self.scenarios[i].src_id for i in self.tracestate.tried]
@@ -495,7 +504,7 @@ class SuiteProcessors:
     def _init_randomiser(seed: any):
         if isinstance(seed, str):
             seed = seed.strip()
-        
+
         if str(seed).lower() == 'none':
             logger.debug(
                 f"Using system's random seed for trace generation. This trace cannot be rerun. Use `seed=new` to generate a reusable seed.")
@@ -518,7 +527,7 @@ class SuiteProcessors:
         for word in range(5):
             prior_choice = random.choice([vowels, consonants])
             last_choice = random.choice([vowels, consonants])
-            
+
             # add first two letters
             string = random.choice(prior_choice) + random.choice(last_choice)
             for letter in range(random.randint(1, 4)):  # add 1 to 4 more letters
@@ -526,12 +535,12 @@ class SuiteProcessors:
                     new_choice = consonants if prior_choice is vowels else vowels
                 else:
                     new_choice = random.choice([vowels, consonants])
-                
+
                 prior_choice = last_choice
                 last_choice = new_choice
                 string += random.choice(new_choice)
-            
+
             words.append(string)
-       
+
         seed = '-'.join(words)
         return seed

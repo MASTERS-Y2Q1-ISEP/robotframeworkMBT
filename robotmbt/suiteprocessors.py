@@ -78,6 +78,13 @@ class SuiteProcessors:
         return out_suite
 
     def process_test_suite(self, in_suite: Suite, *, seed: any = 'new') -> Suite:
+        self.__setup_test_suite(in_suite)
+        self._init_randomiser(seed)
+        random.shuffle(self.scenarios)
+        return self.__start_process_test_suite()
+
+    def __setup_test_suite(self, in_suite: Suite):
+        """Initialize SuiteProcessor self for processing of the given test Suite."""
         self.out_suite = Suite(in_suite.name)
         self.out_suite.filename = in_suite.filename
         self.out_suite.parent = in_suite.parent
@@ -90,8 +97,8 @@ class SuiteProcessors:
         logger.debug("Use these numbers to reference scenarios from traces\n\t" +
                      "\n\t".join([f"{s.src_id}: {s.name}" for s in self.scenarios]))
 
-        self._init_randomiser(seed)
-        random.shuffle(self.scenarios)
+    def __start_process_test_suite(self) -> Suite:
+        """Start processing the test suite. Assumes the SuiteProcessor has been set up beforehand."""
 
         # a short trace without the need for repeating scenarios is preferred
         self._try_to_reach_full_coverage(allow_duplicate_scenarios=False)

@@ -79,7 +79,7 @@ class TraceState:
     def coverage_reached(self):
         return all(self.c_pool.values())
 
-    def get_trace(self):
+    def get_trace(self) -> list[str | Scenario]:
         return [snap.scenario for snap in self._snapshots]
 
     def next_candidate(self, retry: bool=False):

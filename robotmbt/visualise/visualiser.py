@@ -1,3 +1,5 @@
+import graphviz
+
 from robotmbt.modelspace import ModelSpace
 from robotmbt.suitedata import Scenario
 from robotmbt.tracestate import TraceState
@@ -21,7 +23,7 @@ class ScenarioInfo:
             self.src_id = None
 
     def __str__(self):
-        return f"Scen{self.src_id}: {self.name}"
+        return f"({self.src_id}) {self.name}"
 
 
 """
@@ -122,6 +124,33 @@ class Visualiser:
     def set_end(self, scenario: ScenarioInfo):
         self.graph.set_ending_node(scenario)
 
-    # TODO: use a graph library to actually create a graph
+    # TODO: use proper graph library instead of dot
     def generate_html(self) -> str:
-        return f"<div><p>nodes: {self.graph.nodes}\nedges: {self.graph.edges}\nstart: {self.graph.start}\nend: {self.graph.end}\nids: {[f"{name}: {str(val)}" for (name, val) in self.graph.ids.items()]}</p></div>"
+        dot = 'digraph ScenarioGraph {\n'
+        dot += '  node [shape=box, style=filled, fillcolor=lightblue];\n'
+
+        for node_id in self.graph.nodes:
+            scenario = self.graph.ids[node_id]
+            label = str(scenario)
+
+            color = "lightblue"
+            if node_id == self.graph.start:
+                color = "green"
+            elif node_id == self.graph.end:
+                color = "red"
+
+            dot += f'  "{node_id}" [label="{label}", fillcolor="{color}"];\n'
+
+        for from_node, to_node in self.graph.edges:
+            dot += f'  "{from_node}" -> "{to_node}";\n'
+
+        dot += '}\n'
+
+        graph = graphviz.Source(dot, format="svg")
+        svg_data = graph.pipe().decode("utf-8")
+
+        return f"""
+        <div style="width: 100%; overflow-x: auto;">
+            {svg_data}
+        </div>
+        """

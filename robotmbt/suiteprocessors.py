@@ -107,6 +107,7 @@ class SuiteProcessors:
                 "Direct trace not available. Allowing repetition of scenarios")
             self._try_to_reach_full_coverage(allow_duplicate_scenarios=True)
             if not self.tracestate.coverage_reached():
+                logger.write(self.visualiser.generate_html(), html=True)
                 raise Exception("Unable to compose a consistent suite")
 
         self.out_suite.scenarios = self.tracestate.get_trace()

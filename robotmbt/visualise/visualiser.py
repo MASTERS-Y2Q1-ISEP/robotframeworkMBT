@@ -1,6 +1,10 @@
 from robotmbt.modelspace import ModelSpace
 from robotmbt.suitedata import Scenario
 from robotmbt.tracestate import TraceState
+import networkx as nx
+import matplotlib.pyplot as plt
+#numpy
+#scipy
 
 
 """
@@ -122,6 +126,33 @@ class Visualiser:
     def set_end(self, scenario: ScenarioInfo):
         self.graph.set_ending_node(scenario)
 
+    def generate_networkx_graph(self):
+        G = nx.DiGraph()
+        initial_pos = {}
+        fixed = []
+        for node in self.graph.nodes:
+            node_text = self.graph.ids[node]
+            G.add_node(node, text=node_text)
+            if node == self.graph.start:
+                initial_pos[node] = (0,len(self.graph.nodes))
+                fixed.append(self.graph.start)
+            elif node == self.graph.end:
+                initial_pos[node] = (len(self.graph.nodes),0)
+                fixed.append(self.graph.end)
+        for edge in self.graph.edges:
+            G.add_edge(edge[0], edge[1])           
+
+        pos = None
+        if not fixed:
+            pos = nx.spring_layout(G, seed=42)
+        else:
+            pos = nx.spring_layout(G, pos=initial_pos, fixed=fixed, seed=42, method='energy', gravity=0.25)
+
+        # temporary code for visualisation  
+        nx.draw(G, pos=pos, with_labels=True, node_color="lightblue", node_size=600)
+        plt.show()
+
     # TODO: use a graph library to actually create a graph
     def generate_html(self) -> str:
+        self.generate_networkx_graph()
         return f"<div><p>nodes: {self.graph.nodes}\nedges: {self.graph.edges}\nstart: {self.graph.start}\nend: {self.graph.end}\nids: {[f"{name}: {str(val)}" for (name, val) in self.graph.ids.items()]}</p></div>"

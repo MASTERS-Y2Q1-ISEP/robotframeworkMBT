@@ -7,12 +7,12 @@ import matplotlib.pyplot as plt
 #scipy
 
 
-"""
-This contains all information we need from scenarios, abstracting away from the actual Scenario class:
-- name
-- src_id
-"""
 class ScenarioInfo:
+    """
+    This contains all information we need from scenarios, abstracting away from the actual Scenario class:
+    - name
+    - src_id
+    """
     name: str
     src_id: int | None
 
@@ -28,12 +28,12 @@ class ScenarioInfo:
         return f"Scen{self.src_id}: {self.name}"
 
 
-"""
-This contains all information we need at any given step in trace exploration:
-- trace: the strung together scenarios up until this point
-- state: the model space
-"""
 class TraceInfo:
+    """
+    This contains all information we need at any given step in trace exploration:
+    - trace: the strung together scenarios up until this point
+    - state: the model space
+    """
     trace: list[ScenarioInfo] = []
     # TODO: actually use state
     state: ModelSpace = None
@@ -43,11 +43,11 @@ class TraceInfo:
         self.state = state
 
 
-"""
-The scenario graph is the most basic representation of trace exploration.
-It represents scenarios as nodes, and the trace as edges.
-"""
 class ScenarioGraph:
+    """
+    The scenario graph is the most basic representation of trace exploration.
+    It represents scenarios as nodes, and the trace as edges.
+    """
     def __init__(self):
         # We use simplified IDs for nodes, and store the actual scenario info here
         self.ids: dict[str, ScenarioInfo] = {}
@@ -64,11 +64,11 @@ class ScenarioGraph:
         # add the start node
         self.networkx.add_node('start')
 
-    """
-    Update the visualisation with new trace information from another exploration step.
-    This will add nodes for all new scenarios in the provided trace, as well as edges for all pairs in the provided trace.
-    """
     def update_visualisation(self, info: TraceInfo):
+        """
+        Update the visualisation with new trace information from another exploration step.
+        This will add nodes for all new scenarios in the provided trace, as well as edges for all pairs in the provided trace.
+        """
         for i in range(0, len(info.trace) - 1):
             from_node = self.__get_or_create_id(info.trace[i])
             to_node = self.__get_or_create_id(info.trace[i + 1])
@@ -81,10 +81,10 @@ class ScenarioGraph:
             if (from_node, to_node) not in self.networkx.edges:
                 self.networkx.add_edge(from_node, to_node)
 
-    """
-    Get the ID for a scenario that has been added before, or create and store a new one.
-    """
     def __get_or_create_id(self, scenario: ScenarioInfo) -> str:
+        """
+        Get the ID for a scenario that has been added before, or create and store a new one.
+        """
         for i in self.ids.keys():
             # TODO: decide how to deal with repeating scenarios, this merges repeated scenarios into a single scenario
             if self.ids[i].src_id == scenario.src_id:
@@ -94,25 +94,25 @@ class ScenarioGraph:
         self.ids[new_id] = scenario
         return new_id
 
-    """
-    Update the starting node.
-    """
     def set_starting_node(self, scenario: ScenarioInfo):
+        """
+        Update the starting node.
+        """
         node = self.__get_or_create_id(scenario)
         self.networkx.add_edge('start', node)
 
-    """
-    Update the end node.
-    """
     def set_ending_node(self, scenario: ScenarioInfo):
+        """
+        Update the end node.
+        """
         node = self.__get_or_create_id(scenario)
         self.pos[node] = (len(self.networkx.nodes), 0)
         self.fixed.append(node)
 
-    """
-    Calculate the position (x, y) for all nodes in self.networkx
-    """
     def calculate_pos(self):
+        """
+        Calculate the position (x, y) for all nodes in self.networkx
+        """
         self.pos['start'] = (0, len(self.networkx.nodes))
         self.fixed.append('start')
         if not self.fixed:
@@ -121,10 +121,10 @@ class ScenarioGraph:
             self.pos = nx.spring_layout(self.networkx, pos=self.pos, fixed=self.fixed, seed=42, method='energy', gravity=0.25)
 
 
-"""
-The Visualiser class bridges the different concerns to provide a simple interface through which the graph can be updated, and retrieved in HTML format.
-"""
 class Visualiser:
+    """
+    The Visualiser class bridges the different concerns to provide a simple interface through which the graph can be updated, and retrieved in HTML format.
+    """
     def __init__(self):
         self.graph = ScenarioGraph()
 
@@ -137,7 +137,7 @@ class Visualiser:
     def set_end(self, scenario: ScenarioInfo):
         self.graph.set_ending_node(scenario)
 
-    def generate_networkx_graph(self):
+    def generate_graph(self):
         # temporary code for visualisation  
         self.graph.calculate_pos()
         nx.draw(self.graph.networkx, pos=self.graph.pos, with_labels=True, node_color="lightblue", node_size=600)
@@ -145,6 +145,6 @@ class Visualiser:
 
     # TODO: use a graph library to actually create a graph
     def generate_html(self) -> str:
-        self.generate_networkx_graph()
+        self.generate_graph()
         return f""
         # return f"<div><p>nodes: {self.graph.nodes}\nedges: {self.graph.edges}\nstart: {self.graph.start}\nend: {self.graph.end}\nids: {[f"{name}: {str(val)}" for (name, val) in self.graph.ids.items()]}</p></div>"

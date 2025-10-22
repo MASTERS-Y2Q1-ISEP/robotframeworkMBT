@@ -13,8 +13,6 @@ class ScenarioInfo:
     - name
     - src_id
     """
-    name: str
-    src_id: int | None
 
     def __init__(self, scenario: Scenario | str):
         if isinstance(scenario, Scenario):
@@ -34,12 +32,11 @@ class TraceInfo:
     - trace: the strung together scenarios up until this point
     - state: the model space
     """
-    trace: list[ScenarioInfo] = []
-    # TODO: actually use state
-    state: ModelSpace = None
 
+    
     def __init__(self, trace: TraceState, state: ModelSpace):
         self.trace = [ScenarioInfo(s) for s in trace.get_trace()]
+        # TODO: actually use state
         self.state = state
 
 

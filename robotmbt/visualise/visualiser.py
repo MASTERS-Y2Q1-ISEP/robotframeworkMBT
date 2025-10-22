@@ -52,15 +52,17 @@ class ScenarioGraph:
         # We use simplified IDs for nodes, and store the actual scenario info here
         self.ids: dict[str, ScenarioInfo] = {}
 
-        # The nodes are simply a list of IDs
-        self.nodes: list[str] = []
+        # The networkx graph is a directional graph
+        self.networkx = nx.DiGraph()
 
-        # The edges are simply a list of ID pairs
-        self.edges: list[tuple[str, str]] = []
+        # Stores the position (x, y) of the nodes
+        self.pos = {}
 
-        # The start and end nodes are stored as well
-        self.start: str | None = None
-        self.end: str | None = None
+        # List of nodes which positions cannot be changed
+        self.fixed = []
+
+        # add the start node
+        self.networkx.add_node('start')
 
     """
     Update the visualisation with new trace information from another exploration step.
@@ -71,18 +73,13 @@ class ScenarioGraph:
             from_node = self.__get_or_create_id(info.trace[i])
             to_node = self.__get_or_create_id(info.trace[i + 1])
 
-            if not self.nodes:
-                self.nodes = [from_node, to_node]
-            else:
-                if from_node not in self.nodes:
-                    self.nodes.append(from_node)
-                if to_node not in self.nodes:
-                    self.nodes.append(to_node)
+            if from_node not in self.networkx.nodes:
+                self.networkx.add_node(from_node, text=self.ids[from_node].name)
+            if to_node not in self.networkx.nodes:
+                self.networkx.add_node(to_node, text=self.ids[to_node].name)
 
-            if not self.edges:
-                self.edges = [(from_node, to_node)]
-            elif (from_node, to_node) not in self.edges:
-                self.edges.append((from_node, to_node))
+            if (from_node, to_node) not in self.networkx.edges:
+                self.networkx.add_edge(from_node, to_node)
 
     """
     Get the ID for a scenario that has been added before, or create and store a new one.
@@ -101,13 +98,27 @@ class ScenarioGraph:
     Update the starting node.
     """
     def set_starting_node(self, scenario: ScenarioInfo):
-        self.start = self.__get_or_create_id(scenario)
+        node = self.__get_or_create_id(scenario)
+        self.networkx.add_edge('start', node)
 
     """
     Update the end node.
     """
     def set_ending_node(self, scenario: ScenarioInfo):
-        self.end = self.__get_or_create_id(scenario)
+        node = self.__get_or_create_id(scenario)
+        self.pos[node] = (len(self.networkx.nodes), 0)
+        self.fixed.append(node)
+
+    """
+    Calculate the position (x, y) for all nodes in self.networkx
+    """
+    def calculate_pos(self):
+        self.pos['start'] = (0, len(self.networkx.nodes))
+        self.fixed.append('start')
+        if not self.fixed:
+            self.pos = nx.spring_layout(self.networkx, seed=42)
+        else:
+            self.pos = nx.spring_layout(self.networkx, pos=self.pos, fixed=self.fixed, seed=42, method='energy', gravity=0.25)
 
 
 """
@@ -127,32 +138,13 @@ class Visualiser:
         self.graph.set_ending_node(scenario)
 
     def generate_networkx_graph(self):
-        G = nx.DiGraph()
-        initial_pos = {}
-        fixed = []
-        for node in self.graph.nodes:
-            node_text = self.graph.ids[node]
-            G.add_node(node, text=node_text)
-            if node == self.graph.start:
-                initial_pos[node] = (0,len(self.graph.nodes))
-                fixed.append(self.graph.start)
-            elif node == self.graph.end:
-                initial_pos[node] = (len(self.graph.nodes),0)
-                fixed.append(self.graph.end)
-        for edge in self.graph.edges:
-            G.add_edge(edge[0], edge[1])           
-
-        pos = None
-        if not fixed:
-            pos = nx.spring_layout(G, seed=42)
-        else:
-            pos = nx.spring_layout(G, pos=initial_pos, fixed=fixed, seed=42, method='energy', gravity=0.25)
-
         # temporary code for visualisation  
-        nx.draw(G, pos=pos, with_labels=True, node_color="lightblue", node_size=600)
+        self.graph.calculate_pos()
+        nx.draw(self.graph.networkx, pos=self.graph.pos, with_labels=True, node_color="lightblue", node_size=600)
         plt.show()
 
     # TODO: use a graph library to actually create a graph
     def generate_html(self) -> str:
         self.generate_networkx_graph()
-        return f"<div><p>nodes: {self.graph.nodes}\nedges: {self.graph.edges}\nstart: {self.graph.start}\nend: {self.graph.end}\nids: {[f"{name}: {str(val)}" for (name, val) in self.graph.ids.items()]}</p></div>"
+        return f""
+        # return f"<div><p>nodes: {self.graph.nodes}\nedges: {self.graph.edges}\nstart: {self.graph.start}\nend: {self.graph.end}\nids: {[f"{name}: {str(val)}" for (name, val) in self.graph.ids.items()]}</p></div>"

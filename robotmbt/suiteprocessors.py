@@ -40,9 +40,13 @@ from .modelspace import ModelSpace
 from .suitedata import Suite, Scenario, Step
 from .tracestate import TraceState, TraceSnapShot
 from .steparguments import StepArgument, StepArguments
+from .visualise.visualiser import Visualiser, TraceInfo, ScenarioInfo, ScenarioGraph
 
 
 class SuiteProcessors:
+    def __init__(self):
+        self.visualiser = Visualiser()
+
     def echo(self, in_suite):
         return in_suite
 
@@ -93,6 +97,8 @@ class SuiteProcessors:
         self.shuffled = [s.src_id for s in self.scenarios]
         random.shuffle(self.shuffled)  # Keep a single shuffle for all TraceStates (non-essential)
 
+        self.visualiser = Visualiser()
+
         # a short trace without the need for repeating scenarios is preferred
         tracestate = self._try_to_reach_full_coverage(allow_duplicate_scenarios=False)
 
@@ -100,10 +106,15 @@ class SuiteProcessors:
             logger.debug("Direct trace not available. Allowing repetition of scenarios")
             tracestate = self._try_to_reach_full_coverage(allow_duplicate_scenarios=True)
             if not tracestate.coverage_reached():
+                logger.write(self.visualiser.generate_html(), html=True)
                 raise Exception("Unable to compose a consistent suite")
 
         self.out_suite.scenarios = tracestate.get_trace()
         self._report_tracestate_wrapup(tracestate)
+
+        self.visualiser.set_start(ScenarioInfo(self.tracestate.get_trace()[0]))
+        self.visualiser.set_end(ScenarioInfo(self.tracestate.get_trace()[-1]))
+
         return self.out_suite
 
     def _try_to_reach_full_coverage(self, allow_duplicate_scenarios: bool) -> TraceState:
@@ -136,6 +147,7 @@ class SuiteProcessors:
                         modeller.rewind(tracestate, drought_recovery=True)
                         self._report_tracestate_to_user(tracestate)
                         logger.debug(f"last state:\n{tracestate.model.get_status_text()}")
+            self.visualiser.update_visualisation(TraceInfo(self.tracestate, self.active_model))
         return tracestate
 
     @staticmethod

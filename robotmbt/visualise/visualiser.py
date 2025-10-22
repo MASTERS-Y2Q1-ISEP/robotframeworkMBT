@@ -1,4 +1,4 @@
-from models import ScenarioGraph, TraceInfo, ScenarioInfo
+from .models import ScenarioGraph, TraceInfo, ScenarioInfo
 import networkx as nx
 import matplotlib.pyplot as plt
 #numpy

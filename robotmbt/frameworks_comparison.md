@@ -7,8 +7,8 @@
 | **Graph Structure Visualization** | ✅ Excellent interactive network graphs with hover details | ✅ Good network graphs but needs more setup | ❌ Only basic static diagrams |
 | **Path Highlighting** | ✅ Easy to color nodes and edges to show executed vs uncovered paths | ✅ Possible but requires manual styling work | ❌ Limited highlighting capabilities |
 | **User Interaction** | ✅ Built-in zoom, pan, hover with custom tooltips showing scenario details | ✅ Interactive but needs custom code for advanced features | ❌ No native interactivity |
-| **HTML Report Integration** | ✅ Direct embedding in Robot Framework HTML reports | 🟨 Requires extra JS/CSS management | ❌ Static images only |
-| **Export Options** | ✅ One-click export to PNG, SVG, PDF, HTML | 🟨 Complex export process for images | ❌ Limited to basic image formats |
+| **HTML Report Integration** | ✅ Direct embedding in Robot Framework HTML reports | ✅ https://docs.bokeh.org/en/2.4.3/docs/user_guide/embed.html | ❌ Static images only |
+| **Export Options** | ✅ One-click export to PNG, SVG, PDF, HTML | 🟨 Requires `selenium` https://docs.bokeh.org/en/2.4.3/docs/user_guide/export.html  | ❌ Limited to basic image formats |
 | **Quantitative Metrics Display** | ✅ Can show coverage stats, node counts, and trace data alongside graph | ✅ Possible but needs more development effort | ✅ Good for calculating metrics, poor for display |
 | **Automatic Generation** | ✅ Fits into RobotMBT's post-processing workflow, high-level API, quick prototyping | 🟨 Requires more integration work, needed for polished results | ❌ Not designed for automated reporting and modern visualization |
 

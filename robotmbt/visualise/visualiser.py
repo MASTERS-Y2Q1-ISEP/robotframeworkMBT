@@ -5,7 +5,7 @@ from bokeh.plotting import from_networkx, show
 from bokeh.models import (
     Plot, Range1d, Circle, MultiLine,
     HoverTool, BoxZoomTool, ResetTool,
-    Arrow, NormalHead, VeeHead, Bezier
+    Arrow, NormalHead, LabelSet, Bezier, ColumnDataSource
 )
 from math import sqrt
 
@@ -41,10 +41,10 @@ class Visualiser:
         vertices_range = max(x_max-x_min, y_max-y_min)
         vertex_radius = vertices_range / 50
 
-        graph = Plot(width=800, height=800,
-                     x_range=Range1d(x_min, x_max),
-                     y_range=Range1d(y_min, y_max))
-        graph.add_tools(HoverTool(tooltips=None), BoxZoomTool(), ResetTool())
+        plot = Plot(width=800, height=800,
+                    x_range=Range1d(x_min, x_max),
+                    y_range=Range1d(y_min, y_max))
+        plot.add_tools(HoverTool(tooltips=None), BoxZoomTool(), ResetTool())
 
         # draw base graph
         graph_renderer = from_networkx(self.graph.networkx, self.graph.pos)
@@ -52,14 +52,29 @@ class Visualiser:
             radius=vertex_radius, fill_color=Spectral4[0])
         graph_renderer.edge_renderer.glyph = MultiLine(
             line_color="black", line_alpha=0.6, line_width=2)
-        graph.renderers.append(graph_renderer)
+        plot.renderers.append(graph_renderer)
+
+        # add labels to nodes
+        x_cords = []
+        y_cords = []
+        labels = []
+        for vertex in self.graph.networkx.nodes:
+            x_cords.append(self.graph.pos[vertex][0])
+            y_cords.append(self.graph.pos[vertex][1]+vertex_radius/2)
+            labels.append(self.graph.networkx.nodes[vertex]['label'])
+
+        label_source = ColumnDataSource(
+            dict(x=x_cords, y=y_cords, label=labels))
+        labels = LabelSet(x="x", y="y", text="label", source=label_source,
+                          text_color="black", text_align="center")
+        plot.add_layout(labels)
 
         # add arrows and self-loops
         for src, dst in self.graph.networkx.edges():
             x0, y0 = self.graph.pos[src]
             x1, y1 = self.graph.pos[dst]
             if src == dst:
-                # Self-loop as a curved Bezier arc
+                # Self-loop as a curved Bezier arsc
                 loop = Bezier(
                     x0=x0, y0=y0-vertex_radius,
                     x1=x0+vertex_radius, y1=y0,
@@ -68,7 +83,7 @@ class Visualiser:
                     cx1=x0 + 5*vertex_radius, cy1=y0,
                     line_color="red", line_width=2, line_alpha=0.7
                 )
-                graph.add_glyph(loop)
+                plot.add_glyph(loop)
                 # Optional arrowhead on the loop (small VeeHead at the end)
                 # arrow = Arrow(end=VeeHead(size=10, line_color="red", fill_color="red"),
                 #               x_start=x0 + 0.1, y_start=y0 + 0.05,
@@ -85,9 +100,9 @@ class Visualiser:
                               y_start=y0 + dy / length * vertex_radius,
                               x_end=x1 - dx / length * vertex_radius,
                               y_end=y1 - dy / length * vertex_radius)
-                graph.add_layout(arrow)
+                plot.add_layout(arrow)
 
-        show(graph)
+        show(plot)
 
     def generate_html(self) -> str:
         self.generate_graph()

@@ -56,7 +56,7 @@ class ScenarioGraph:
         self.fixed = []
 
         # add the start node
-        self.networkx.add_node('start')
+        self.networkx.add_node('start', label='start')
 
     def update_visualisation(self, info: TraceInfo):
         """
@@ -70,9 +70,9 @@ class ScenarioGraph:
             if from_node not in self.networkx.nodes:
                 self.networkx.add_node(
 
-                    from_node, text=self.ids[from_node].name)
+                    from_node, label=self.ids[from_node].name)
             if to_node not in self.networkx.nodes:
-                self.networkx.add_node(to_node, text=self.ids[to_node].name)
+                self.networkx.add_node(to_node, label=self.ids[to_node].name)
 
             if (from_node, to_node) not in self.networkx.edges:
                 self.networkx.add_edge(from_node, to_node)

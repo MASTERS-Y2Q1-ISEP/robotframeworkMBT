@@ -2,8 +2,6 @@ from robotmbt.modelspace import ModelSpace
 from robotmbt.suitedata import Scenario
 from robotmbt.tracestate import TraceState
 import networkx as nx
-# numpy
-# scipy
 
 
 class ScenarioInfo:

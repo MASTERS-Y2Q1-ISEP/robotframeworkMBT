@@ -1,6 +1,13 @@
 from .models import ScenarioGraph, TraceInfo, ScenarioInfo
 import networkx as nx
-import bokeh
+from bokeh.palettes import Spectral4
+from bokeh.plotting import from_networkx, show
+from bokeh.models import (
+    Plot, Range1d, Circle, MultiLine,
+    HoverTool, BoxZoomTool, ResetTool,
+    Arrow, NormalHead, VeeHead, Bezier
+)
+from math import sqrt
 
 
 class Visualiser:
@@ -21,13 +28,67 @@ class Visualiser:
         self.graph.set_ending_node(scenario)
 
     def generate_graph(self):
-        # temporary code for visualisation
         self.graph.calculate_pos()
-        # nx.draw(self.graph.networkx, pos=self.graph.pos,
-        #         with_labels=True, node_color="lightblue", node_size=600)
-        # plt.show()
 
-    # TODO: use a graph library to actually create a graph
+        # determine min and max of x, y of all vertices with buffer space
+        x_range, y_range = zip(*self.graph.pos.values())
+        x_min = min(x_range) - 0.1 * (max(x_range) - min(x_range))
+        x_max = max(x_range) + 0.1 * (max(x_range) - min(x_range))
+        y_min = min(y_range) - 0.1 * (max(y_range) - min(y_range))
+        y_max = max(y_range) + 0.1 * (max(y_range) - min(y_range))
+
+        # scale vertex radius x, y coordinates of all vertices
+        vertices_range = max(x_max-x_min, y_max-y_min)
+        vertex_radius = vertices_range / 50
+
+        graph = Plot(width=800, height=800,
+                     x_range=Range1d(x_min, x_max),
+                     y_range=Range1d(y_min, y_max))
+        graph.add_tools(HoverTool(tooltips=None), BoxZoomTool(), ResetTool())
+
+        # draw base graph
+        graph_renderer = from_networkx(self.graph.networkx, self.graph.pos)
+        graph_renderer.node_renderer.glyph = Circle(
+            radius=vertex_radius, fill_color=Spectral4[0])
+        graph_renderer.edge_renderer.glyph = MultiLine(
+            line_color="black", line_alpha=0.6, line_width=2)
+        graph.renderers.append(graph_renderer)
+
+        # add arrows and self-loops
+        for src, dst in self.graph.networkx.edges():
+            x0, y0 = self.graph.pos[src]
+            x1, y1 = self.graph.pos[dst]
+            if src == dst:
+                # Self-loop as a curved Bezier arc
+                loop = Bezier(
+                    x0=x0, y0=y0-vertex_radius,
+                    x1=x0+vertex_radius, y1=y0,
+                    # control point
+                    cx0=x0, cy0=y0-5*vertex_radius,
+                    cx1=x0 + 5*vertex_radius, cy1=y0,
+                    line_color="red", line_width=2, line_alpha=0.7
+                )
+                graph.add_glyph(loop)
+                # Optional arrowhead on the loop (small VeeHead at the end)
+                # arrow = Arrow(end=VeeHead(size=10, line_color="red", fill_color="red"),
+                #               x_start=x0 + 0.1, y_start=y0 + 0.05,
+                #               x_end=x0, y_end=y0)
+                # graph.add_layout(arrow)
+                pass
+            else:
+                # Normal directed edge
+                dx = x1 - x0
+                dy = y1 - y0
+                length = sqrt(dx**2 + dy**2)
+                arrow = Arrow(end=NormalHead(size=10, line_color="black", fill_color="black"),
+                              x_start=x0 + dx / length * vertex_radius,
+                              y_start=y0 + dy / length * vertex_radius,
+                              x_end=x1 - dx / length * vertex_radius,
+                              y_end=y1 - dy / length * vertex_radius)
+                graph.add_layout(arrow)
+
+        show(graph)
+
     def generate_html(self) -> str:
         self.generate_graph()
         return f""

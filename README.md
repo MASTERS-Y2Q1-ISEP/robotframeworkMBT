@@ -202,3 +202,37 @@ Using `seed=new` will force generation of a new reusable seed and is identical t
 ## Disclaimer
 
 Please note that this library is in a premature state and hasn't reached its first official (1.0) release yet. Developments are ongoing within the context of the [TiCToC](https://tictoc.cs.ru.nl/) research project. Interface changes are still frequent, and no deprecation warnings are being issued yet.
+
+
+## Development
+### Python virtual environment
+Installing the proper virtual environment can be done with the default `python -m venv ./.venv` command built into python. However, if you have another version of python on your system, this might break dependencies.
+
+#### Pipenv+Pyenv (Linux)
+For the optimal experience (at least on Linux), we suggest installing the packages [`pyenv`](https://github.com/pyenv/pyenv) and [`pipenv`](https://github.com/pypa/pipenv). Then, you can install the proper version of python with:
+
+```bash
+pipenv --python <python_version>
+```
+..where the python version can be found in the `pyproject.toml`. For example, for 3.10: `pipenv --python 3.10`.
+
+You might need to manually make the folder `.venv` by doing `mkdir .venv`.
+
+You can verify if the install went correctly with:
+```bash
+pipenv check
+```
+and:
+```bash
+./.venv/bin/python --version
+```
+
+### Installing dependencies
+Install the dependencies by using `pip` to install the pyproject.toml dependencies. It is recommended that you also include the optional depedencies for visualisation, e.g.:
+```bash
+./.venv/bin/pip install ".[visualization]"
+```
+..or just `pip` if you want to globally install dependencies.
+
+
+

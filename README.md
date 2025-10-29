@@ -208,8 +208,12 @@ Please note that this library is in a premature state and hasn't reached its fir
 ### Python virtual environment
 Installing the proper virtual environment can be done with the default `python -m venv ./.venv` command built into python. However, if you have another version of python on your system, this might break dependencies.
 
-#### Pipenv+Pyenv (Linux)
-For the optimal experience (at least on Linux), we suggest installing the packages [`pyenv`](https://github.com/pyenv/pyenv) and [`pipenv`](https://github.com/pypa/pipenv). Then, you can install the proper version of python with:
+#### Pipenv+Pyenv (verified on Windows and Linux)
+For the optimal experience (at least on Linux), we suggest installing the following packages:
+- [`pyenv`](https://github.com/pyenv/pyenv) (Linux/Mac) or [`pyenv-win`](https://github.com/pyenv-win/pyenv-win) (Windows)
+- [`pipenv`](https://github.com/pypa/pipenv) 
+
+Then, you can install a python virtual environment with:
 
 ```bash
 pipenv --python <python_version>
@@ -222,17 +226,29 @@ You can verify if the install went correctly with:
 ```bash
 pipenv check
 ```
-and:
-```bash
-./.venv/bin/python --version
+This should return `Passed!`
+
+Errors related to minor versions (for example `3.10.0rc2` != `3.10.0`) can be ignored.
+
+Now activate the virtual environment by running 
+```bash 
+pipenv shell
 ```
 
-### Installing dependencies
-Install the dependencies by using `pip` to install the pyproject.toml dependencies. It is recommended that you also include the optional depedencies for visualisation, e.g.:
+..and you should have a virtual env! If you run
 ```bash
-./.venv/bin/pip install ".[visualization]"
+python --version
 ```
-..or just `pip` if you want to globally install dependencies.
+..while in your virtual environment, it should show the `<python_version>` from before.
+
+
+### Installing dependencies
+***NOTE: making sure that you are in the virtual environment***. 
+
+It is recommended that you also include the optional depedencies for visualisation, e.g.:
+```bash
+pip install ".[visualization]"
+```
 
 
 

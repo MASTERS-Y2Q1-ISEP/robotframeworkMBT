@@ -1,14 +1,13 @@
 from .models import ScenarioGraph, TraceInfo, ScenarioInfo
 import networkx as nx
-import matplotlib.pyplot as plt
-#numpy
-#scipy
+import bokeh
 
 
 class Visualiser:
     """
     The Visualiser class bridges the different concerns to provide a simple interface through which the graph can be updated, and retrieved in HTML format.
     """
+
     def __init__(self):
         self.graph = ScenarioGraph()
 
@@ -22,10 +21,11 @@ class Visualiser:
         self.graph.set_ending_node(scenario)
 
     def generate_graph(self):
-        # temporary code for visualisation  
+        # temporary code for visualisation
         self.graph.calculate_pos()
-        nx.draw(self.graph.networkx, pos=self.graph.pos, with_labels=True, node_color="lightblue", node_size=600)
-        plt.show()
+        # nx.draw(self.graph.networkx, pos=self.graph.pos,
+        #         with_labels=True, node_color="lightblue", node_size=600)
+        # plt.show()
 
     # TODO: use a graph library to actually create a graph
     def generate_html(self) -> str:

@@ -1,13 +1,15 @@
 from .models import ScenarioGraph, TraceInfo, ScenarioInfo
 from bokeh.palettes import Spectral4
-from bokeh.plotting import from_networkx, show
+from bokeh.plotting import from_networkx
 from bokeh.models import (
     Plot, Range1d, Circle, MultiLine,
     HoverTool, BoxZoomTool, ResetTool,
     Arrow, NormalHead, LabelSet, Bezier, ColumnDataSource
 )
-from bokeh.embed import components
+from bokeh.embed import file_html
+from bokeh.resources import CDN
 from math import sqrt
+import html
 
 
 class Visualiser:
@@ -30,9 +32,10 @@ class Visualiser:
     def generate_visualisation(self) -> str:
         self.graph.calculate_pos()
         networkvisualiser = NetworkVisualiser(self.graph)
-        networkvisualiser.generate_html()
-        return f""
-        # return f"<div><p>nodes: {self.graph.nodes}\nedges: {self.graph.edges}\nstart: {self.graph.start}\nend: {self.graph.end}\nids: {[f"{name}: {str(val)}" for (name, val) in self.graph.ids.items()]}</p></div>"
+        html_bokeh = networkvisualiser.generate_html()
+        str = f"<iframe srcdoc=\"{html.escape(html_bokeh)}\", width=\"400\", height=\"400\"></iframe>"
+
+        return str
 
 
 class NetworkVisualiser:
@@ -46,7 +49,7 @@ class NetworkVisualiser:
         self.graph = graph
         self.edge_color = "black"
 
-    def generate_html(self):
+    def generate_html(self) -> str:
         self.initialise_plot()
 
         self.draw_from_networkx()
@@ -60,7 +63,7 @@ class NetworkVisualiser:
                 self.add_arrow(x0=x0, y0=y0, x1=x1, y1=y1)
 
         self.add_labels()
-        show(self.plot)
+        return file_html(self.plot, CDN, "graph")
 
     def initialise_plot(self):
         """
@@ -78,7 +81,7 @@ class NetworkVisualiser:
 
         range = Range1d(min(x_min, y_min), max(x_max, y_max))
 
-        self.plot = Plot(width=800, height=800,
+        self.plot = Plot(width=400, height=400,
                          x_range=range,
                          y_range=range)
         self.plot.add_tools(HoverTool(tooltips=None),

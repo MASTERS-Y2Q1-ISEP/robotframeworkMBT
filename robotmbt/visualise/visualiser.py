@@ -6,6 +6,7 @@ from bokeh.models import (
     HoverTool, BoxZoomTool, ResetTool,
     Arrow, NormalHead, LabelSet, Bezier, ColumnDataSource
 )
+from bokeh.embed import components
 from math import sqrt
 
 
@@ -41,11 +42,15 @@ class NetworkVisualiser:
 
     def __init__(self, graph: ScenarioGraph):
         self.plot = None
-        self.vertex_radius = 1
+        self.vertex_radius = 1.0
         self.graph = graph
+        self.edge_color = "black"
 
     def generate_html(self):
         self.initialise_plot()
+
+        self.draw_from_networkx()
+
         for src, dst in self.graph.networkx.edges():
             x0, y0 = self.graph.pos[src]
             x1, y1 = self.graph.pos[dst]
@@ -54,7 +59,6 @@ class NetworkVisualiser:
             else:
                 self.add_arrow(x0=x0, y0=y0, x1=x1, y1=y1)
 
-        self.draw_from_networkx()
         self.add_labels()
         show(self.plot)
 
@@ -72,20 +76,24 @@ class NetworkVisualiser:
         vertices_range = max(x_max-x_min, y_max-y_min)
         self.vertex_radius = vertices_range / 50
 
+        range = Range1d(min(x_min, y_min), max(x_max, y_max))
+
         self.plot = Plot(width=800, height=800,
-                         x_range=Range1d(x_min, x_max),
-                         y_range=Range1d(y_min, y_max))
+                         x_range=range,
+                         y_range=range)
         self.plot.add_tools(HoverTool(tooltips=None),
                             BoxZoomTool(), ResetTool())
 
     def add_labels(self):
-        # add labels to nodes
+        """
+        Add labels to the vertices
+        """
         x_cords = []
         y_cords = []
         labels = []
         for vertex in self.graph.networkx.nodes:
             x_cords.append(self.graph.pos[vertex][0])
-            y_cords.append(self.graph.pos[vertex][1]+self.vertex_radius/2)
+            y_cords.append(self.graph.pos[vertex][1]+self.vertex_radius)
             labels.append(self.graph.networkx.nodes[vertex]['label'])
 
         label_source = ColumnDataSource(
@@ -95,41 +103,55 @@ class NetworkVisualiser:
         self.plot.add_layout(labels)
 
     def draw_from_networkx(self):
+        """
+        Render graph from networkx and stylise nodes and eges
+        """
         graph_renderer = from_networkx(self.graph.networkx, self.graph.pos)
         graph_renderer.node_renderer.glyph = Circle(
             radius=self.vertex_radius, fill_color=Spectral4[0])
         graph_renderer.edge_renderer.glyph = MultiLine(
-            line_color="black", line_alpha=0.6, line_width=2)
+            line_color=self.edge_color, line_alpha=0.7, line_width=2)
         self.plot.renderers.append(graph_renderer)
 
     def add_self_loop(self, x: float, y: float):
-        # Self-loop as a curved Bezier arsc
+        """
+        Self-loop as a Bezier curve with arrow head
+        """
         loop = Bezier(
-            x0=x,
-            y0=y-self.vertex_radius,
-            x1=x+self.vertex_radius,
-            y1=y,
+            # starting point
+            x0=x + self.vertex_radius,
+            y0=y,
+            # end point
+            x1=x,
+            y1=y - self.vertex_radius,
             # control points
-            cx0=x,
-            cy0=y-5*self.vertex_radius,
-            cx1=x + 5*self.vertex_radius,
-            cy1=y,
+            cx0=x + 5*self.vertex_radius,
+            cy0=y,
+            cx1=x,
+            cy1=y - 5*self.vertex_radius,
             # styling
-            line_color="red", line_width=2, line_alpha=0.7
+            line_color=self.edge_color,
+            line_width=2,
+            line_alpha=0.7
         )
         self.plot.add_glyph(loop)
-        # Optional arrowhead on the loop (small VeeHead at the end)
-        # arrow = Arrow(end=VeeHead(size=10, line_color="red", fill_color="red"),
-        #               x_start=x0 + 0.1, y_start=y0 + 0.05,
-        #               x_end=x0, y_end=y0)
-        # graph.add_layout(arrow)
+
+        # add arrow head
+        arrow = Arrow(end=NormalHead(size=10, line_color=self.edge_color, fill_color=self.edge_color),
+                      x_start=x,
+                      y_start=y-self.vertex_radius-0.01,
+                      x_end=x,
+                      y_end=y-self.vertex_radius)
+        self.plot.add_layout(arrow)
 
     def add_arrow(self, x0: float, y0: float, x1: float, y1: float):
-        # Normal directed edge
+        """
+        Add arrowhead to every edge
+        """
         dx = x1 - x0
         dy = y1 - y0
         length = sqrt(dx**2 + dy**2)
-        arrow = Arrow(end=NormalHead(size=10, line_color="black", fill_color="black"),
+        arrow = Arrow(end=NormalHead(size=10, line_color=self.edge_color, fill_color=self.edge_color),
                       x_start=x0 + dx / length * self.vertex_radius,
                       y_start=y0 + dy / length * self.vertex_radius,
                       x_end=x1 - dx / length * self.vertex_radius,

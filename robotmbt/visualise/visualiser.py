@@ -45,11 +45,16 @@ class NetworkVisualiser:
 
     def __init__(self, graph: ScenarioGraph):
         self.plot = None
-        self.vertex_radius = 1.0
         self.graph = graph
+
+        # graph customisation options
         self.edge_color = "black"
+        self.vertex_radius = 1.0
 
     def generate_html(self) -> str:
+        """
+        Generate html file from networkx graph via Bokeh
+        """
         self.initialise_plot()
 
         self.draw_from_networkx()
@@ -76,14 +81,18 @@ class NetworkVisualiser:
         y_min = min(y_range) - 0.1 * (max(y_range) - min(y_range))
         y_max = max(y_range) + 0.1 * (max(y_range) - min(y_range))
 
+        # scale vertex radius based on range
         vertices_range = max(x_max-x_min, y_max-y_min)
         self.vertex_radius = vertices_range / 50
 
+        # create plot
         range = Range1d(min(x_min, y_min), max(x_max, y_max))
 
         self.plot = Plot(width=400, height=400,
                          x_range=range,
                          y_range=range)
+
+        # add tools
         self.plot.add_tools(HoverTool(tooltips=None),
                             BoxZoomTool(), ResetTool())
 
@@ -149,7 +158,7 @@ class NetworkVisualiser:
 
     def add_arrow(self, x0: float, y0: float, x1: float, y1: float):
         """
-        Add arrowhead to every edge
+        Add arrowhead to edge
         """
         dx = x1 - x0
         dy = y1 - y0

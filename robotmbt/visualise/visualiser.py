@@ -2,8 +2,8 @@ from .models import ScenarioGraph, TraceInfo, ScenarioInfo
 from bokeh.palettes import Spectral4
 from bokeh.models import (
     Plot, Range1d, Circle,
-    HoverTool, ResetTool,
-    Arrow, NormalHead, LabelSet, Bezier, ColumnDataSource,
+    Arrow, NormalHead, LabelSet, 
+    Bezier, ColumnDataSource, ResetTool, 
     SaveTool, WheelZoomTool, PanTool
 )
 from bokeh.embed import file_html
@@ -62,11 +62,16 @@ class NetworkVisualiser:
 
     def generate_html(self) -> str:
         """
+        # add tools
+        self.plot.add_tools(ResetTool(), SaveTool(),
+                            WheelZoomTool(), PanTool())
+
+    def _add_nodes(self):
         Generate html file from networkx graph via Bokeh
         """
-        self.initialise_plot()
-        self.add_edges()
-        self.add_nodes()
+        self._initialise_plot()
+        self._add_edges()
+        self._add_nodes()
         label_source = ColumnDataSource(data=self.labels)
         labels = LabelSet(x="x", y="y", text="label", source=label_source,
                           text_color=NetworkVisualiser.EDGE_COLOUR,
@@ -76,7 +81,7 @@ class NetworkVisualiser:
 
         return file_html(self.plot, CDN, "graph")
 
-    def initialise_plot(self):
+    def _initialise_plot(self):
         """
         Define plot with width, height, x_range, y_range and enable tools.
         x_range and y_range are padded. Plot needs to be a square
@@ -106,7 +111,7 @@ class NetworkVisualiser:
         self.plot.add_tools(ResetTool(), SaveTool(),
                             WheelZoomTool(), PanTool())
 
-    def add_nodes(self):
+    def _add_nodes(self):
         """
         Add labels to the nodes in bokeh plot
         """
@@ -169,7 +174,7 @@ class NetworkVisualiser:
 
         self.plot.add_layout(arrow)
 
-    def add_edges(self):
+    def _add_edges(self):
         edge_labels = nx.get_edge_attributes(self.graph.networkx, "label")
         for edge in self.graph.networkx.edges():
             x0, y0 = self.graph.pos[edge[0]]

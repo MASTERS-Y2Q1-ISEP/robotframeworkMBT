@@ -2,9 +2,10 @@ from .models import ScenarioGraph, TraceInfo, ScenarioInfo
 from bokeh.palettes import Spectral4
 from bokeh.plotting import from_networkx
 from bokeh.models import (
-    Plot, Range1d, Circle, MultiLine,
-    HoverTool, BoxZoomTool, ResetTool,
-    Arrow, NormalHead, LabelSet, Bezier, ColumnDataSource
+    Plot, Range1d, Circle,
+    HoverTool, ResetTool,
+    Arrow, NormalHead, LabelSet, Bezier, ColumnDataSource,
+    SaveTool, WheelZoomTool, PanTool
 )
 from bokeh.embed import file_html
 from bokeh.resources import CDN
@@ -18,10 +19,10 @@ class Visualiser:
     a simple interface through which the graph can be updated,
     and retrieved in HTML format.
     """
-    GRAPH_WIDTH_PX      :int = 600 # in px
-    GRAPH_HEIGHT_PX     :int = 400 # in px
-    GRAPH_PADDING_PERC  :int = 15  # %
-    MAX_VERTEX_NAME_LEN :int = 20 # no. of characters
+    GRAPH_WIDTH_PX: int = 600  # in px
+    GRAPH_HEIGHT_PX: int = 400  # in px
+    GRAPH_PADDING_PERC: int = 15  # %
+    MAX_VERTEX_NAME_LEN: int = 20  # no. of characters
 
     def __init__(self):
         self.graph = ScenarioGraph()
@@ -49,10 +50,10 @@ class NetworkVisualiser:
     Generate plot with Bokeh
     """
 
-    EDGE_WIDTH :float = 2.0
-    EDGE_ALPHA :float = 0.7
-    EDGE_COLOUR :str|tuple[int,int,int]  = (12,12,12) # 'visual studio black'
-
+    EDGE_WIDTH: float = 2.0
+    EDGE_ALPHA: float = 0.7
+    EDGE_COLOUR: str | tuple[int, int, int] = (
+        12, 12, 12)  # 'visual studio black'
 
     def __init__(self, graph: ScenarioGraph):
         self.plot = None
@@ -80,10 +81,10 @@ class NetworkVisualiser:
 
     def initialise_plot(self):
         """
-        Define plot based on range of coordinates of the nodes.
-        Enable tools
+        Define plot with width, height, x_range, y_range and enable tools.
+        x_range and y_range are padded. Plot needs to be a square
         """
-        padding :float = Visualiser.GRAPH_PADDING_PERC / 100
+        padding: float = Visualiser.GRAPH_PADDING_PERC / 100
 
         x_range, y_range = zip(*self.graph.pos.values())
         x_min = min(x_range) - padding * (max(x_range) - min(x_range))
@@ -96,16 +97,17 @@ class NetworkVisualiser:
         self.node_radius = nodes_range / 50
 
         # create plot
-        range = Range1d(min(x_min, y_min), max(x_max, y_max))
+        x_range = Range1d(min(x_min, y_min), max(x_max, y_max))
+        y_range = Range1d(min(x_min, y_min), max(x_max, y_max))
 
-        self.plot = Plot(width=Visualiser.GRAPH_WIDTH_PX, 
+        self.plot = Plot(width=Visualiser.GRAPH_WIDTH_PX,
                          height=Visualiser.GRAPH_HEIGHT_PX,
-                         x_range=range,
-                         y_range=range)
+                         x_range=x_range,
+                         y_range=y_range)
 
         # add tools
-        self.plot.add_tools(HoverTool(tooltips=None),
-                            BoxZoomTool(), ResetTool())
+        self.plot.add_tools(ResetTool(), SaveTool(),
+                            WheelZoomTool(), PanTool())
 
     def add_nodes(self):
         """
@@ -121,12 +123,12 @@ class NetworkVisualiser:
             labels.append(
                 self._cap_name(self.graph.networkx.nodes[node]['label'])
             )
-            
+
             bokeh_node = Circle(radius=self.node_radius,
                                 fill_color=Spectral4[0],
                                 x=self.graph.pos[node][0],
                                 y=self.graph.pos[node][1])
-            
+
             self.plot.add_glyph(bokeh_node)
 
         label_source = ColumnDataSource(
@@ -134,9 +136,9 @@ class NetworkVisualiser:
         )
 
         labels = LabelSet(x="x", y="y", text="label", source=label_source,
-                          text_color=NetworkVisualiser.EDGE_COLOUR, 
+                          text_color=NetworkVisualiser.EDGE_COLOUR,
                           text_align="center")
-        
+
         self.plot.add_layout(labels)
 
     def add_self_loop(self, x: float, y: float):
@@ -147,17 +149,17 @@ class NetworkVisualiser:
             # starting point
             x0=x + self.node_radius,
             y0=y,
-            
+
             # end point
             x1=x,
             y1=y - self.node_radius,
-            
+
             # control points
             cx0=x + 5*self.node_radius,
             cy0=y,
             cx1=x,
             cy1=y - 5*self.node_radius,
-            
+
             # styling
             line_color=NetworkVisualiser.EDGE_COLOUR,
             line_width=NetworkVisualiser.EDGE_WIDTH,
@@ -167,11 +169,12 @@ class NetworkVisualiser:
 
         # add arrow head
         arrow = Arrow(
-            end=NormalHead(size=10, 
-                           line_color=NetworkVisualiser.EDGE_COLOUR, 
+            end=NormalHead(size=10,
+                           line_color=NetworkVisualiser.EDGE_COLOUR,
                            fill_color=NetworkVisualiser.EDGE_COLOUR),
-                           
-            x_start=x, y_start=y-self.node_radius-0.01, # -0.01 to guarantee that arrow points upwards. 
+
+            # -0.01 to guarantee that arrow points upwards.
+            x_start=x, y_start=y-self.node_radius-0.01,
             x_end=x, y_end=y-self.node_radius
         )
 
@@ -183,12 +186,12 @@ class NetworkVisualiser:
         """
         dx = x1 - x0
         dy = y1 - y0
-        length = sqrt(dx**2 + dy**2) # she dx on my dy till I pythagoras
-        
+        length = sqrt(dx**2 + dy**2)  # she dx on my dy till I pythagoras
+
         arrow = Arrow(
             end=NormalHead(
-                size=10, 
-                line_color=NetworkVisualiser.EDGE_COLOUR, 
+                size=10,
+                line_color=NetworkVisualiser.EDGE_COLOUR,
                 fill_color=NetworkVisualiser.EDGE_COLOUR),
 
             x_start=x0 + dx / length * self.node_radius,
@@ -199,10 +202,9 @@ class NetworkVisualiser:
 
         self.plot.add_layout(arrow)
 
-
     @staticmethod
-    def _cap_name(name :str) -> str:
+    def _cap_name(name: str) -> str:
         if len(name) < Visualiser.MAX_VERTEX_NAME_LEN:
             return name
-    
+
         return f"{name[:(Visualiser.MAX_VERTEX_NAME_LEN-3)]}..."

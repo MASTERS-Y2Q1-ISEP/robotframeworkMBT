@@ -14,7 +14,9 @@ import html
 
 class Visualiser:
     """
-    The Visualiser class bridges the different concerns to provide a simple interface through which the graph can be updated, and retrieved in HTML format.
+    The Visualiser class bridges the different concerns to provide
+    a simple interface through which the graph can be updated,
+    and retrieved in HTML format.
     """
 
     def __init__(self):
@@ -57,8 +59,6 @@ class NetworkVisualiser:
         """
         self.initialise_plot()
 
-        self.draw_from_networkx()
-
         for src, dst in self.graph.networkx.edges():
             x0, y0 = self.graph.pos[src]
             x1, y1 = self.graph.pos[dst]
@@ -67,7 +67,7 @@ class NetworkVisualiser:
             else:
                 self.add_arrow(x0=x0, y0=y0, x1=x1, y1=y1)
 
-        self.add_labels()
+        self.add_nodes()
         return file_html(self.plot, CDN, "graph")
 
     def initialise_plot(self):
@@ -96,7 +96,7 @@ class NetworkVisualiser:
         self.plot.add_tools(HoverTool(tooltips=None),
                             BoxZoomTool(), ResetTool())
 
-    def add_labels(self):
+    def add_nodes(self):
         """
         Add labels to the nodes in bokeh plot
         """
@@ -107,23 +107,17 @@ class NetworkVisualiser:
             x_cords.append(self.graph.pos[node][0])
             y_cords.append(self.graph.pos[node][1]+self.node_radius)
             labels.append(self.graph.networkx.nodes[node]['label'])
+            bokeh_node = Circle(radius=self.node_radius,
+                                fill_color=Spectral4[0],
+                                x=self.graph.pos[node][0],
+                                y=self.graph.pos[node][1])
+            self.plot.add_glyph(bokeh_node)
 
         label_source = ColumnDataSource(
             dict(x=x_cords, y=y_cords, label=labels))
         labels = LabelSet(x="x", y="y", text="label", source=label_source,
                           text_color="black", text_align="center")
         self.plot.add_layout(labels)
-
-    def draw_from_networkx(self):
-        """
-        Render graph from networkx and stylise nodes and eges
-        """
-        graph_renderer = from_networkx(self.graph.networkx, self.graph.pos)
-        graph_renderer.node_renderer.glyph = Circle(
-            radius=self.node_radius, fill_color=Spectral4[0])
-        graph_renderer.edge_renderer.glyph = MultiLine(
-            line_color=self.edge_color, line_alpha=0.7, line_width=2)
-        self.plot.renderers.append(graph_renderer)
 
     def add_self_loop(self, x: float, y: float):
         """

@@ -108,7 +108,8 @@ class SuiteProcessors:
                 "Direct trace not available. Allowing repetition of scenarios")
             self._try_to_reach_full_coverage(allow_duplicate_scenarios=True)
             if not self.tracestate.coverage_reached():
-                logger.write(self.visualiser.generate_html(), html=True)
+                logger.write(
+                    self.visualiser.generate_visualisation(), html=True)
                 raise Exception("Unable to compose a consistent suite")
 
         self.out_suite.scenarios = self.tracestate.get_trace()
@@ -152,7 +153,8 @@ class SuiteProcessors:
                         self._report_tracestate_to_user()
                         logger.debug(
                             f"last state:\n{self.active_model.get_status_text()}")
-            self.visualiser.update_visualisation(TraceInfo(self.tracestate, self.active_model))
+            self.visualiser.update_visualisation(
+                TraceInfo(self.tracestate, self.active_model))
 
     def __last_candidate_changed_nothing(self) -> bool:
         if len(self.tracestate) < 2:
@@ -454,9 +456,9 @@ class SuiteProcessors:
         if subs.solution:
             logger.debug(
                 f"Example variant generated with argument substitution: {subs}")
-        
+
         scenario.data_choices = subs
-        
+
         for step in scenario.steps:
             if 'MOD' in step.model_info:
                 for expr in step.model_info['MOD']:
@@ -475,13 +477,13 @@ class SuiteProcessors:
                 if expression.casefold().startswith(var.arg.casefold()):
                     assignment_expr = expression.replace(
                         var.arg, '', 1).strip()
-                    
+
                     if not assignment_expr.startswith('=') or assignment_expr.startswith('=='):
                         break  # not an assignment
-                    
+
                     constraint = assignment_expr.replace('=', '', 1).strip()
                     return var.arg, constraint
-        
+
         raise ValueError(f"Invalid argument substitution: {expression}")
 
     def _report_tracestate_to_user(self):
@@ -489,7 +491,7 @@ class SuiteProcessors:
         for snapshot in self.tracestate:
             part = f".{snapshot.id.split('.')[1]}" if '.' in snapshot.id else ""
             user_trace += f"{snapshot.scenario.src_id}{part}, "
-        
+
         user_trace = user_trace[:-2] + "]" if ',' in user_trace else "[]"
         reject_trace = [
             self.scenarios[i].src_id for i in self.tracestate.tried]
@@ -505,7 +507,7 @@ class SuiteProcessors:
     def _init_randomiser(seed: any):
         if isinstance(seed, str):
             seed = seed.strip()
-        
+
         if str(seed).lower() == 'none':
             logger.info(f"Using system's random seed for trace generation. This trace cannot be rerun. Use `seed=new` to generate a reusable seed.")
         elif str(seed).lower() == 'new':
@@ -527,7 +529,7 @@ class SuiteProcessors:
         for word in range(5):
             prior_choice = random.choice([vowels, consonants])
             last_choice = random.choice([vowels, consonants])
-            
+
             # add first two letters
             string = random.choice(prior_choice) + random.choice(last_choice)
             for letter in range(random.randint(1, 4)):  # add 1 to 4 more letters
@@ -535,12 +537,12 @@ class SuiteProcessors:
                     new_choice = consonants if prior_choice is vowels else vowels
                 else:
                     new_choice = random.choice([vowels, consonants])
-                
+
                 prior_choice = last_choice
                 last_choice = new_choice
                 string += random.choice(new_choice)
-            
+
             words.append(string)
-       
+
         seed = '-'.join(words)
         return seed

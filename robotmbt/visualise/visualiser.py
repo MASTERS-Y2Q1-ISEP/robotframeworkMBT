@@ -2,8 +2,8 @@ from .models import ScenarioGraph, TraceInfo, ScenarioInfo
 from bokeh.palettes import Spectral4
 from bokeh.models import (
     Plot, Range1d, Circle,
-    Arrow, NormalHead, LabelSet, 
-    Bezier, ColumnDataSource, ResetTool, 
+    Arrow, NormalHead, LabelSet,
+    Bezier, ColumnDataSource, ResetTool,
     SaveTool, WheelZoomTool, PanTool
 )
 from bokeh.embed import file_html
@@ -62,11 +62,6 @@ class NetworkVisualiser:
 
     def generate_html(self) -> str:
         """
-        # add tools
-        self.plot.add_tools(ResetTool(), SaveTool(),
-                            WheelZoomTool(), PanTool())
-
-    def _add_nodes(self):
         Generate html file from networkx graph via Bokeh
         """
         self._initialise_plot()
@@ -184,11 +179,10 @@ class NetworkVisualiser:
                     x=x0, y=y0, label=self._cap_name(edge_labels[edge]))
 
             else:
-                # edge between 2 different noes
+                # edge between 2 different nodes
                 dx = x1 - x0
                 dy = y1 - y0
 
-                # she dx on my dy till I pythagoras
                 length = sqrt(dx**2 + dy**2)
 
                 arrow = Arrow(

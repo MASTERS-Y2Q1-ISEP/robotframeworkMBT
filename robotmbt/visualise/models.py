@@ -52,11 +52,11 @@ class ScenarioGraph:
         # Stores the position (x, y) of the nodes
         self.pos = {}
 
-        # List of nodes which positions cannot be changed
-        self.fixed = []
-
         # add the start node
         self.networkx.add_node('start', label='start')
+
+        # indicates last scenario of trace
+        self.end_node = 'start'
 
     def update_visualisation(self, info: TraceInfo):
         """
@@ -106,8 +106,7 @@ class ScenarioGraph:
         """
         Update the end node.
         """
-        node = self.__get_or_create_id(scenario)
-        self.fixed.append(node)
+        self.end_node = self.__get_or_create_id(scenario)
 
     def calculate_pos(self):
         """

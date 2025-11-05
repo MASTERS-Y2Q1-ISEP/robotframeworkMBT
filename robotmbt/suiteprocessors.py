@@ -202,7 +202,7 @@ class SuiteProcessors:
     def _init_randomiser(seed: any):
         if isinstance(seed, str):
             seed = seed.strip()
-        
+
         if str(seed).lower() == 'none':
             logger.info(
                 f"Using system's random seed for trace generation. This trace cannot be rerun. Use `seed=new` to generate a reusable seed.")
@@ -231,12 +231,12 @@ class SuiteProcessors:
                     new_choice = consonants if prior_choice is vowels else vowels
                 else:
                     new_choice = random.choice([vowels, consonants])
-                
+
                 prior_choice = last_choice
                 last_choice = new_choice
                 string += random.choice(new_choice)
-            
+
             words.append(string)
-       
+
         seed = '-'.join(words)
         return seed

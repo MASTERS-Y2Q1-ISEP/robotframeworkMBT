@@ -34,14 +34,12 @@ class StateInfo:
         self.domain = state.ref_id
         self.properties = {}
         for p in state.props:
-            if p == 'scenario':
-                self.properties['scenario'] = {}
-                for attr, value in state.props['scenario']:
-                    self.properties['scenario'][attr] = value
-                continue
             self.properties[p] = {}
-            for attr in dir(state.props[p]):
-                self.properties[p][attr] = getattr(state.props[p], attr)
+            if p == 'scenario':
+                self.properties['scenario'] = dict(state.props['scenario'])
+            else:
+                for attr in dir(state.props[p]):
+                    self.properties[p][attr] = getattr(state.props[p], attr)
 
     def __eq__(self, other):
         return self.domain == other.domain and self.properties == other.properties

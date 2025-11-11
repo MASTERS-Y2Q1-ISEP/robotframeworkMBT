@@ -29,11 +29,8 @@ class Visualiser:
     def update_visualisation(self, info: TraceInfo):
         self.graph.update_visualisation(info)
 
-    def set_start(self, scenario: ScenarioInfo):
-        self.graph.set_starting_node(scenario)
-
-    def set_end(self, scenario: ScenarioInfo):
-        self.graph.set_ending_node(scenario)
+    def set_final_trace(self, info: TraceInfo):
+        self.graph.set_final_trace(info)
 
     def generate_visualisation(self) -> str:
         self.graph.calculate_pos()

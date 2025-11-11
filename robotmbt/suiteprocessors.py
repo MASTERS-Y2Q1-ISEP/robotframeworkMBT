@@ -115,8 +115,7 @@ class SuiteProcessors:
         self.out_suite.scenarios = self.tracestate.get_trace()
         self._report_tracestate_wrapup()
 
-        self.visualiser.set_start(ScenarioInfo(self.tracestate.get_trace()[0]))
-        self.visualiser.set_end(ScenarioInfo(self.tracestate.get_trace()[-1]))
+        self.visualiser.set_final_trace(TraceInfo(self.tracestate, self.active_model))
 
         return self.out_suite
 

@@ -67,8 +67,8 @@ class ScenarioGraph:
             from_node = self.__get_or_create_id(info.trace[i])
             to_node = self.__get_or_create_id(info.trace[i + 1])
 
-            self.add_node(from_node)
-            self.add_node(to_node)
+            self.__add_node(from_node)
+            self.__add_node(to_node)
 
             if (from_node, to_node) not in self.networkx.edges:
                 self.networkx.add_edge(
@@ -87,27 +87,34 @@ class ScenarioGraph:
         self.ids[new_id] = scenario
         return new_id
 
-    def add_node(self, node: str):
+    def __add_node(self, node: str):
         """
         Add node if it doesn't already exist
         """
         if node not in self.networkx.nodes:
             self.networkx.add_node(node, label=self.ids[node].name)
 
-    def set_starting_node(self, scenario: ScenarioInfo):
+    def __set_starting_node(self, scenario: ScenarioInfo):
         """
         Update the starting node.
         """
         node = self.__get_or_create_id(scenario)
-        self.add_node(node)
+        self.__add_node(node)
         self.networkx.add_edge('start', node, label='')
 
-    def set_ending_node(self, scenario: ScenarioInfo):
+    def __set_ending_node(self, scenario: ScenarioInfo):
         """
         Update the end node.
         """
         node = self.__get_or_create_id(scenario)
         self.fixed.append(node)
+
+    def set_final_trace(self, info: TraceInfo):
+        """
+        Update the graph with information on the final trace.
+        """
+        self.__set_starting_node(info.trace[0])
+        self.__set_ending_node(info.trace[-1])
 
     def calculate_pos(self):
         """

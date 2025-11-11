@@ -23,6 +23,38 @@ class ScenarioInfo:
         return f"Scen{self.src_id}: {self.name}"
 
 
+class StateInfo:
+    """
+    This contains all information we need from states, abstracting away from the actual ModelSpace class:
+    - domain
+    - properties
+    """
+
+    def __init__(self, state: ModelSpace):
+        self.domain = state.ref_id
+        self.properties = {}
+        for p in state.props:
+            if p == 'scenario':
+                self.properties['scenario'] = {}
+                for attr, value in state.props['scenario']:
+                    self.properties['scenario'][attr] = value
+                continue
+            self.properties[p] = {}
+            for attr in dir(state.props[p]):
+                self.properties[p][attr] = getattr(state.props[p], attr)
+
+    def __eq__(self, other):
+        return self.domain == other.domain and self.properties == other.properties
+
+    def __str__(self):
+        res = ""
+        for p in self.properties:
+            res += f"{p}:\n"
+            for k, v in self.properties[p].items():
+                res += f"\t{k}={v}\n"
+        return res
+
+
 class TraceInfo:
     """
     This contains all information we need at any given step in trace exploration:
@@ -32,8 +64,7 @@ class TraceInfo:
 
     def __init__(self, trace: TraceState, state: ModelSpace):
         self.trace = [ScenarioInfo(s) for s in trace.get_trace()]
-        # TODO: actually use state
-        self.state = state
+        self.state = StateInfo(state)
 
 
 class ScenarioGraph:

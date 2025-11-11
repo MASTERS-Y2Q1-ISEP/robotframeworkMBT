@@ -1,4 +1,4 @@
-from .models import ScenarioGraph, TraceInfo, ScenarioInfo
+from .models import ScenarioGraph, StateGraph, TraceInfo
 from bokeh.palettes import Spectral4
 from bokeh.models import (
     Plot, Range1d, Circle,
@@ -24,7 +24,7 @@ class Visualiser:
     MAX_VERTEX_NAME_LEN: int = 20  # no. of characters
 
     def __init__(self):
-        self.graph = ScenarioGraph()
+        self.graph = StateGraph()
 
     def update_visualisation(self, info: TraceInfo):
         self.graph.update_visualisation(info)
@@ -49,6 +49,7 @@ class NetworkVisualiser:
     EDGE_COLOUR: str | tuple[int, int, int] = (
         12, 12, 12)  # 'visual studio black'
 
+    # TODO: abstract Graph class, e.g. using abc
     def __init__(self, graph: ScenarioGraph):
         self.plot = None
         self.graph = graph
@@ -203,6 +204,9 @@ class NetworkVisualiser:
 
     @staticmethod
     def _cap_name(name: str) -> str:
+        # TODO: cap name only if scenario graph
+        # And figure out how to make large graphs readable with long states
+        return name
         if len(name) < Visualiser.MAX_VERTEX_NAME_LEN:
             return name
 

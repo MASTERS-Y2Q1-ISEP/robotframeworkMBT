@@ -156,3 +156,89 @@ class ScenarioGraph:
         except nx.NetworkXException:
             # if planar layout cannot find a graph without crossing edges
             self.pos = nx.arf_layout(self.networkx, seed=42)
+
+
+class StateGraph:
+    def __init__(self):
+        # We use simplified IDs for nodes, and store the actual state info here
+        self.ids: dict[str, StateInfo] = {}
+
+        # The networkx graph is a directional graph
+        self.networkx = nx.DiGraph()
+
+        # Stores the position (x, y) of the nodes
+        self.pos = {}
+
+        # List of nodes which positions cannot be changed
+        self.fixed = []
+
+        # add the start node
+        self.networkx.add_node('start', label='start')
+
+        self.prev_state = StateInfo(ModelSpace())
+        self.prev_trace_len = 0
+
+    def update_visualisation(self, info: TraceInfo):
+        """
+        Update the visualisation with new trace information from another exploration step.
+        This will add nodes for all new scenarios in the provided trace, as well as edges for all pairs in the provided trace.
+        """
+        if len(info.trace) > 0:
+            scenario = info.trace[-1]
+
+            from_node = self.__get_or_create_id(self.prev_state)
+            if len(info.trace) == 1:
+                from_node = 'start'
+            to_node = self.__get_or_create_id(info.state)
+
+            self.__add_node(from_node)
+            self.__add_node(to_node)
+
+            if self.prev_trace_len < len(info.trace):
+                if (from_node, to_node) not in self.networkx.edges:
+                    self.networkx.add_edge(from_node, to_node, label=scenario.name)
+
+        self.prev_state = info.state
+        self.prev_trace_len = len(info.trace)
+
+    def __get_or_create_id(self, state: StateInfo) -> str:
+        """
+        Get the ID for a state that has been added before, or create and store a new one.
+        """
+        for i in self.ids.keys():
+            if self.ids[i] == state:
+                return i
+
+        new_id = f"node{len(self.ids)}"
+        self.ids[new_id] = state
+        return new_id
+
+    def __add_node(self, node: str):
+        """
+        Add node if it doesn't already exist
+        """
+        if node not in self.networkx.nodes:
+            self.networkx.add_node(node, label=str(self.ids[node]))
+
+    def set_final_trace(self, info: TraceInfo):
+        """
+        Update the graph with information on the final trace.
+        """
+        self.__set_ending_node(info.state)
+
+    def __set_ending_node(self, state: StateInfo):
+        """
+        Update the end node.
+        """
+        node = self.__get_or_create_id(state)
+        self.fixed.append(node)
+
+    def calculate_pos(self):
+        """
+        Calculate the position (x, y) for all nodes in self.networkx
+        """
+        try:
+            self.pos = nx.planar_layout(self.networkx)
+        except nx.NetworkXException:
+            # if planar layout cannot find a graph without crossing edges
+            self.pos = nx.arf_layout(self.networkx, seed=42)

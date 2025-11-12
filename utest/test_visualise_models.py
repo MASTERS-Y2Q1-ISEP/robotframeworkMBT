@@ -160,6 +160,13 @@ class TestVisualiseModels(unittest.TestCase):
         edge_labels = nx.get_edge_attributes(sg.networkx, "label")
         self.assertEqual(edge_labels[('start', id)], '')
 
+    def test_scenario_graph_set_end_node(self):
+        sg = ScenarioGraph()
+        si = ScenarioInfo('test')
+        id = sg._get_or_create_id(si)
+        sg.set_ending_node(si)
+        self.assertEqual(sg.end_node, id)
+
 
 if __name__ == '__main__':
     unittest.main()

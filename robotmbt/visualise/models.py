@@ -86,7 +86,7 @@ class ScenarioGraph:
         """
         for i in self.ids.keys():
             # TODO: decide how to deal with repeating scenarios, this merges repeated scenarios into a single scenario
-            if self.ids[i].src_id == scenario.src_id:
+            if self.ids[i].src_id == scenario.src_id and scenario.src_id is not None:
                 return i
 
         new_id = f"node{len(self.ids)}"

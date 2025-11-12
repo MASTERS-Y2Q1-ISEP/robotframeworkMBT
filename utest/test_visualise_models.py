@@ -39,8 +39,7 @@ class TestVisualiseModels(unittest.TestCase):
         self.assertEqual(ti.trace[1].name, str(1))
         self.assertEqual(ti.trace[2].name, str(2))
 
-        # TODO change when state is implemented
-        self.assertIsNone(ti.state)
+        # TODO check state
 
     """
     Class: ScenarioGraph
@@ -97,11 +96,11 @@ class TestVisualiseModels(unittest.TestCase):
         sg.update_visualisation(ti)
 
         self.assertIn('node0', sg.networkx.nodes)
-        self.assertEqual(sg.networkx.nodes['node0']['label'], 0)
+        self.assertEqual(sg.networkx.nodes['node0']['label'], str(0))
         self.assertIn('node1', sg.networkx.nodes)
-        self.assertEqual(sg.networkx.nodes['node1']['label'], 1)
+        self.assertEqual(sg.networkx.nodes['node1']['label'], str(1))
         self.assertIn('node2', sg.networkx.nodes)
-        self.assertEqual(sg.networkx.nodes['node2']['label'], 2)
+        self.assertEqual(sg.networkx.nodes['node2']['label'], str(2))
 
     def test_scenario_graph_update_visualisation_edges(self):
         ts = TraceState(3)

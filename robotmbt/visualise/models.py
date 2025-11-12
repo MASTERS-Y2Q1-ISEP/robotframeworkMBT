@@ -115,7 +115,12 @@ class ScenarioGraph:
         Calculate the position (x, y) for all nodes in self.networkx
         """
         try:
-            self.pos = nx.planar_layout(self.networkx)
+            self.pos = nx.bfs_layout(
+                self.networkx, 'start', align='horizontal', scale=1
+            )
+            # flip y axis so start is the top node
+            for node in self.pos:
+                self.pos[node] = (self.pos[node][0], -self.pos[node][1])
         except nx.NetworkXException:
             # if planar layout cannot find a graph without crossing edges
             self.pos = nx.arf_layout(self.networkx, seed=42)

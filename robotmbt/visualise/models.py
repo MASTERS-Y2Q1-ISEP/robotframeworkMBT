@@ -29,11 +29,17 @@ class TraceInfo:
     - trace: the strung together scenarios up until this point
     - state: the model space
     """
+    @classmethod
+    def from_trace_state(cls, trace: TraceState, state: ModelSpace|None):
+        return cls([ScenarioInfo(t) for t in trace.get_trace()], state)
 
-    def __init__(self, trace: TraceState, state: ModelSpace):
-        self.trace = [ScenarioInfo(s) for s in trace.get_trace()]
+    def __init__(self, trace :list[ScenarioInfo], state :ModelSpace|None):
+        self.trace :list[ScenarioInfo] = trace
         # TODO: actually use state
-        self.state = state
+        self.state :ModelSpace|None = state
+    
+    def __repr__(self) -> str:
+        return f"TraceInfo(trace=[{[str(t) for t in self.trace]}], state={self.state})"
 
 
 class ScenarioGraph:

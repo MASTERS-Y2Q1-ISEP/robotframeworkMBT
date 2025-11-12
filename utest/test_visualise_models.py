@@ -10,7 +10,7 @@ class TestVisualiseModels(unittest.TestCase):
         for scenario in range(3):
             candidates.append(ts.next_candidate())
             ts.confirm_full_scenario(candidates[-1], scenario, {})
-        ti = TraceInfo(trace=ts, state=None)
+        ti = TraceInfo.from_trace_state(trace=ts, state=None)
 
         self.assertEqual(0, ti.trace[0].name)
         self.assertEqual(1, ti.trace[1].name)

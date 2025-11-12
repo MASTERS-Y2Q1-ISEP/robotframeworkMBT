@@ -94,7 +94,7 @@ class TestVisualiseModels(unittest.TestCase):
         for scenario in range(3):
             candidates.append(ts.next_candidate())
             ts.confirm_full_scenario(candidates[-1], scenario, {})
-        ti = TraceInfo(trace=ts, state=None)
+        ti = TraceInfo.from_trace_state(ts, None)
         sg = ScenarioGraph()
         sg.update_visualisation(ti)
 
@@ -111,7 +111,7 @@ class TestVisualiseModels(unittest.TestCase):
         for scenario in range(3):
             candidates.append(ts.next_candidate())
             ts.confirm_full_scenario(candidates[-1], scenario, {})
-        ti = TraceInfo(trace=ts, state=None)
+        ti = TraceInfo.from_trace_state(ts, None)
         sg = ScenarioGraph()
         sg.update_visualisation(ti)
 
@@ -126,7 +126,7 @@ class TestVisualiseModels(unittest.TestCase):
         ts = TraceState(1)
         ts.confirm_full_scenario(0, 'one', {})
         self.assertEqual(ts.get_trace(), ['one'])
-        ti = TraceInfo(trace=ts, state=None)
+        ti = TraceInfo.from_trace_state(ts, None)
         sg = ScenarioGraph()
         sg.update_visualisation(ti)
 

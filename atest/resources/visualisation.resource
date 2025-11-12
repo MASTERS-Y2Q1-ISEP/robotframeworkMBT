@@ -16,12 +16,14 @@ Test Suite ${suite} has ${count} scenarios
     [Documentation]    Makes a test suite
     ...    :IN: scenario_count = ${count}, suite = ${suite}
     ...    :OUT: None
-    # use customer ScenarioGenerator.py to generate some scenarios
-    
     ${trace_info} =    Generate Trace Information   ${count}
     Set Suite Variable    ${trace_info}
 
 # WARNING: this only works for Scenario graphs, this needs to be adjusted to continually update the model when adding new state.
+    ${scenarios} =    Generate Scenarios    ${count}
+    Set Suite Variable    ${scenarios}    # Store scenarios as a suite variable
+    Log    Generated scenarios: ${scenarios}
+
 Graph ${graph} is generated based on Test Suite ${suite}
      [Documentation]    Generates the graph 
     ...    :IN: graph = ${graph}, suite = ${suite}

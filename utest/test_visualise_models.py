@@ -94,7 +94,11 @@ class TestVisualiseModels(unittest.TestCase):
         for scenario in range(3):
             candidates.append(ts.next_candidate())
             ts.confirm_full_scenario(candidates[-1], scenario, {})
+<<<<<<< HEAD
         ti = TraceInfo.from_trace_state(ts, ModelSpace())
+=======
+        ti = TraceInfo.from_trace_state(ts, None)
+>>>>>>> 80ccdb6 (fix unit tests)
         sg = ScenarioGraph()
         sg.update_visualisation(ti)
 
@@ -111,7 +115,11 @@ class TestVisualiseModels(unittest.TestCase):
         for scenario in range(3):
             candidates.append(ts.next_candidate())
             ts.confirm_full_scenario(candidates[-1], scenario, {})
+<<<<<<< HEAD
         ti = TraceInfo.from_trace_state(ts, ModelSpace())
+=======
+        ti = TraceInfo.from_trace_state(ts, None)
+>>>>>>> 80ccdb6 (fix unit tests)
         sg = ScenarioGraph()
         sg.update_visualisation(ti)
 
@@ -126,7 +134,11 @@ class TestVisualiseModels(unittest.TestCase):
         ts = TraceState(1)
         ts.confirm_full_scenario(0, 'one', {})
         self.assertEqual(ts.get_trace(), ['one'])
+<<<<<<< HEAD
         ti = TraceInfo.from_trace_state(ts, ModelSpace())
+=======
+        ti = TraceInfo.from_trace_state(ts, None)
+>>>>>>> 80ccdb6 (fix unit tests)
         sg = ScenarioGraph()
         sg.update_visualisation(ti)
 

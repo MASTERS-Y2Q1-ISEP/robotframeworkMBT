@@ -41,9 +41,15 @@ from .modelspace import ModelSpace
 from .suitedata import Suite, Scenario, Step
 from .tracestate import TraceState, TraceSnapShot
 from .steparguments import StepArgument, StepArguments
-from .visualise.visualiser import Visualiser
-from .visualise.models import TraceInfo
 
+try:
+    from .visualise.visualiser import Visualiser
+    from .visualise.models import TraceInfo
+    VISUALISE = True
+except ImportError:
+    Visualiser = None
+    TraceInfo = None
+    VISUALISE = False
 
 class SuiteProcessors:
     @staticmethod
@@ -96,7 +102,12 @@ class SuiteProcessors:
         self._init_randomiser(seed)
         random.shuffle(self.scenarios)
 
-        self.visualiser = Visualiser(graph)
+        self.visualiser = None
+        if graph is not None and VISUALISE:
+            self.visualiser = Visualiser(graph)
+        elif graph is not None and not VISUALISE:
+            logger.warn(f'Visualisation {graph} requested, but required dependencies are not installed.'
+                        'Install them with `pip install robotmbt[visualization]`.')
 
         # a short trace without the need for repeating scenarios is preferred
         self._try_to_reach_full_coverage(allow_duplicate_scenarios=False)
@@ -106,16 +117,15 @@ class SuiteProcessors:
                 "Direct trace not available. Allowing repetition of scenarios")
             self._try_to_reach_full_coverage(allow_duplicate_scenarios=True)
             if not self.tracestate.coverage_reached():
-                if graph is not None:
+                if self.visualiser is not None:
                     logger.write(self.visualiser.generate_visualisation(), html=True)
                 raise Exception("Unable to compose a consistent suite")
 
         self.out_suite.scenarios = self.tracestate.get_trace()
         self._report_tracestate_wrapup()
 
-        self.visualiser.set_final_trace(TraceInfo(self.tracestate, self.active_model))
-
-        if graph is not None:
+        if self.visualiser is not None:
+            self.visualiser.set_final_trace(TraceInfo(self.tracestate, self.active_model))
             logger.write(self.visualiser.generate_visualisation(), html=True)
 
         return self.out_suite
@@ -153,8 +163,8 @@ class SuiteProcessors:
                         self._report_tracestate_to_user()
                         logger.debug(
                             f"last state:\n{self.active_model.get_status_text()}")
-            self.visualiser.update_visualisation(
-                TraceInfo(self.tracestate, self.active_model))
+            if self.visualiser is not None:
+                self.visualiser.update_visualisation(TraceInfo(self.tracestate, self.active_model))
 
     def __last_candidate_changed_nothing(self) -> bool:
         if len(self.tracestate) < 2:

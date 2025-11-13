@@ -12,9 +12,8 @@ class ModelGenerator:
 
         return TraceInfo(scenarios, None)
 
-
     @staticmethod
-    def generate_random_scenario_name(length :int=10) -> list[str]:
+    def generate_random_scenario_name(length :int=10) -> str:
         """Generates a random scenario name."""
         return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
     

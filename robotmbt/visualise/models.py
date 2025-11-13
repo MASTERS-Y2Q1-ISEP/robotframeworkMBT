@@ -38,7 +38,7 @@ class TraceInfo:
     def __init__(self, trace :list[ScenarioInfo], state :ModelSpace|None):
         self.trace :list[ScenarioInfo] = trace
         # TODO: actually use state
-        self.state :ModelSpace|None = state
+        self.state :ModelSpace = state if state is not None else ModelSpace()
     
     def __repr__(self) -> str:
         return f"TraceInfo(trace=[{[str(t) for t in self.trace]}], state={self.state})"

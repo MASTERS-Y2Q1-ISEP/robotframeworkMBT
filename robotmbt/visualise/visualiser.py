@@ -1,4 +1,4 @@
-from .models import ScenarioGraph, StateGraph, TraceInfo
+from .models import TraceInfo, AbstractGraph, StateGraph, ScenarioGraph
 from bokeh.palettes import Spectral4
 from bokeh.models import (
     Plot, Range1d, Circle,
@@ -49,8 +49,7 @@ class NetworkVisualiser:
     EDGE_COLOUR: str | tuple[int, int, int] = (
         12, 12, 12)  # 'visual studio black'
 
-    # TODO: abstract Graph class, e.g. using abc
-    def __init__(self, graph: ScenarioGraph):
+    def __init__(self, graph: AbstractGraph):
         self.plot = None
         self.graph = graph
         self.labels = dict(x=[], y=[], label=[])

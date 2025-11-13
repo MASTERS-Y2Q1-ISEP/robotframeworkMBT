@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from robotmbt.modelspace import ModelSpace
 from robotmbt.suitedata import Scenario
 from robotmbt.tracestate import TraceState
@@ -67,7 +68,41 @@ class TraceInfo:
         self.state = StateInfo(state)
 
 
-class ScenarioGraph:
+class AbstractGraph(ABC):
+    @abstractmethod
+    def update_visualisation(self, info: TraceInfo):
+        pass
+
+    @abstractmethod
+    def set_final_trace(self, info: TraceInfo):
+        pass
+
+    @abstractmethod
+    def calculate_pos(self):
+        pass
+
+    @property
+    @abstractmethod
+    def networkx(self):
+        pass
+
+    @networkx.setter
+    @abstractmethod
+    def networkx(self, value):
+        pass
+
+    @property
+    @abstractmethod
+    def pos(self):
+        pass
+
+    @pos.setter
+    @abstractmethod
+    def pos(self, value):
+        pass
+
+
+class ScenarioGraph(AbstractGraph):
     """
     The scenario graph is the most basic representation of trace exploration.
     It represents scenarios as nodes, and the trace as edges.
@@ -156,8 +191,24 @@ class ScenarioGraph:
             # if planar layout cannot find a graph without crossing edges
             self.pos = nx.arf_layout(self.networkx, seed=42)
 
+    @property
+    def networkx(self):
+        return self._networkx
 
-class StateGraph:
+    @networkx.setter
+    def networkx(self, value):
+        self._networkx = value
+
+    @property
+    def pos(self):
+        return self._pos
+
+    @pos.setter
+    def pos(self, value):
+        self._pos = value
+
+
+class StateGraph(AbstractGraph):
     def __init__(self):
         # We use simplified IDs for nodes, and store the actual state info here
         self.ids: dict[str, StateInfo] = {}
@@ -240,3 +291,19 @@ class StateGraph:
         except nx.NetworkXException:
             # if planar layout cannot find a graph without crossing edges
             self.pos = nx.arf_layout(self.networkx, seed=42)
+
+    @property
+    def networkx(self):
+        return self._networkx
+
+    @networkx.setter
+    def networkx(self, value):
+        self._networkx = value
+
+    @property
+    def pos(self):
+        return self._pos
+
+    @pos.setter
+    def pos(self, value):
+        self._pos = value

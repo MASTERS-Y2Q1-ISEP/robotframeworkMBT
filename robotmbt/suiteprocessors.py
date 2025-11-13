@@ -42,14 +42,12 @@ from .suitedata import Suite, Scenario, Step
 from .tracestate import TraceState, TraceSnapShot
 from .steparguments import StepArgument, StepArguments
 from .visualise.visualiser import Visualiser
-from .visualise.models import TraceInfo, ScenarioInfo
+from .visualise.models import TraceInfo
 
 
 class SuiteProcessors:
-    def __init__(self):
-        self.visualiser = Visualiser()
-
-    def echo(self, in_suite):
+    @staticmethod
+    def echo(in_suite):
         return in_suite
 
     def flatten(self, in_suite: Suite) -> Suite:
@@ -82,7 +80,7 @@ class SuiteProcessors:
         out_suite.suites = []
         return out_suite
 
-    def process_test_suite(self, in_suite: Suite, *, seed: any = 'new') -> Suite:
+    def process_test_suite(self, in_suite: Suite, *, seed: any = 'new', graph: str | None = None) -> Suite:
         self.out_suite = Suite(in_suite.name)
         self.out_suite.filename = in_suite.filename
         self.out_suite.parent = in_suite.parent
@@ -98,7 +96,7 @@ class SuiteProcessors:
         self._init_randomiser(seed)
         random.shuffle(self.scenarios)
 
-        self.visualiser = Visualiser()
+        self.visualiser = Visualiser(graph)
 
         # a short trace without the need for repeating scenarios is preferred
         self._try_to_reach_full_coverage(allow_duplicate_scenarios=False)
@@ -108,14 +106,17 @@ class SuiteProcessors:
                 "Direct trace not available. Allowing repetition of scenarios")
             self._try_to_reach_full_coverage(allow_duplicate_scenarios=True)
             if not self.tracestate.coverage_reached():
-                logger.write(
-                    self.visualiser.generate_visualisation(), html=True)
+                if graph is not None:
+                    logger.write(self.visualiser.generate_visualisation(), html=True)
                 raise Exception("Unable to compose a consistent suite")
 
         self.out_suite.scenarios = self.tracestate.get_trace()
         self._report_tracestate_wrapup()
 
         self.visualiser.set_final_trace(TraceInfo(self.tracestate, self.active_model))
+
+        if graph is not None:
+            logger.write(self.visualiser.generate_visualisation(), html=True)
 
         return self.out_suite
 

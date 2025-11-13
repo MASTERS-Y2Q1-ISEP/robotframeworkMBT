@@ -100,11 +100,6 @@ class SuiteReplacer:
         self.__clearTestSuite(self.robot_suite)
         self.__generateRobotSuite(modelbased_suite, self.robot_suite)
 
-        # TODO: add flag using kwargs to disable this
-        if isinstance(self.processor_lib, SuiteProcessors):
-            logger.write(
-                self.processor_lib.visualiser.generate_visualisation(), html=True)
-
     @keyword("Set model-based options")
     def set_model_based_options(self, **kwargs):
         """

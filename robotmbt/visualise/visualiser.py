@@ -23,19 +23,29 @@ class Visualiser:
     GRAPH_PADDING_PERC: int = 15  # %
     MAX_VERTEX_NAME_LEN: int = 20  # no. of characters
 
-    def __init__(self):
-        self.graph = StateGraph()
+    def __init__(self, graph_type: str | None):
+        if graph_type is None:
+            self.graph: AbstractGraph | None = None
+        elif graph_type == 'scenario':
+            self.graph: AbstractGraph | None = ScenarioGraph()
+        elif graph_type == 'state':
+            self.graph: AbstractGraph | None = StateGraph()
+        else:
+            raise ValueError(f"Unknown graph type: {graph_type}!")
 
     def update_visualisation(self, info: TraceInfo):
-        self.graph.update_visualisation(info)
+        if self.graph is not None:
+            self.graph.update_visualisation(info)
 
     def set_final_trace(self, info: TraceInfo):
-        self.graph.set_final_trace(info)
+        if self.graph is not None:
+            self.graph.set_final_trace(info)
 
     def generate_visualisation(self) -> str:
+        if self.graph is None:
+            return ""
         self.graph.calculate_pos()
-        networkvisualiser = NetworkVisualiser(self.graph)
-        html_bokeh = networkvisualiser.generate_html()
+        html_bokeh = NetworkVisualiser(self.graph).generate_html()
         return f"<iframe srcdoc=\"{html.escape(html_bokeh)}\", width=\"{Visualiser.GRAPH_SIZE_PX}px\", height=\"{Visualiser.GRAPH_SIZE_PX}px\"></iframe>"
 
 

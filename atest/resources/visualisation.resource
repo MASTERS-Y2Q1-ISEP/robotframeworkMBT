@@ -20,7 +20,6 @@ Test Suite ${suite} has ${count} scenarios
     
     ${trace_info} =    Generate Trace Information   ${count}
     Set Suite Variable    ${trace_info}
-    Log    Generated trace info: ${trace_info}
 
 Graph ${graph} is generated based on Test Suite ${suite}
      [Documentation]    Generates the graph 
@@ -28,7 +27,6 @@ Graph ${graph} is generated based on Test Suite ${suite}
     ...    :OUT: None
     Variable Should Exist    ${trace_info}
     ${visualiser} =    robotmbt.visualise.visualiser.Visualiser.Construct
-    Log To Console    visualiser ${visualiser}
     Call Method    ${visualiser}    update_visualisation    ${trace_info}
     ${html} =     Call Method    ${visualiser}    generate_visualisation
 
@@ -42,7 +40,6 @@ Graph ${graph} contains ${number} vertices
     Variable Should Exist    ${visualiser}
     Variable Should Exist    ${trace_info}
     
-    Log To Console    ${trace_info}
     ${vertex_count} =    Get Length   ${visualiser.graph.networkx.nodes}
     Should Be Equal As Integers       ${vertex_count}    ${number}
 

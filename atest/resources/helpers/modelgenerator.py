@@ -2,7 +2,7 @@ import random
 import string
 
 from robot.api.deco import keyword # type:ignore
-from robotmbt.visualise.models import TraceInfo, ScenarioInfo
+from robotmbt.visualise.models import TraceInfo, ScenarioInfo, ModelSpace
 
 class ModelGenerator:    
     @keyword(name="Generate Trace Information") # type: ignore
@@ -10,7 +10,7 @@ class ModelGenerator:
         """Generates a list of unique random scenarios."""
         scenarios :list[ScenarioInfo] = ModelGenerator.generate_scenario_names(scenario_count)
 
-        return TraceInfo(scenarios, None)
+        return TraceInfo(scenarios, ModelSpace())
 
     @staticmethod
     def generate_random_scenario_name(length :int=10) -> str:

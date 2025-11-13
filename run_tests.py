@@ -35,8 +35,7 @@ if __name__ == '__main__':
     if atest:
         if 'atest' in sys.argv:
             sys.argv.remove('atest')
-        # sys.argv.append(os.path.join(THIS_DIR, 'atest'))
-        sys.argv.append(os.path.join(THIS_DIR, 'atest/robotMBT tests/10_visualisation_tests'))
+        sys.argv.append(os.path.join(THIS_DIR, 'atest'))
         OUTPUT_ROOT = os.path.join(THIS_DIR, 'atest', 'results')
         # Adding the robotframeworkMBT folder to the python path forces the development
         # version to be used instead of the one installed on your system. You will also

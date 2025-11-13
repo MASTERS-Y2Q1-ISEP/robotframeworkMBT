@@ -14,7 +14,7 @@ class ModelGenerator:
 
 
     @staticmethod
-    def generate_random_scenario_name(length :int=10):
+    def generate_random_scenario_name(length :int=10) -> list[str]:
         """Generates a random scenario name."""
         return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
     

@@ -1,6 +1,7 @@
 *** Settings ***
 Resource          ../../../../resources/visualisation.resource
 Library           robotmbt    processor=echo
+Suite Setup       Set Global Variable    ${scen_count}    ${2}
 
 *** Test Cases ***
 Graph should contain vertex count equal to scenario count + 1 for scenario-graph

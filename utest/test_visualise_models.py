@@ -41,8 +41,8 @@ class TestVisualiseModels(unittest.TestCase):
         self.assertEqual(ti.trace[1].name, 1)
         self.assertEqual(ti.trace[2].name, 2)
 
-        # TODO change when state is implemented
-        self.assertIsNone(ti.state)
+        self.assertIsNotNone(ti.state)
+        # TODO: add state tests to this.
 
     """
     Class: ScenarioGraph

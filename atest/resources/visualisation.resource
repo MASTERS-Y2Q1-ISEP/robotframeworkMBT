@@ -21,6 +21,7 @@ Test Suite ${suite} has ${count} scenarios
     ${trace_info} =    Generate Trace Information   ${count}
     Set Suite Variable    ${trace_info}
 
+# WARNING: this only works for Scenario graphs, this needs to be adjusted to continually update the model when adding new state.
 Graph ${graph} is generated based on Test Suite ${suite}
      [Documentation]    Generates the graph 
     ...    :IN: graph = ${graph}, suite = ${suite}

@@ -1,8 +1,12 @@
 import unittest
-from robotmbt.visualise.models import *
+try:
+    from robotmbt.visualise.models import *
+    VISUALISE = True
+except ImportError:
+    VISUALISE = False
 
-
-class TestVisualiseModels(unittest.TestCase):
+if VISUALISE:
+  class TestVisualiseModels(unittest.TestCase):
     """
     Contains tests for robotmbt/visualise/models.py
     """
@@ -165,5 +169,5 @@ class TestVisualiseModels(unittest.TestCase):
         self.assertEqual(sg.end_node, node_id)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__' and VISUALISE:
     unittest.main()

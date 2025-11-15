@@ -86,7 +86,7 @@ class SuiteProcessors:
         out_suite.suites = []
         return out_suite
 
-    def process_test_suite(self, in_suite: Suite, *, seed: any = 'new', graph: str | None = None) -> Suite:
+    def process_test_suite(self, in_suite: Suite, *, seed: any = 'new', graph: str = '') -> Suite:
         self.out_suite = Suite(in_suite.name)
         self.out_suite.filename = in_suite.filename
         self.out_suite.parent = in_suite.parent
@@ -103,11 +103,11 @@ class SuiteProcessors:
         random.shuffle(self.scenarios)
 
         self.visualiser = None
-        if graph is not None and VISUALISE:
+        if graph is not '' and VISUALISE:
             self.visualiser = Visualiser(graph)
-        elif graph is not None and not VISUALISE:
+        elif graph is not '' and not VISUALISE:
             logger.warn(f'Visualisation {graph} requested, but required dependencies are not installed.'
-                        'Install them with `pip install robotmbt[visualization]`.')
+                        'Install them with `pip install .[visualization]`.')
 
         # a short trace without the need for repeating scenarios is preferred
         self._try_to_reach_full_coverage(allow_duplicate_scenarios=False)

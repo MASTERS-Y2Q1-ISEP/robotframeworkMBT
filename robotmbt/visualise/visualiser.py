@@ -23,27 +23,21 @@ class Visualiser:
     GRAPH_PADDING_PERC: int = 15  # %
     MAX_VERTEX_NAME_LEN: int = 20  # no. of characters
 
-    def __init__(self, graph_type: str | None):
-        if graph_type is None:
-            self.graph: AbstractGraph | None = None
-        elif graph_type == 'scenario':
-            self.graph: AbstractGraph | None = ScenarioGraph()
+    def __init__(self, graph_type: str):
+        if graph_type == 'scenario':
+            self.graph: AbstractGraph = ScenarioGraph()
         elif graph_type == 'state':
-            self.graph: AbstractGraph | None = StateGraph()
+            self.graph: AbstractGraph = StateGraph()
         else:
             raise ValueError(f"Unknown graph type: {graph_type}!")
 
     def update_visualisation(self, info: TraceInfo):
-        if self.graph is not None:
-            self.graph.update_visualisation(info)
+        self.graph.update_visualisation(info)
 
     def set_final_trace(self, info: TraceInfo):
-        if self.graph is not None:
-            self.graph.set_final_trace(info)
+        self.graph.set_final_trace(info)
 
     def generate_visualisation(self) -> str:
-        if self.graph is None:
-            return ""
         self.graph.calculate_pos()
         html_bokeh = NetworkVisualiser(self.graph).generate_html()
         return f"<iframe srcdoc=\"{html.escape(html_bokeh)}\", width=\"{Visualiser.GRAPH_SIZE_PX}px\", height=\"{Visualiser.GRAPH_SIZE_PX}px\"></iframe>"
@@ -97,7 +91,7 @@ class NetworkVisualiser:
         y_max = max(y_range) + padding * (max(y_range) - min(y_range))
 
         # scale node radius based on range
-        nodes_range = max(x_max-x_min, y_max-y_min)
+        nodes_range = max(x_max - x_min, y_max - y_min)
         self.node_radius = nodes_range / 50
 
         # create plot
@@ -121,7 +115,7 @@ class NetworkVisualiser:
         for node in self.graph.networkx.nodes:
             # prepare adding labels
             self.labels['x'].append(self.graph.pos[node][0])
-            self.labels['y'].append(self.graph.pos[node][1]+self.node_radius)
+            self.labels['y'].append(self.graph.pos[node][1] + self.node_radius)
             self.labels['label'].append(self._cap_name(node_labels[node]))
 
             # add node
@@ -146,10 +140,10 @@ class NetworkVisualiser:
             y1=y - self.node_radius,
 
             # control points
-            cx0=x + 5*self.node_radius,
+            cx0=x + 5 * self.node_radius,
             cy0=y,
             cx1=x,
-            cy1=y - 5*self.node_radius,
+            cy1=y - 5 * self.node_radius,
 
             # styling
             line_color=NetworkVisualiser.EDGE_COLOUR,
@@ -165,13 +159,13 @@ class NetworkVisualiser:
                            fill_color=NetworkVisualiser.EDGE_COLOUR),
 
             # -0.01 to guarantee that arrow points upwards.
-            x_start=x, y_start=y-self.node_radius-0.01,
-            x_end=x, y_end=y-self.node_radius
+            x_start=x, y_start=y - self.node_radius - 0.01,
+            x_end=x, y_end=y - self.node_radius
         )
 
         # add edge label
         self.labels['x'].append(x + self.node_radius)
-        self.labels['y'].append(y - 4*self.node_radius)
+        self.labels['y'].append(y - 4 * self.node_radius)
         self.labels['label'].append(label)
 
         self.plot.add_layout(arrow)
@@ -190,7 +184,7 @@ class NetworkVisualiser:
                 dx = x1 - x0
                 dy = y1 - y0
 
-                length = sqrt(dx**2 + dy**2)
+                length = sqrt(dx ** 2 + dy ** 2)
 
                 arrow = Arrow(
                     end=NormalHead(
@@ -207,8 +201,8 @@ class NetworkVisualiser:
                 self.plot.add_layout(arrow)
 
                 # add edge label
-                self.labels['x'].append((x0+x1)/2)
-                self.labels['y'].append((y0+y1)/2)
+                self.labels['x'].append((x0 + x1) / 2)
+                self.labels['y'].append((y0 + y1) / 2)
                 self.labels['label'].append(self._cap_name(edge_labels[edge]))
 
     @staticmethod
@@ -219,4 +213,4 @@ class NetworkVisualiser:
         if len(name) < Visualiser.MAX_VERTEX_NAME_LEN:
             return name
 
-        return f"{name[:(Visualiser.MAX_VERTEX_NAME_LEN-3)]}..."
+        return f"{name[:(Visualiser.MAX_VERTEX_NAME_LEN - 3)]}..."

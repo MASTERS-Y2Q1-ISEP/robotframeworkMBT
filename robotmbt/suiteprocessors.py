@@ -103,9 +103,9 @@ class SuiteProcessors:
         random.shuffle(self.scenarios)
 
         self.visualiser = None
-        if graph is not '' and VISUALISE:
+        if graph != '' and VISUALISE:
             self.visualiser = Visualiser(graph)
-        elif graph is not '' and not VISUALISE:
+        elif graph != '' and not VISUALISE:
             logger.warn(f'Visualisation {graph} requested, but required dependencies are not installed.'
                         'Install them with `pip install .[visualization]`.')
 

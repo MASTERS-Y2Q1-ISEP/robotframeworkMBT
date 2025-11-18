@@ -240,6 +240,11 @@ class ScenarioGraph(AbstractGraph):
 
 
 class StateGraph(AbstractGraph):
+    """
+    The state graph is a more advanced representation of trace exploration, allowing you to see the internal state.
+    It represents states as nodes, and scenarios as edges.
+    """
+
     def __init__(self):
         # We use simplified IDs for nodes, and store the actual state info here
         self.ids: dict[str, StateInfo] = {}
@@ -262,7 +267,8 @@ class StateGraph(AbstractGraph):
     def update_visualisation(self, info: TraceInfo):
         """
         Update the visualisation with new trace information from another exploration step.
-        This will add nodes for all new scenarios in the provided trace, as well as edges for all pairs in the provided trace.
+        This will add nodes the newly reached state (if we did not roll back), as well as an edge from the previous to
+        the current state labeled with the scenario that took it there.
         """
         if len(info.trace) > 0:
             scenario = info.trace[-1]

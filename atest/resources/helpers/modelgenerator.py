@@ -2,6 +2,7 @@ import random
 import string
 
 from robot.api.deco import keyword # type:ignore
+from robotmbt.modelspace import ModelSpace
 from robotmbt.visualise.models import TraceInfo, ScenarioInfo, ScenarioGraph
 
 class ModelGenerator:    
@@ -10,7 +11,7 @@ class ModelGenerator:
         """Generates a list of unique random scenarios."""
         scenarios :list[ScenarioInfo] = ModelGenerator.generate_scenario_names(scenario_count)
 
-        return TraceInfo(scenarios, None)
+        return TraceInfo(scenarios, ModelSpace())
 
     @keyword(name="Ensure Scenario Present") # type: ignore
     def ensure_scenario_present(self, trace_info :TraceInfo, scenario_name :str) -> TraceInfo:

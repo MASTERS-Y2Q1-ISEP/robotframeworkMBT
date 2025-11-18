@@ -125,7 +125,7 @@ class SuiteProcessors:
         self._report_tracestate_wrapup()
 
         if self.visualiser is not None:
-            self.visualiser.set_final_trace(TraceInfo(self.tracestate, self.active_model))
+            self.visualiser.set_final_trace(TraceInfo.from_trace_state(self.tracestate, self.active_model))
             logger.write(self.visualiser.generate_visualisation(), html=True)
 
         return self.out_suite

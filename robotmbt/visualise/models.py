@@ -23,7 +23,7 @@ class ScenarioInfo:
             self.src_id = scenario
 
     def __str__(self):
-        return f"Scen{self.src_id}: {self.name}"
+        return f"Scenario {self.src_id}: {self.name}"
 
 
 class StateInfo:

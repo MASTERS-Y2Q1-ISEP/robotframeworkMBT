@@ -45,11 +45,13 @@ from .steparguments import StepArgument, StepArguments
 try:
     from .visualise.visualiser import Visualiser
     from .visualise.models import TraceInfo
+
     VISUALISE = True
 except ImportError:
     Visualiser = None
     TraceInfo = None
     VISUALISE = False
+
 
 class SuiteProcessors:
     @staticmethod

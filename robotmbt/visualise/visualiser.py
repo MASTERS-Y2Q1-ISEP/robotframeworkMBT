@@ -12,6 +12,7 @@ from math import sqrt
 import html
 import networkx as nx
 
+
 class Visualiser:
     """
     The Visualiser class bridges the different concerns to provide
@@ -25,7 +26,7 @@ class Visualiser:
     # glue method to let us construct Visualiser objects in Robot tests.
     @classmethod
     def construct(cls, graph: str):
-        return cls(graph) # just calls __init__, but without having underscores etc.
+        return cls(graph)  # just calls __init__, but without having underscores etc.
 
     def __init__(self, graph_type: str):
         if graph_type == 'scenario':
@@ -45,6 +46,7 @@ class Visualiser:
         self.graph.calculate_pos()
         html_bokeh = NetworkVisualiser(self.graph).generate_html()
         return f"<iframe srcdoc=\"{html.escape(html_bokeh)}\", width=\"{Visualiser.GRAPH_SIZE_PX}px\", height=\"{Visualiser.GRAPH_SIZE_PX}px\"></iframe>"
+
 
 class NetworkVisualiser:
     """
@@ -90,7 +92,7 @@ class NetworkVisualiser:
         y_max = max(y_range) + padding * (max(y_range) - min(y_range))
 
         # scale node radius based on range
-        nodes_range = max(x_max-x_min, y_max-y_min)
+        nodes_range = max(x_max - x_min, y_max - y_min)
         self.node_radius = nodes_range / 150
         self.char_width = nodes_range / 150
         self.char_height = nodes_range / 150
@@ -161,7 +163,8 @@ class NetworkVisualiser:
                 rect_data['label'].append(label)
 
                 # Store node properties for arrow calculations
-                self.node_props[node] = {'type': 'rect', 'x': x, 'y': y, 'width': text_width, 'height': text_height, 'label': label}
+                self.node_props[node] = {'type': 'rect', 'x': x, 'y': y, 'width': text_width, 'height': text_height,
+                                         'label': label}
 
             # Add text for all nodes
             text_data['x'].append(x)
@@ -172,21 +175,21 @@ class NetworkVisualiser:
         if circle_data['x']:
             circle_source = ColumnDataSource(circle_data)
             circles = Circle(x='x', y='y', radius='radius',
-                           fill_color=Spectral4[0])
+                             fill_color=Spectral4[0])
             self.plot.add_glyph(circle_source, circles)
 
         # Add rectangles for scenario nodes
         if rect_data['x']:
             rect_source = ColumnDataSource(rect_data)
             rectangles = Rect(x='x', y='y', width='width', height='height',
-                            fill_color=Spectral4[0])
+                              fill_color=Spectral4[0])
             self.plot.add_glyph(rect_source, rectangles)
 
         # Add text labels for all nodes
         text_source = ColumnDataSource(text_data)
         text_labels = Text(x='x', y='y', text='text',
-                          text_align='center', text_baseline='middle',
-                          text_color='white', text_font_size='9pt')
+                           text_align='center', text_baseline='middle',
+                           text_color='white', text_font_size='9pt')
         self.plot.add_glyph(text_source, text_labels)
 
     def _get_edge_points(self, start_node, end_node):
@@ -201,7 +204,7 @@ class NetworkVisualiser:
         # Calculate direction vector
         dx = end_props['x'] - start_props['x']
         dy = end_props['y'] - start_props['y']
-        distance = sqrt(dx*dx + dy*dy)
+        distance = sqrt(dx * dx + dy * dy)
 
         # Self-loops are handled separately, distance should never be 0
         if distance == 0:
@@ -272,22 +275,22 @@ class NetworkVisualiser:
         height = node_props['height']
 
         # Start: 1/4 width from left, top side
-        start_x = x - width/4
-        start_y = y + height/2
+        start_x = x - width / 4
+        start_y = y + height / 2
 
         # End: 3/4 width from left, top side
-        end_x = x + width/4
-        end_y = y + height/2
+        end_x = x + width / 4
+        end_y = y + height / 2
 
         # Arc height above the rectangle
         arc_height = width * 0.4
 
         # Control points for a circular arc above
-        control1_x = x - width/8
-        control1_y = y + height/2 + arc_height
+        control1_x = x - width / 8
+        control1_y = y + height / 2 + arc_height
 
-        control2_x = x + width/8
-        control2_y = y + height/2 + arc_height
+        control2_x = x + width / 8
+        control2_y = y + height / 2 + arc_height
 
         # Create the Bezier curve (the main arc) with the same thickness as straight lines
         loop = Bezier(
@@ -307,7 +310,7 @@ class NetworkVisualiser:
         tangent_y = end_y - control2_y
 
         # Normalize the tangent vector
-        tangent_length = sqrt(tangent_x**2 + tangent_y**2)
+        tangent_length = sqrt(tangent_x ** 2 + tangent_y ** 2)
         if tangent_length > 0:
             tangent_x /= tangent_length
             tangent_y /= tangent_length
@@ -336,7 +339,7 @@ class NetworkVisualiser:
 
         # Add edge label - positioned above the arc
         label_x = x
-        label_y = y + height/2 + arc_height * 0.6
+        label_y = y + height / 2 + arc_height * 0.6
 
         return label_x, label_y
 
@@ -381,12 +384,12 @@ class NetworkVisualiser:
         if edge_text_data['x']:
             edge_text_source = ColumnDataSource(edge_text_data)
             edge_labels_glyph = Text(x='x', y='y', text='text',
-                                   text_align='center', text_baseline='middle',
-                                   text_font_size='7pt')
+                                     text_align='center', text_baseline='middle',
+                                     text_font_size='7pt')
             self.plot.add_glyph(edge_text_source, edge_labels_glyph)
 
     def _cap_name(self, name: str) -> str:
         if len(name) < Visualiser.MAX_VERTEX_NAME_LEN or isinstance(self.graph, StateGraph):
             return name
 
-        return f"{name[:(Visualiser.MAX_VERTEX_NAME_LEN-3)]}..."
+        return f"{name[:(Visualiser.MAX_VERTEX_NAME_LEN - 3)]}..."

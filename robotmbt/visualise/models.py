@@ -62,36 +62,37 @@ class TraceInfo:
     - trace: the strung together scenarios up until this point
     - state: the model space
     """
+
     @classmethod
     def from_trace_state(cls, trace: TraceState, state: ModelSpace):
         return cls([ScenarioInfo(t) for t in trace.get_trace()], state)
 
-    def __init__(self, trace :list[ScenarioInfo], state: ModelSpace):
-        self.trace :list[ScenarioInfo] = trace
+    def __init__(self, trace: list[ScenarioInfo], state: ModelSpace):
+        self.trace: list[ScenarioInfo] = trace
         self.state = StateInfo(state)
 
     def __repr__(self) -> str:
         return f"TraceInfo(trace=[{[str(t) for t in self.trace]}], state={self.state})"
 
-    def contains_scenario(self, scen_name :str) -> bool:
+    def contains_scenario(self, scen_name: str) -> bool:
         for scen in self.trace:
             if scen.name == scen_name:
                 return True
         return False
 
-    def add_scenario(self, scen :ScenarioInfo):
+    def add_scenario(self, scen: ScenarioInfo):
         """
         Used in acceptance testing
         """
         self.trace.append(scen)
 
-    def get_scenario(self, scen_name :str) -> ScenarioInfo|None:
+    def get_scenario(self, scen_name: str) -> ScenarioInfo | None:
         for scenario in self.trace:
             if scenario.name == scen_name:
                 return scenario
         return None
 
-    def insert_trace_at(self, index :int, scen_info :ScenarioInfo):
+    def insert_trace_at(self, index: int, scen_info: ScenarioInfo):
         if index < 0 or index >= len(self.trace):
             raise IndexError(f"InsertTraceAt received invalid index ({index}) for length of list ({len(self.trace)})")
 

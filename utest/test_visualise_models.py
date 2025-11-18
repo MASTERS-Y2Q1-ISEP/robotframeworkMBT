@@ -37,12 +37,13 @@ if VISUALISE:
         for scenario in range(3):
             candidates.append(ts.next_candidate())
             ts.confirm_full_scenario(candidates[-1], str(scenario), {})
-        ti = TraceInfo(trace=ts, state=ModelSpace())
+        ti = TraceInfo.from_trace_state(trace=ts, state=ModelSpace())
 
         self.assertEqual(ti.trace[0].name, str(0))
         self.assertEqual(ti.trace[1].name, str(1))
         self.assertEqual(ti.trace[2].name, str(2))
 
+        self.assertIsNotNone(ti.state)
         # TODO check state
 
     """
@@ -95,7 +96,7 @@ if VISUALISE:
         for scenario in range(3):
             candidates.append(ts.next_candidate())
             ts.confirm_full_scenario(candidates[-1], str(scenario), {})
-        ti = TraceInfo(trace=ts, state=ModelSpace())
+        ti = TraceInfo.from_trace_state(ts, ModelSpace())
         sg = ScenarioGraph()
         sg.update_visualisation(ti)
 
@@ -112,7 +113,7 @@ if VISUALISE:
         for scenario in range(3):
             candidates.append(ts.next_candidate())
             ts.confirm_full_scenario(candidates[-1], str(scenario), {})
-        ti = TraceInfo(trace=ts, state=ModelSpace())
+        ti = TraceInfo.from_trace_state(trace=ts, state=ModelSpace())
         sg = ScenarioGraph()
         sg.update_visualisation(ti)
 
@@ -127,7 +128,7 @@ if VISUALISE:
         ts = TraceState(1)
         ts.confirm_full_scenario(0, 'one', {})
         self.assertEqual(ts.get_trace(), ['one'])
-        ti = TraceInfo(trace=ts, state=ModelSpace())
+        ti = TraceInfo.from_trace_state(ts, ModelSpace())
         sg = ScenarioGraph()
         sg.update_visualisation(ti)
 
@@ -169,5 +170,5 @@ if VISUALISE:
         self.assertEqual(sg.end_node, node_id)
 
 
-if __name__ == '__main__' and VISUALISE:
+if __name__ == '__main__':
     unittest.main()

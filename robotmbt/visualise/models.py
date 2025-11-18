@@ -62,10 +62,40 @@ class TraceInfo:
     - trace: the strung together scenarios up until this point
     - state: the model space
     """
+    @classmethod
+    def from_trace_state(cls, trace: TraceState, state: ModelSpace):
+        return cls([ScenarioInfo(t) for t in trace.get_trace()], state)
 
-    def __init__(self, trace: TraceState, state: ModelSpace):
-        self.trace = [ScenarioInfo(s) for s in trace.get_trace()]
+    def __init__(self, trace :list[ScenarioInfo], state: ModelSpace):
+        self.trace :list[ScenarioInfo] = trace
         self.state = StateInfo(state)
+
+    def __repr__(self) -> str:
+        return f"TraceInfo(trace=[{[str(t) for t in self.trace]}], state={self.state})"
+
+    def contains_scenario(self, scen_name :str) -> bool:
+        for scen in self.trace:
+            if scen.name == scen_name:
+                return True
+        return False
+
+    def add_scenario(self, scen :ScenarioInfo):
+        """
+        Used in acceptance testing
+        """
+        self.trace.append(scen)
+
+    def get_scenario(self, scen_name :str) -> ScenarioInfo|None:
+        for scenario in self.trace:
+            if scenario.name == scen_name:
+                return scenario
+        return None
+
+    def insert_trace_at(self, index :int, scen_info :ScenarioInfo):
+        if index < 0 or index >= len(self.trace):
+            raise IndexError(f"InsertTraceAt received invalid index ({index}) for length of list ({len(self.trace)})")
+
+        self.trace.insert(index, scen_info)
 
 
 class AbstractGraph(ABC):
@@ -146,7 +176,7 @@ class ScenarioGraph(AbstractGraph):
         """
         for i in self.ids.keys():
             # TODO: decide how to deal with repeating scenarios, this merges repeated scenarios into a single scenario
-            if self.ids[i].src_id == scenario.src_id:
+            if self.ids[i].src_id == scenario.src_id and scenario.src_id is not None:
                 return i
 
         new_id = f"node{len(self.ids)}"

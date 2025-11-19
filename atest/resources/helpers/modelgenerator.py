@@ -10,7 +10,8 @@ class ModelGenerator:
     @keyword(name="Generate Trace Information")  # type: ignore
     def generate_trace_info(self, scenario_count: int) -> TraceInfo:
         """Generates a list of unique random scenarios."""
-        scenarios: list[ScenarioInfo] = ModelGenerator.generate_scenario_names(scenario_count)
+        scenarios: list[ScenarioInfo] = ModelGenerator.generate_scenario_names(
+            scenario_count)
 
         return TraceInfo(scenarios, ModelSpace())
 
@@ -28,7 +29,8 @@ class ModelGenerator:
         scen2_info: ScenarioInfo | None = trace_info.get_scenario(scen2)
 
         if scen1_info is None or scen2_info is None:
-            raise Exception(f"Ensure Scenario Follows for scenarios that did not exist! scen1={scen1}, scen2={scen2}")
+            raise Exception(
+                f"Ensure Scenario Follows for scenarios that did not exist! scen1={scen1}, scen2={scen2}")
 
         # both scenarios apparently exist, now make sure that scenario2 follows after some appearance of scenario 1:
         scen1_index: int = trace_info.trace.index(scen1_info)

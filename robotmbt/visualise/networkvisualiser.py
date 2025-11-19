@@ -376,7 +376,12 @@ class NetworkVisualiser:
 
     def _calculate_graph_layout(self):
         try:
-            self.graph_layout = nx.bfs_layout(self.graph.networkx, 'start')
+            self.graph_layout = nx.bfs_layout(
+                self.graph.networkx, 'start', align='horizontal')
+            # horizontal mirror
+            for node in self.graph_layout:
+                self.graph_layout[node] = (self.graph_layout[node][0],
+                                           -1 * self.graph_layout[node][1])
         except nx.NetworkXException:
             # if planar layout cannot find a graph without crossing edges
             self.graph_layout = nx.arf_layout(self.graph.networkx, seed=42)

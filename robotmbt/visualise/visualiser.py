@@ -1,5 +1,5 @@
 from robotmbt.visualise.models import AbstractGraph, ScenarioGraph, StateGraph, TraceInfo
-from robotmbt.visualise.network_visualiser import NetworkVisualiser
+from robotmbt.visualise.networkvisualiser import NetworkVisualiser
 import html
 
 

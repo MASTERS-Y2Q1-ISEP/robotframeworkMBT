@@ -1,8 +1,8 @@
-from robotmbt.visualise.models import AbstractGraph, ScenarioGraph, StateGraph, TraceInfo, ScenarioInfo
+from robotmbt.visualise.models import AbstractGraph, ScenarioGraph, StateGraph, TraceInfo
 from bokeh.palettes import Spectral4
 from bokeh.models import (
     Plot, Range1d, Circle, Rect,
-    Arrow, NormalHead, LabelSet,
+    Arrow, NormalHead,
     Bezier, ColumnDataSource, ResetTool,
     SaveTool, WheelZoomTool, PanTool, Text
 )
@@ -25,8 +25,8 @@ class Visualiser:
 
     # glue method to let us construct Visualiser objects in Robot tests.
     @classmethod
-    def construct(cls, graph: str):
-        return cls(graph)  # just calls __init__, but without having underscores etc.
+    def construct(cls, graph_type: str):
+        return cls(graph_type)  # just calls __init__, but without having underscores etc.
 
     def __init__(self, graph_type: str):
         if graph_type == 'scenario':
@@ -117,7 +117,7 @@ class NetworkVisualiser:
         width = (text_length * self.char_width) + (2 * self.padding)
 
         # Reduced height for more compact rectangles
-        height = self.char_height + (self.padding)
+        height = self.char_height + self.padding
 
         return width, height
 

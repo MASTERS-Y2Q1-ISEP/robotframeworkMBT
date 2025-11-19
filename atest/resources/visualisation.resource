@@ -44,7 +44,7 @@ Graph ${graph} of type ${graph_type} is generated based on Test Suite ${suite}
     ...    :IN: graph = ${graph}, graph_type = ${graph_type}, suite = ${suite}
     ...    :OUT: None
     Variable Should Exist    ${trace_info}
-    ${visualiser} =    robotmbt.visualise.visualiser.Visualiser.Construct  graph=${graph_type}
+    ${visualiser} =    robotmbt.visualise.visualiser.Visualiser.Construct  graph_type=${graph_type}
     Call Method    ${visualiser}    update_visualisation    ${trace_info}
     ${html} =     Call Method    ${visualiser}    generate_visualisation
 

@@ -102,34 +102,49 @@ class TraceInfo:
 class AbstractGraph(ABC):
     @abstractmethod
     def update_visualisation(self, info: TraceInfo):
+        """
+        Update the visualisation with new trace information from another exploration step.
+        """
         pass
 
     @abstractmethod
     def set_final_trace(self, info: TraceInfo):
+        """
+        Update the graph with information on the final trace.
+        """
         pass
 
     @abstractmethod
     def calculate_pos(self):
+        """
+        Calculate the position (x, y) for all nodes in self.networkx
+        """
         pass
 
     @property
     @abstractmethod
-    def networkx(self):
+    def networkx(self) -> nx.DiGraph:
+        """
+        We use networkx to store nodes and edges.
+        """
         pass
 
     @networkx.setter
     @abstractmethod
-    def networkx(self, value):
+    def networkx(self, value: nx.DiGraph):
         pass
 
     @property
     @abstractmethod
-    def pos(self):
+    def pos(self) -> dict:
+        """
+        A dictionary with the positions of nodes.
+        """
         pass
 
     @pos.setter
     @abstractmethod
-    def pos(self, value):
+    def pos(self, value: dict):
         pass
 
 
@@ -157,7 +172,6 @@ class ScenarioGraph(AbstractGraph):
 
     def update_visualisation(self, info: TraceInfo):
         """
-        Update the visualisation with new trace information from another exploration step.
         This will add nodes for all new scenarios in the provided trace, as well as edges for all pairs in the provided trace.
         """
         for i in range(0, len(info.trace) - 1):
@@ -186,7 +200,7 @@ class ScenarioGraph(AbstractGraph):
 
     def _add_node(self, node: str):
         """
-        Add node if it doesn't already exist
+        Add node if it doesn't already exist.
         """
         if node not in self.networkx.nodes:
             self.networkx.add_node(node, label=self.ids[node].name)
@@ -213,9 +227,6 @@ class ScenarioGraph(AbstractGraph):
         self._set_ending_node(info.trace[-1])
 
     def calculate_pos(self):
-        """
-        Calculate the position (x, y) for all nodes in self.networkx
-        """
         try:
             self.pos = nx.planar_layout(self.networkx)
         except nx.NetworkXException:
@@ -223,19 +234,19 @@ class ScenarioGraph(AbstractGraph):
             self.pos = nx.arf_layout(self.networkx, seed=42)
 
     @property
-    def networkx(self):
+    def networkx(self) -> nx.DiGraph:
         return self._networkx
 
     @networkx.setter
-    def networkx(self, value):
+    def networkx(self, value: nx.DiGraph):
         self._networkx = value
 
     @property
-    def pos(self):
+    def pos(self) -> dict:
         return self._pos
 
     @pos.setter
-    def pos(self, value):
+    def pos(self, value: dict):
         self._pos = value
 
 
@@ -255,9 +266,6 @@ class StateGraph(AbstractGraph):
         # Stores the position (x, y) of the nodes
         self.pos = {}
 
-        # List of nodes which positions cannot be changed
-        self.fixed = []
-
         # add the start node
         self.networkx.add_node('start', label='start')
 
@@ -266,7 +274,6 @@ class StateGraph(AbstractGraph):
 
     def update_visualisation(self, info: TraceInfo):
         """
-        Update the visualisation with new trace information from another exploration step.
         This will add nodes the newly reached state (if we did not roll back), as well as an edge from the previous to
         the current state labeled with the scenario that took it there.
         """
@@ -302,15 +309,12 @@ class StateGraph(AbstractGraph):
 
     def _add_node(self, node: str):
         """
-        Add node if it doesn't already exist
+        Add node if it doesn't already exist.
         """
         if node not in self.networkx.nodes:
             self.networkx.add_node(node, label=str(self.ids[node]))
 
     def set_final_trace(self, info: TraceInfo):
-        """
-        Update the graph with information on the final trace.
-        """
         self._set_ending_node(info.state)
 
     def _set_ending_node(self, state: StateInfo):
@@ -320,9 +324,6 @@ class StateGraph(AbstractGraph):
         self.end_node = self._get_or_create_id(state)
 
     def calculate_pos(self):
-        """
-        Calculate the position (x, y) for all nodes in self.networkx
-        """
         try:
             self.pos = nx.planar_layout(self.networkx)
         except nx.NetworkXException:
@@ -330,17 +331,17 @@ class StateGraph(AbstractGraph):
             self.pos = nx.arf_layout(self.networkx, seed=42)
 
     @property
-    def networkx(self):
+    def networkx(self) -> nx.DiGraph:
         return self._networkx
 
     @networkx.setter
-    def networkx(self, value):
+    def networkx(self, value: nx.DiGraph):
         self._networkx = value
 
     @property
-    def pos(self):
+    def pos(self) -> dict:
         return self._pos
 
     @pos.setter
-    def pos(self, value):
+    def pos(self, value: dict):
         self._pos = value

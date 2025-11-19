@@ -3,7 +3,8 @@ import string
 
 from robot.api.deco import keyword  # type:ignore
 from robotmbt.modelspace import ModelSpace
-from robotmbt.visualise.models import TraceInfo, ScenarioInfo, ScenarioGraph
+from robotmbt.visualise.models import TraceInfo, ScenarioInfo
+from robotmbt.visualise.graphs.scenariograph import ScenarioGraph
 
 
 class ModelGenerator:

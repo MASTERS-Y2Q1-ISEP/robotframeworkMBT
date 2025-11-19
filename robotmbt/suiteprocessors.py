@@ -44,7 +44,7 @@ from .steparguments import StepArgument, StepArguments
 
 try:
     from .visualise.visualiser import Visualiser
-    from .visualise.graphs import TraceInfo
+    from .visualise.models import TraceInfo
 
     VISUALISE = True
 except ImportError:

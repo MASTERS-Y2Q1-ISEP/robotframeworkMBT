@@ -31,6 +31,7 @@ class NetworkVisualiser:
         self.plot = None
         self.graph = graph
         self.node_props = {}  # Store node properties for arrow calculations
+        self.graph_layout = {}
 
         # graph customisation options
         self.node_radius = 1.0
@@ -42,6 +43,7 @@ class NetworkVisualiser:
         """
         Generate html file from networkx graph via Bokeh
         """
+        self._calculate_graph_layout()
         self._initialise_plot()
         self._add_nodes_with_labels()
         self._add_edges()
@@ -54,7 +56,7 @@ class NetworkVisualiser:
         """
         padding: float = self.GRAPH_PADDING_PERC / 100
 
-        x_range, y_range = zip(*self.graph.pos.values())
+        x_range, y_range = zip(*self.graph_layout.values())
         x_min = min(x_range) - padding * (max(x_range) - min(x_range))
         x_max = max(x_range) + padding * (max(x_range) - min(x_range))
         y_min = min(y_range) - padding * (max(y_range) - min(y_range))
@@ -105,7 +107,7 @@ class NetworkVisualiser:
             # Labels are always defined and cannot be lists
             label = node_labels[node]
             label = self._cap_name(label)
-            x, y = self.graph.pos[node]
+            x, y = self.graph_layout[node]
 
             if node == 'start':
                 # For start node (circle), calculate radius based on text width
@@ -370,3 +372,10 @@ class NetworkVisualiser:
             return name
 
         return f"{name[:(self.MAX_VERTEX_NAME_LEN - 3)]}..."
+
+    def _calculate_graph_layout(self):
+        try:
+            self.graph_layout = nx.bfs_layout(self.graph.networkx, 'start')
+        except nx.NetworkXException:
+            # if planar layout cannot find a graph without crossing edges
+            self.graph_layout = nx.arf_layout(self.graph.networkx, seed=42)

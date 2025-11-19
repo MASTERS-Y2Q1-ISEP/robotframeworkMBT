@@ -31,7 +31,6 @@ class Visualiser:
         self.graph.set_final_trace(info)
 
     def generate_visualisation(self) -> str:
-        self.graph.calculate_pos()
         html_bokeh = NetworkVisualiser(self.graph).generate_html()
         return f"<iframe srcdoc=\"{html.escape(html_bokeh)}\", \
             width=\"{NetworkVisualiser.GRAPH_SIZE_PX}px\", \

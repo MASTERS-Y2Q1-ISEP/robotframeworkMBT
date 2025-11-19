@@ -75,8 +75,8 @@ class TraceInfo:
         return f"TraceInfo(trace=[{[str(t) for t in self.trace]}], state={self.state})"
 
     def contains_scenario(self, scen_name: str) -> bool:
-        for scen in self.trace:
-            if scen.name == scen_name:
+        for scenario in self.trace:
+            if scenario.name == scen_name:
                 return True
         return False
 
@@ -94,7 +94,8 @@ class TraceInfo:
 
     def insert_trace_at(self, index: int, scen_info: ScenarioInfo):
         if index < 0 or index >= len(self.trace):
-            raise IndexError(f"InsertTraceAt received invalid index ({index}) for length of list ({len(self.trace)})")
+            raise IndexError(
+                f"InsertTraceAt received invalid index ({index}) for length of list ({len(self.trace)})")
 
         self.trace.insert(index, scen_info)
 
@@ -114,13 +115,6 @@ class AbstractGraph(ABC):
         """
         pass
 
-    @abstractmethod
-    def calculate_pos(self):
-        """
-        Calculate the position (x, y) for all nodes in self.networkx
-        """
-        pass
-
     @property
     @abstractmethod
     def networkx(self) -> nx.DiGraph:
@@ -132,19 +126,6 @@ class AbstractGraph(ABC):
     @networkx.setter
     @abstractmethod
     def networkx(self, value: nx.DiGraph):
-        pass
-
-    @property
-    @abstractmethod
-    def pos(self) -> dict:
-        """
-        A dictionary with the positions of nodes.
-        """
-        pass
-
-    @pos.setter
-    @abstractmethod
-    def pos(self, value: dict):
         pass
 
 
@@ -160,9 +141,6 @@ class ScenarioGraph(AbstractGraph):
 
         # The networkx graph is a directional graph
         self.networkx = nx.DiGraph()
-
-        # Stores the position (x, y) of the nodes
-        self.pos = {}
 
         # add the start node
         self.networkx.add_node('start', label='start')
@@ -226,13 +204,6 @@ class ScenarioGraph(AbstractGraph):
         self._set_starting_node(info.trace[0])
         self._set_ending_node(info.trace[-1])
 
-    def calculate_pos(self):
-        try:
-            self.pos = nx.planar_layout(self.networkx)
-        except nx.NetworkXException:
-            # if planar layout cannot find a graph without crossing edges
-            self.pos = nx.arf_layout(self.networkx, seed=42)
-
     @property
     def networkx(self) -> nx.DiGraph:
         return self._networkx
@@ -240,14 +211,6 @@ class ScenarioGraph(AbstractGraph):
     @networkx.setter
     def networkx(self, value: nx.DiGraph):
         self._networkx = value
-
-    @property
-    def pos(self) -> dict:
-        return self._pos
-
-    @pos.setter
-    def pos(self, value: dict):
-        self._pos = value
 
 
 class StateGraph(AbstractGraph):
@@ -262,9 +225,6 @@ class StateGraph(AbstractGraph):
 
         # The networkx graph is a directional graph
         self.networkx = nx.DiGraph()
-
-        # Stores the position (x, y) of the nodes
-        self.pos = {}
 
         # add the start node
         self.networkx.add_node('start', label='start')
@@ -290,7 +250,8 @@ class StateGraph(AbstractGraph):
 
             if self.prev_trace_len < len(info.trace):
                 if (from_node, to_node) not in self.networkx.edges:
-                    self.networkx.add_edge(from_node, to_node, label=scenario.name)
+                    self.networkx.add_edge(
+                        from_node, to_node, label=scenario.name)
 
         self.prev_state = info.state
         self.prev_trace_len = len(info.trace)
@@ -323,13 +284,6 @@ class StateGraph(AbstractGraph):
         """
         self.end_node = self._get_or_create_id(state)
 
-    def calculate_pos(self):
-        try:
-            self.pos = nx.planar_layout(self.networkx)
-        except nx.NetworkXException:
-            # if planar layout cannot find a graph without crossing edges
-            self.pos = nx.arf_layout(self.networkx, seed=42)
-
     @property
     def networkx(self) -> nx.DiGraph:
         return self._networkx
@@ -337,11 +291,3 @@ class StateGraph(AbstractGraph):
     @networkx.setter
     def networkx(self, value: nx.DiGraph):
         self._networkx = value
-
-    @property
-    def pos(self) -> dict:
-        return self._pos
-
-    @pos.setter
-    def pos(self, value: dict):
-        self._pos = value

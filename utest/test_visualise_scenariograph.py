@@ -1,8 +1,9 @@
 import unittest
 import networkx as nx
+from robotmbt.tracestate import TraceState
 try:
     from robotmbt.visualise.graphs.scenariograph import ScenarioGraph
-    from robotmbt.visualise.models import *
+    from robotmbt.visualise.models import TraceInfo, ScenarioInfo, ModelSpace
     VISUALISE = True
 except ImportError:
     VISUALISE = False
@@ -128,5 +129,20 @@ if VISUALISE:
             sg._set_ending_node(si)
             self.assertEqual(sg.end_node, node_id)
 
-if __name__ == '__main__':
-    unittest.main()
+        def test_scenario_graph_set_final_trace(self):
+            ts = TraceState(3)
+            candidates = []
+            for scenario in range(3):
+                candidates.append(ts.next_candidate())
+                ts.confirm_full_scenario(candidates[-1], str(scenario), {})
+            ti = TraceInfo.from_trace_state(trace=ts, state=ModelSpace())
+            sg = ScenarioGraph()
+            sg.update_visualisation(ti)
+            sg.set_final_trace(ti)
+            # test start node
+            self.assertIn(('start', 'node0'), sg.networkx.edges)
+            # test end node
+            self.assertEqual(sg.end_node, 'node2')
+
+            if __name__ == '__main__':
+                unittest.main()

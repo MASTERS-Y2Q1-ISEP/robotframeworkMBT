@@ -86,13 +86,13 @@ class TraceState:
         for i in self.c_pool:
             if i not in self._tried[-1] and not self.is_refinement_active(i) and self.count(i) == 0:
                 return i
-        
+
         if not retry:
             return None
         for i in self.c_pool:
             if i not in self._tried[-1] and not self.is_refinement_active(i):
                 return i
-        
+
         return None
 
     def count(self, index: int) -> int:
@@ -151,8 +151,8 @@ class TraceState:
 
     def push_partial_scenario(self, index: int, scenario: str, model: dict[str, int], remainder=None):
         if self.is_refinement_active(index):
-            id = f"{index}.{self.highest_part(index)+1}"
-        
+            id = f"{index}.{self.highest_part(index) + 1}"
+
         else:
             id = f"{index}.1"
             self._tried[-1].append(index)

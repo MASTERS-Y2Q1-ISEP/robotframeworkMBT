@@ -33,6 +33,7 @@
 import copy
 import random
 
+import networkx
 from robot.api import logger
 from robot.utils import is_list_like
 
@@ -130,6 +131,12 @@ class SuiteProcessors:
         if self.visualiser is not None:
             self.visualiser.set_final_trace(
                 TraceInfo.from_trace_state(self.tracestate, self.active_model))
+
+            dom_dict: dict = networkx.immediate_dominators(self.visualiser.graph.networkx, 'start')
+            nodes = self.visualiser.graph.networkx.nodes
+            dom_dict = dict(map(lambda entry: (nodes[entry[0]]['label'], nodes[entry[1]]['label']), dom_dict.items()))
+            logger.write(str(dom_dict))
+
             logger.write(self.visualiser.generate_visualisation(), html=True)
 
         return self.out_suite

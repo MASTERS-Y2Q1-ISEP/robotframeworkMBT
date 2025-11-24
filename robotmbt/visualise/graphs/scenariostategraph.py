@@ -25,6 +25,9 @@ class ScenarioStateGraph(AbstractGraph):
         # indicates last scenario of trace
         self.end_node = 'start'
 
+        self.start_scenario: ScenarioInfo | None = None
+        self.start_state: StateInfo | None = None
+
         self.prev_state = StateInfo(ModelSpace())
         self.prev_state_len = 0
 
@@ -32,6 +35,10 @@ class ScenarioStateGraph(AbstractGraph):
         """
         This will add nodes for all new scenarios in the provided trace, as well as edges for all pairs in the provided trace.
         """
+        if len(info.trace) == 1:
+            self.start_scenario = info.trace[0]
+            self.start_state = info.state
+
         for i in range(0, len(info.trace) - 1):
             from_node = self._get_or_create_id(info.trace[i], self.prev_state)
             to_node = self._get_or_create_id(info.trace[i + 1], info.state)
@@ -63,7 +70,7 @@ class ScenarioStateGraph(AbstractGraph):
         Add node if it doesn't already exist.
         """
         if node not in self.networkx.nodes:
-            self.networkx.add_node(node, label=self.ids[node][0].name + "\n" + str(self.ids[node][1]))
+            self.networkx.add_node(node, label=self.ids[node][0].name + "\n\r" + str(self.ids[node][1]))
 
     def _set_starting_node(self, scenario: ScenarioInfo, state: StateInfo):
         """
@@ -83,7 +90,7 @@ class ScenarioStateGraph(AbstractGraph):
         """
         Update the graph with information on the final trace.
         """
-        first_node = self.ids["node0"]  # TODO: check assumption that node0 is always starting node
+        first_node = self.ids[self._get_or_create_id(self.start_scenario, self.start_state)]
         self._set_starting_node(first_node[0], first_node[1])
         self._set_ending_node(info.trace[-1], info.state)
 

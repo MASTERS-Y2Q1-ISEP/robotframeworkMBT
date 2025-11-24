@@ -70,7 +70,8 @@ class ModelSpace:
 
     def del_prop(self, name: str):
         if name == 'scenario':
-            raise ModellingError(f"scenario is a reserved attribute and cannot be removed.")
+            raise ModellingError(
+                f"scenario is a reserved attribute and cannot be removed.")
         if name not in self.props:
             raise ModellingError(f"Delete failed, '{name}' is not defined.")
         self.props.pop(name)

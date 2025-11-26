@@ -11,18 +11,18 @@ except ImportError:
 
 if VISUALISE:
     class TestVisualiseScenarioGraph(unittest.TestCase):
-        def test_scenario_graph_init(self):
+        def test_scenario_state_graph_init(self):
             stg = ScenarioStateGraph()
             self.assertIn('start', stg.networkx.nodes)
             self.assertEqual(stg.networkx.nodes['start']['label'], 'start')
 
-        def test_scenario_graph_ids_empty(self):
+        def test_scenario_state_graph_ids_empty(self):
             stg = ScenarioStateGraph()
             si = ScenarioInfo('test')
             node_id = stg._get_or_create_id(si, StateInfo(ModelSpace()))
             self.assertEqual(node_id, 'node0')
 
-        def test_scenario_graph_ids_duplicate_scenario(self):
+        def test_scenario_state_graph_ids_duplicate_scenario(self):
             stg = ScenarioStateGraph()
             si = ScenarioInfo('test')
             sti = StateInfo(ModelSpace())
@@ -30,7 +30,7 @@ if VISUALISE:
             id1 = stg._get_or_create_id(si, sti)
             self.assertEqual(id0, id1)
 
-        def test_scenario_graph_ids_different_scenarios(self):
+        def test_scenario_state_graph_ids_different_scenarios(self):
             stg = ScenarioStateGraph()
             si0 = ScenarioInfo('test0')
             si1 = ScenarioInfo('test1')
@@ -40,7 +40,7 @@ if VISUALISE:
             self.assertEqual(id0, 'node0')
             self.assertEqual(id1, 'node1')
 
-        def test_scenario_graph_ids_different_states(self):
+        def test_scenario_state_graph_ids_different_states(self):
             stg = ScenarioStateGraph()
             si = ScenarioInfo('test0')
             sti0 = StateInfo(ModelSpace("state0"))
@@ -50,7 +50,7 @@ if VISUALISE:
             self.assertEqual(id0, 'node0')
             self.assertEqual(id1, 'node1')
 
-        def test_scenario_graph_add_new_node(self):
+        def test_scenario_state_graph_add_new_node(self):
             stg = ScenarioStateGraph()
             stg.ids['test'] = (ScenarioInfo('test'), StateInfo(ModelSpace()))
             stg._add_node('test')
@@ -58,13 +58,13 @@ if VISUALISE:
             self.assertEqual(stg.networkx.nodes['test']['label'],
                              _gen_label(ScenarioInfo('test'), StateInfo(ModelSpace())))
 
-        def test_scenario_graph_add_existing_node(self):
+        def test_scenario_state_graph_add_existing_node(self):
             stg = ScenarioStateGraph()
             stg._add_node('start')
             self.assertIn('start', stg.networkx.nodes)
             self.assertEqual(len(stg.networkx.nodes), 1)
 
-        def test_scenario_graph_update_visualisation_nodes(self):
+        def test_scenario_state_graph_update_visualisation_nodes(self):
             ts = TraceState(3)
             candidates = []
             for scenario in range(3):
@@ -84,7 +84,7 @@ if VISUALISE:
             self.assertEqual(stg.networkx.nodes['node2']['label'],
                              _gen_label(ScenarioInfo(str(2)), StateInfo(ModelSpace())))
 
-        def test_scenario_graph_update_visualisation_edges(self):
+        def test_scenario_state_graph_update_visualisation_edges(self):
             ts = TraceState(3)
             candidates = []
             for scenario in range(3):
@@ -101,7 +101,7 @@ if VISUALISE:
             self.assertEqual(edge_labels[('node0', 'node1')], '')
             self.assertEqual(edge_labels[('node1', 'node2')], '')
 
-        def test_scenario_graph_update_visualisation_single_node(self):
+        def test_scenario_state_graph_update_visualisation_single_node(self):
             ts = TraceState(1)
             ts.confirm_full_scenario(0, 'one', {})
             self.assertEqual(ts.get_trace(), ['one'])
@@ -113,7 +113,7 @@ if VISUALISE:
             self.assertEqual(len(stg.networkx.nodes), 1)
             self.assertEqual(len(stg.networkx.edges), 0)
 
-        def test_scenario_graph_set_starting_node_new_node(self):
+        def test_scenario_state_graph_set_starting_node_new_node(self):
             stg = ScenarioStateGraph()
             si = ScenarioInfo('test')
             stg._set_starting_node(si, StateInfo(ModelSpace()))
@@ -127,7 +127,7 @@ if VISUALISE:
             edge_labels = nx.get_edge_attributes(stg.networkx, "label")
             self.assertEqual(edge_labels[('start', node_id)], '')
 
-        def test_scenario_graph_set_starting_node_existing_node(self):
+        def test_scenario_state_graph_set_starting_node_existing_node(self):
             stg = ScenarioStateGraph()
             si = ScenarioInfo('test')
             node_id = stg._get_or_create_id(si, StateInfo(ModelSpace()))
@@ -139,14 +139,14 @@ if VISUALISE:
             edge_labels = nx.get_edge_attributes(stg.networkx, "label")
             self.assertEqual(edge_labels[('start', node_id)], '')
 
-        def test_scenario_graph_set_end_node(self):
+        def test_scenario_state_graph_set_end_node(self):
             stg = ScenarioStateGraph()
             si = ScenarioInfo('test')
             node_id = stg._get_or_create_id(si, StateInfo(ModelSpace()))
             stg._set_ending_node(si, StateInfo(ModelSpace()))
             self.assertEqual(stg.end_node, node_id)
 
-        def test_scenario_graph_set_final_trace(self):
+        def test_scenario_state_graph_set_final_trace(self):
             ts = TraceState(3)
             candidates = []
             for scenario in range(3):

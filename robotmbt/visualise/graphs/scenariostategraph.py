@@ -5,6 +5,13 @@ from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 from robotmbt.visualise.models import TraceInfo, ScenarioInfo, StateInfo
 
 
+def _gen_label(scenario: ScenarioInfo, state: StateInfo) -> str:
+    """
+    Creates the label for a node in a Scenario-State Graph from the scenario and state associated to it.
+    """
+    return scenario.name + "\n\r" + str(state)
+
+
 class ScenarioStateGraph(AbstractGraph):
     """
     The scenario-State graph keeps track of both the scenarios and states encountered.
@@ -70,7 +77,7 @@ class ScenarioStateGraph(AbstractGraph):
         Add node if it doesn't already exist.
         """
         if node not in self.networkx.nodes:
-            self.networkx.add_node(node, label=self.ids[node][0].name + "\n\r" + str(self.ids[node][1]))
+            self.networkx.add_node(node, label=_gen_label(self.ids[node][0], self.ids[node][1]))
 
     def _set_starting_node(self, scenario: ScenarioInfo, state: StateInfo):
         """
@@ -90,6 +97,9 @@ class ScenarioStateGraph(AbstractGraph):
         """
         Update the graph with information on the final trace.
         """
+        if self.start_scenario is None:
+            self.start_scenario = info.trace[0]
+            self.start_state = info.state  # fallback if a trace with multiple nodes instantly materializes
         first_node = self.ids[self._get_or_create_id(self.start_scenario, self.start_state)]
         self._set_starting_node(first_node[0], first_node[1])
         self._set_ending_node(info.trace[-1], info.state)

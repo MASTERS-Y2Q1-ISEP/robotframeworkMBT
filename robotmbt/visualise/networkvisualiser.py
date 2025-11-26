@@ -27,6 +27,20 @@ class NetworkVisualiser:
     # in px, needs to be equal for height and width otherwise calculations are wrong
     GRAPH_SIZE_PX: int = 600
     MAX_VERTEX_NAME_LEN: int = 20  # no. of characters
+    
+    # Colors and styles for executed vs unexecuted elements
+    EXECUTED_NODE_COLOR = Spectral4[0]  # Bright blue
+    UNEXECUTED_NODE_COLOR = '#D3D3D3'   # Light gray
+    EXECUTED_TEXT_COLOR = 'white'
+    UNEXECUTED_TEXT_COLOR = '#A9A9A9'   # Dark gray
+    EXECUTED_EDGE_COLOR = (12, 12, 12)  # Black
+    UNEXECUTED_EDGE_COLOR = '#808080'   # Gray
+    EXECUTED_EDGE_WIDTH = 2.5
+    UNEXECUTED_EDGE_WIDTH = 1.2
+    EXECUTED_EDGE_ALPHA = 0.7
+    UNEXECUTED_EDGE_ALPHA = 0.3
+    EXECUTED_LABEL_COLOR = 'black'
+    UNEXECUTED_LABEL_COLOR = '#A9A9A9'
 
     def __init__(self, graph: AbstractGraph):
         self.plot = None
@@ -39,6 +53,9 @@ class NetworkVisualiser:
         self.char_width = 0.1
         self.char_height = 0.1
         self.padding = 0.1
+        
+        # Get executed elements for visual differentiation
+        self.executed_nodes, self.executed_edges = graph.get_executed_elements()
 
     def generate_html(self) -> str:
         """
@@ -100,15 +117,20 @@ class NetworkVisualiser:
         node_labels = nx.get_node_attributes(self.graph.networkx, "label")
 
         # Create data sources for nodes and labels
-        circle_data = dict(x=[], y=[], radius=[], label=[])
-        rect_data = dict(x=[], y=[], width=[], height=[], label=[])
-        text_data = dict(x=[], y=[], text=[])
+        circle_data = dict(x=[], y=[], radius=[], label=[], color=[], text_color=[])
+        rect_data = dict(x=[], y=[], width=[], height=[], label=[], color=[], text_color=[])
+        text_data = dict(x=[], y=[], text=[], text_color=[])
 
         for node in self.graph.networkx.nodes:
             # Labels are always defined and cannot be lists
             label = node_labels[node]
             label = self._cap_name(label)
             x, y = self.graph_layout[node]
+            
+            # Determine if node is executed
+            is_executed = node in self.executed_nodes
+            node_color = self.EXECUTED_NODE_COLOR if is_executed else self.UNEXECUTED_NODE_COLOR
+            text_color = self.EXECUTED_TEXT_COLOR if is_executed else self.UNEXECUTED_TEXT_COLOR
 
             if node == 'start':
                 # For start node (circle), calculate radius based on text width
@@ -121,6 +143,8 @@ class NetworkVisualiser:
                 circle_data['y'].append(y)
                 circle_data['radius'].append(radius)
                 circle_data['label'].append(label)
+                circle_data['color'].append(node_color)
+                circle_data['text_color'].append(text_color)
 
                 # Store node properties for arrow calculations
                 self.node_props[node] = {
@@ -136,6 +160,8 @@ class NetworkVisualiser:
                 rect_data['width'].append(text_width)
                 rect_data['height'].append(text_height)
                 rect_data['label'].append(label)
+                rect_data['color'].append(node_color)
+                rect_data['text_color'].append(text_color)
 
                 # Store node properties for arrow calculations
                 self.node_props[node] = {'type': 'rect', 'x': x, 'y': y, 'width': text_width, 'height': text_height,
@@ -145,26 +171,27 @@ class NetworkVisualiser:
             text_data['x'].append(x)
             text_data['y'].append(y)
             text_data['text'].append(label)
+            text_data['text_color'].append(text_color)
 
         # Add circles for start node
         if circle_data['x']:
             circle_source = ColumnDataSource(circle_data)
             circles = Circle(x='x', y='y', radius='radius',
-                             fill_color=Spectral4[0])
+                             fill_color='color', line_color='color')
             self.plot.add_glyph(circle_source, circles)
 
         # Add rectangles for scenario nodes
         if rect_data['x']:
             rect_source = ColumnDataSource(rect_data)
             rectangles = Rect(x='x', y='y', width='width', height='height',
-                              fill_color=Spectral4[0])
+                              fill_color='color', line_color='color')
             self.plot.add_glyph(rect_source, rectangles)
 
         # Add text labels for all nodes
         text_source = ColumnDataSource(text_data)
         text_labels = Text(x='x', y='y', text='text',
                            text_align='center', text_baseline='middle',
-                           text_color='white', text_font_size='9pt')
+                           text_color='text_color', text_font_size='9pt')
         self.plot.add_glyph(text_source, text_labels)
 
     def _get_edge_points(self, start_node, end_node):
@@ -271,15 +298,21 @@ class NetworkVisualiser:
         control2_x = x + width / 8
         control2_y = y + height / 2 + arc_height
 
+        # Determine if edge is executed
+        is_executed = (node_id, node_id) in self.executed_edges
+        edge_color = self.EXECUTED_EDGE_COLOR if is_executed else self.UNEXECUTED_EDGE_COLOR
+        edge_width = self.EXECUTED_EDGE_WIDTH if is_executed else self.UNEXECUTED_EDGE_WIDTH
+        edge_alpha = self.EXECUTED_EDGE_ALPHA if is_executed else self.UNEXECUTED_EDGE_ALPHA
+
         # Create the Bezier curve (the main arc) with the same thickness as straight lines
         loop = Bezier(
             x0=start_x, y0=start_y,
             x1=end_x, y1=end_y,
             cx0=control1_x, cy0=control1_y,
             cx1=control2_x, cy1=control2_y,
-            line_color=NetworkVisualiser.EDGE_COLOUR,
-            line_width=NetworkVisualiser.EDGE_WIDTH,
-            line_alpha=NetworkVisualiser.EDGE_ALPHA,
+            line_color=edge_color,
+            line_width=edge_width,
+            line_alpha=edge_alpha,
         )
         self.plot.add_glyph(loop)
 
@@ -297,9 +330,9 @@ class NetworkVisualiser:
         # Add just the arrowhead (NormalHead) at the end point, oriented along the tangent
         arrowhead = NormalHead(
             size=NetworkVisualiser.ARROWHEAD_SIZE,
-            line_color=NetworkVisualiser.EDGE_COLOUR,
-            fill_color=NetworkVisualiser.EDGE_COLOUR,
-            line_width=NetworkVisualiser.EDGE_WIDTH
+            line_color=edge_color,
+            fill_color=edge_color,
+            line_width=edge_width
         )
 
         # Create a standalone arrowhead at the end point
@@ -310,9 +343,9 @@ class NetworkVisualiser:
             y_start=end_y - tangent_y * 0.001,
             x_end=end_x,
             y_end=end_y,
-            line_color=NetworkVisualiser.EDGE_COLOUR,
-            line_width=NetworkVisualiser.EDGE_WIDTH,
-            line_alpha=NetworkVisualiser.EDGE_ALPHA
+            line_color=edge_color,
+            line_width=edge_width,
+            line_alpha=edge_alpha
         )
         self.plot.add_layout(arrow)
 
@@ -320,23 +353,32 @@ class NetworkVisualiser:
         label_x = x
         label_y = y + height / 2 + arc_height * 0.6
 
-        return label_x, label_y
+        return label_x, label_y, is_executed
 
     def _add_edges(self):
         edge_labels = nx.get_edge_attributes(self.graph.networkx, "label")
 
         # Create data sources for edges and edge labels
-        edge_text_data = dict(x=[], y=[], text=[])
+        edge_text_data = dict(x=[], y=[], text=[], text_color=[])
 
         for edge in self.graph.networkx.edges():
             # Edge labels are always defined and cannot be lists
             edge_label = edge_labels[edge]
             edge_label = self._cap_name(edge_label)
+            
+            # Determine if edge is executed
+            is_executed = edge in self.executed_edges
+            edge_color = self.EXECUTED_EDGE_COLOR if is_executed else self.UNEXECUTED_EDGE_COLOR
+            edge_width = self.EXECUTED_EDGE_WIDTH if is_executed else self.UNEXECUTED_EDGE_WIDTH
+            edge_alpha = self.EXECUTED_EDGE_ALPHA if is_executed else self.UNEXECUTED_EDGE_ALPHA
+            label_color = self.EXECUTED_LABEL_COLOR if is_executed else self.UNEXECUTED_LABEL_COLOR
+
             edge_text_data['text'].append(edge_label)
+            edge_text_data['text_color'].append(label_color)
 
             if edge[0] == edge[1]:
                 # Self-loop handled separately
-                label_x, label_y = self.add_self_loop(edge[0])
+                label_x, label_y, is_executed_loop = self.add_self_loop(edge[0])
                 edge_text_data['x'].append(label_x)
                 edge_text_data['y'].append(label_y)
 
@@ -349,10 +391,14 @@ class NetworkVisualiser:
                 arrow = Arrow(
                     end=NormalHead(
                         size=NetworkVisualiser.ARROWHEAD_SIZE,
-                        line_color=NetworkVisualiser.EDGE_COLOUR,
-                        fill_color=NetworkVisualiser.EDGE_COLOUR),
+                        line_color=edge_color,
+                        fill_color=edge_color,
+                        line_width=edge_width),
                     x_start=start_x, y_start=start_y,
-                    x_end=end_x, y_end=end_y
+                    x_end=end_x, y_end=end_y,
+                    line_color=edge_color,
+                    line_width=edge_width,
+                    line_alpha=edge_alpha
                 )
                 self.plot.add_layout(arrow)
 
@@ -365,7 +411,7 @@ class NetworkVisualiser:
             edge_text_source = ColumnDataSource(edge_text_data)
             edge_labels_glyph = Text(x='x', y='y', text='text',
                                      text_align='center', text_baseline='middle',
-                                     text_font_size='7pt')
+                                     text_color='text_color', text_font_size='7pt')
             self.plot.add_glyph(edge_text_source, edge_labels_glyph)
 
     def _cap_name(self, name: str) -> str:

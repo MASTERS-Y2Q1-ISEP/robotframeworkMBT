@@ -22,6 +22,11 @@ class StateGraph(AbstractGraph):
 
         self.prev_state = StateInfo(ModelSpace())
         self.prev_trace_len = 0
+        
+        # Store executed nodes and edges for visual differentiation
+        self.executed_nodes: set[str] = set()
+        self.executed_edges: set[tuple[str, str]] = set()
+        self.executed_nodes.add('start')
 
     def update_visualisation(self, info: TraceInfo):
         """
@@ -43,6 +48,11 @@ class StateGraph(AbstractGraph):
                 if (from_node, to_node) not in self.networkx.edges:
                     self.networkx.add_edge(
                         from_node, to_node, label=scenario.name)
+                    
+                # Track executed elements
+                self.executed_nodes.add(from_node)
+                self.executed_nodes.add(to_node)
+                self.executed_edges.add((from_node, to_node))
 
         self.prev_state = info.state
         self.prev_trace_len = len(info.trace)
@@ -74,6 +84,13 @@ class StateGraph(AbstractGraph):
         Update the end node.
         """
         self.end_node = self._get_or_create_id(state)
+        
+    def get_executed_elements(self) -> tuple[set[str], set[tuple[str, str]]]:
+        """
+        Get the sets of executed nodes and edges.
+        Returns: (executed_nodes, executed_edges)
+        """
+        return self.executed_nodes, self.executed_edges
 
     @property
     def networkx(self) -> nx.DiGraph:

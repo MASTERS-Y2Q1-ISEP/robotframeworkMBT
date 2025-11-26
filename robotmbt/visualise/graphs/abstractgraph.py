@@ -18,6 +18,14 @@ class AbstractGraph(ABC):
         """
         pass
 
+    @abstractmethod
+    def get_executed_elements(self) -> tuple[set[str], set[tuple[str, str]]]:
+        """
+        Get the sets of executed nodes and edges.
+        Returns: (executed_nodes, executed_edges)
+        """
+        pass
+
     @property
     @abstractmethod
     def networkx(self) -> nx.DiGraph:

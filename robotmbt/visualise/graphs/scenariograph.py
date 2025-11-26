@@ -21,6 +21,10 @@ class ScenarioGraph(AbstractGraph):
 
         # indicates last scenario of trace
         self.end_node = 'start'
+        
+        # Store executed nodes and edges for visual differentiation
+        self.executed_nodes: set[str] = set()
+        self.executed_edges: set[tuple[str, str]] = set()
 
     def update_visualisation(self, info: TraceInfo):
         """
@@ -77,6 +81,35 @@ class ScenarioGraph(AbstractGraph):
         """
         self._set_starting_node(info.trace[0])
         self._set_ending_node(info.trace[-1])
+        
+        # Build sets of executed nodes and edges
+        self.executed_nodes.clear()
+        self.executed_edges.clear()
+        
+        # Add start node
+        self.executed_nodes.add('start')
+        
+        # Process the trace to identify executed elements
+        if len(info.trace) > 0:
+            # First edge: start -> first scenario
+            first_node = self._get_or_create_id(info.trace[0])
+            self.executed_edges.add(('start', first_node))
+            self.executed_nodes.add(first_node)
+            
+            # Process remaining edges in the trace
+            for i in range(len(info.trace) - 1):
+                from_node = self._get_or_create_id(info.trace[i])
+                to_node = self._get_or_create_id(info.trace[i + 1])
+                
+                self.executed_edges.add((from_node, to_node))
+                self.executed_nodes.add(to_node)
+
+    def get_executed_elements(self) -> tuple[set[str], set[tuple[str, str]]]:
+        """
+        Get the sets of executed nodes and edges.
+        Returns: (executed_nodes, executed_edges)
+        """
+        return self.executed_nodes, self.executed_edges
 
     @property
     def networkx(self) -> nx.DiGraph:

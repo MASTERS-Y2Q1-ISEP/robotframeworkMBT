@@ -1,6 +1,5 @@
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 from robotmbt.visualise.graphs.stategraph import StateGraph
-from robotmbt.visualise.graphs.scenariostategraph import ScenarioStateGraph
 from bokeh.palettes import Spectral4
 from bokeh.models import (
     Plot, Range1d, Circle, Rect,
@@ -28,14 +27,14 @@ class NetworkVisualiser:
     # in px, needs to be equal for height and width otherwise calculations are wrong
     GRAPH_SIZE_PX: int = 600
     MAX_VERTEX_NAME_LEN: int = 20  # no. of characters
-
+    
     # Colors and styles for executed vs unexecuted elements
     EXECUTED_NODE_COLOR = Spectral4[0]  # Bright blue
-    UNEXECUTED_NODE_COLOR = '#D3D3D3'  # Light gray
-    EXECUTED_TEXT_COLOR = '#C8C8C8'
-    UNEXECUTED_TEXT_COLOR = '#A9A9A9'  # Dark gray
+    UNEXECUTED_NODE_COLOR = '#D3D3D3'   # Light gray
+    EXECUTED_TEXT_COLOR = 'white'
+    UNEXECUTED_TEXT_COLOR = '#A9A9A9'   # Dark gray
     EXECUTED_EDGE_COLOR = (12, 12, 12)  # Black
-    UNEXECUTED_EDGE_COLOR = '#808080'  # Gray
+    UNEXECUTED_EDGE_COLOR = '#808080'   # Gray
     EXECUTED_EDGE_WIDTH = 2.5
     UNEXECUTED_EDGE_WIDTH = 1.2
     EXECUTED_EDGE_ALPHA = 0.7
@@ -54,15 +53,9 @@ class NetworkVisualiser:
         self.char_width = 0.1
         self.char_height = 0.1
         self.padding = 0.1
-
+        
         # Get executed elements for visual differentiation
-        final_trace = graph.get_final_trace()
-        self.executed_nodes = set(final_trace)
-        self.executed_edges = set()
-        for i in range(0, len(final_trace) - 1):
-            from_node = final_trace[i]
-            to_node = final_trace[i + 1]
-            self.executed_edges.add((from_node, to_node))
+        self.executed_nodes, self.executed_edges = graph.get_executed_elements()
 
     def generate_html(self) -> str:
         """
@@ -133,7 +126,7 @@ class NetworkVisualiser:
             label = node_labels[node]
             label = self._cap_name(label)
             x, y = self.graph_layout[node]
-
+            
             # Determine if node is executed
             is_executed = node in self.executed_nodes
             node_color = self.EXECUTED_NODE_COLOR if is_executed else self.UNEXECUTED_NODE_COLOR
@@ -360,7 +353,7 @@ class NetworkVisualiser:
         label_x = x
         label_y = y + height / 2 + arc_height * 0.6
 
-        return label_x, label_y
+        return label_x, label_y, is_executed
 
     def _add_edges(self):
         edge_labels = nx.get_edge_attributes(self.graph.networkx, "label")
@@ -372,7 +365,7 @@ class NetworkVisualiser:
             # Edge labels are always defined and cannot be lists
             edge_label = edge_labels[edge]
             edge_label = self._cap_name(edge_label)
-
+            
             # Determine if edge is executed
             is_executed = edge in self.executed_edges
             edge_color = self.EXECUTED_EDGE_COLOR if is_executed else self.UNEXECUTED_EDGE_COLOR
@@ -385,7 +378,7 @@ class NetworkVisualiser:
 
             if edge[0] == edge[1]:
                 # Self-loop handled separately
-                label_x, label_y = self.add_self_loop(edge[0])
+                label_x, label_y, is_executed_loop = self.add_self_loop(edge[0])
                 edge_text_data['x'].append(label_x)
                 edge_text_data['y'].append(label_y)
 
@@ -422,7 +415,7 @@ class NetworkVisualiser:
             self.plot.add_glyph(edge_text_source, edge_labels_glyph)
 
     def _cap_name(self, name: str) -> str:
-        if len(name) < self.MAX_VERTEX_NAME_LEN or isinstance(self.graph, StateGraph) or isinstance(self.graph, ScenarioStateGraph):
+        if len(name) < self.MAX_VERTEX_NAME_LEN or isinstance(self.graph, StateGraph):
             return name
 
         return f"{name[:(self.MAX_VERTEX_NAME_LEN - 3)]}..."

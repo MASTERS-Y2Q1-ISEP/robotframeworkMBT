@@ -57,6 +57,8 @@ class StateInfo:
     def __str__(self):
         res = ""
         for p in self.properties:
+            if res != "":
+                res += "\n\n"
             res += f"{p}:"
             for k, v in self.properties[p].items():
                 res += f"\n\t{k}={v}"

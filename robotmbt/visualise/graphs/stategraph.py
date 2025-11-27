@@ -22,49 +22,55 @@ class StateGraph(AbstractGraph):
 
         self.prev_state = StateInfo(ModelSpace())
         self.prev_trace_len = 0
-        
-        # Store executed nodes and edges for visual differentiation
-        self.executed_nodes: set[str] = set()
-        self.executed_edges: set[tuple[str, str]] = set()
-        
+
         # Stack to track the current execution path
         self.state_stack: list[str] = ['start']
-        self.executed_nodes.add('start')
 
     def update_visualisation(self, info: TraceInfo):
         """
         This will add nodes the newly reached state (if we did not roll back), as well as an edge from the previous to
         the current state labeled with the scenario that took it there.
         """
-        if len(info.trace) > 0:
-            scenario = info.trace[-1]
+        if len(info.trace) == 0:
+            self.prev_trace_len = len(info.trace)
+            self.prev_state = info.state
+            return
 
-            from_node = self._get_or_create_id(self.prev_state)
-            if len(info.trace) == 1:
-                from_node = 'start'
-            to_node = self._get_or_create_id(info.state)
+        scenario = info.trace[-1]
 
-            self._add_node(from_node)
-            self._add_node(to_node)
+        from_node = self._get_or_create_id(self.prev_state)
+        if len(info.trace) == 1:
+            from_node = 'start'
+        to_node = self._get_or_create_id(info.state)
 
-            if self.prev_trace_len < len(info.trace):
-                # Moving forward - add new state to stack
-                if (from_node, to_node) not in self.networkx.edges:
-                    self.networkx.add_edge(
-                        from_node, to_node, label=scenario.name)
-                
-                # Update stack - push new state
-                self.state_stack.append(to_node)
-                    
-            elif self.prev_trace_len > len(info.trace):
-                # Backtracking - pop states from stack
-                pop_count = self.prev_trace_len - len(info.trace)
-                for _ in range(pop_count):
-                    if len(self.state_stack) > 1:  # Always keep 'start'
-                        self.state_stack.pop()
+        self._add_node(from_node)
+        self._add_node(to_node)
+
+        if self.prev_trace_len < len(info.trace):
+            # New state added - add to stack
+            self.state_stack.append(to_node)
+
+            if (from_node, to_node) not in self.networkx.edges:
+                self.networkx.add_edge(
+                    from_node, to_node, label=scenario.name)
+
+        elif self.prev_trace_len > len(info.trace):
+            # States removed - remove from stack
+            pop_count = self.prev_trace_len - len(info.trace)
+            for _ in range(pop_count):
+                if len(self.state_stack) > 1:  # Always keep 'start'
+                    self.state_stack.pop()
 
         self.prev_state = info.state
         self.prev_trace_len = len(info.trace)
+
+    def set_final_trace(self, info: TraceInfo):
+        # We already have the final trace in state_stack, so we don't need to do anything
+        pass
+
+    def get_final_trace(self) -> list[str]:
+        # The final trace is simply the state stack we've been keeping track of
+        return self.state_stack
 
     def _get_or_create_id(self, state: StateInfo) -> str:
         """
@@ -84,35 +90,6 @@ class StateGraph(AbstractGraph):
         """
         if node not in self.networkx.nodes:
             self.networkx.add_node(node, label=str(self.ids[node]))
-
-    def set_final_trace(self, info: TraceInfo):
-        self._set_ending_node(info.state)
-        
-        # Build sets of executed nodes and edges from the final state stack
-        self.executed_nodes.clear()
-        self.executed_edges.clear()
-        
-        # All states in the final stack are executed
-        self.executed_nodes.update(self.state_stack)
-        
-        # Build executed edges from consecutive states in the stack
-        for i in range(len(self.state_stack) - 1):
-            from_node = self.state_stack[i]
-            to_node = self.state_stack[i + 1]
-            self.executed_edges.add((from_node, to_node))
-
-    def _set_ending_node(self, state: StateInfo):
-        """
-        Update the end node.
-        """
-        self.end_node = self._get_or_create_id(state)
-        
-    def get_executed_elements(self) -> tuple[set[str], set[tuple[str, str]]]:
-        """
-        Get the sets of executed nodes and edges.
-        Returns: (executed_nodes, executed_edges)
-        """
-        return self.executed_nodes, self.executed_edges
 
     @property
     def networkx(self) -> nx.DiGraph:

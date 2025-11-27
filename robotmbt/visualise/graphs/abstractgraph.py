@@ -19,10 +19,10 @@ class AbstractGraph(ABC):
         pass
 
     @abstractmethod
-    def get_executed_elements(self) -> tuple[set[str], set[tuple[str, str]]]:
+    def get_final_trace(self) -> list[str]:
         """
-        Get the sets of executed nodes and edges.
-        Returns: (executed_nodes, executed_edges)
+        Get the final trace as ordered node ids.
+        Edges are subsequent entries in the list.
         """
         pass
 

@@ -33,6 +33,9 @@ class StateInfo:
 
     def __init__(self, state: ModelSpace):
         self.domain = state.ref_id
+
+        # Extract all attributes/properties stored in the model space and store them in the temp dict
+        # Similar in workings to ModelSpace's get_status_text
         temp = {}
         for p in state.props:
             temp[p] = {}

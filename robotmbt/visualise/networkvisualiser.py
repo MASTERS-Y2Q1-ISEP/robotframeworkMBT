@@ -1,440 +1,332 @@
-from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
-from robotmbt.visualise.graphs.scenariostategraph import ScenarioStateGraph
-from robotmbt.visualise.graphs.stategraph import StateGraph
-from bokeh.palettes import Spectral4
+import networkx as nx
+from math import sqrt
+from bokeh.plotting import figure
 from bokeh.models import (
-    Plot, Range1d, Circle, Rect,
-    Arrow, NormalHead,
-    Bezier, ColumnDataSource, ResetTool,
-    SaveTool, WheelZoomTool, PanTool, Text
+    ColumnDataSource, Rect, Text, Arrow, NormalHead, CustomJS
 )
 from bokeh.embed import file_html
 from bokeh.resources import CDN
-from math import sqrt
-import networkx as nx
 
 
 class NetworkVisualiser:
     """
-    Generate plot with Bokeh
+    Clean implementation:
+    - Level-based layout (BFS)
+    - Sized rectangles from multi-line labels
+    - Non-overlapping layout
+    - Arrows connect at rectangle borders
+    - Executed nodes/edges highlighted
+    - Text scales when zooming
     """
 
-    ARROWHEAD_SIZE: int = 6  # Consistent arrowhead size
-    EDGE_WIDTH: float = 2.0
-    EDGE_ALPHA: float = 0.7
-    EDGE_COLOUR: str | tuple[int, int, int] = (
-        12, 12, 12)  # 'visual studio black'
-    GRAPH_PADDING_PERC: int = 15  # %
-    # in px, needs to be equal for height and width otherwise calculations are wrong
-    GRAPH_SIZE_PX: int = 600
-    MAX_VERTEX_NAME_LEN: int = 20  # no. of characters
+    # Visual constants
+    EXECUTED_NODE_COLOR = "#4C72B0"
+    UNEXECUTED_NODE_COLOR = "#D3D3D3"
+    EXECUTED_TEXT_COLOR = "#E8E8E8"
+    UNEXECUTED_TEXT_COLOR = "#555555"
 
-    # Colors and styles for executed vs unexecuted elements
-    EXECUTED_NODE_COLOR = Spectral4[0]  # Bright blue
-    UNEXECUTED_NODE_COLOR = '#D3D3D3'  # Light gray
-    EXECUTED_TEXT_COLOR = '#C8C8C8'
-    UNEXECUTED_TEXT_COLOR = '#A9A9A9'  # Dark gray
-    EXECUTED_EDGE_COLOR = (12, 12, 12)  # Black
-    UNEXECUTED_EDGE_COLOR = '#808080'  # Gray
+    EXECUTED_EDGE_COLOR = "#000000"
+    UNEXECUTED_EDGE_COLOR = "#808080"
     EXECUTED_EDGE_WIDTH = 2.5
     UNEXECUTED_EDGE_WIDTH = 1.2
     EXECUTED_EDGE_ALPHA = 0.7
     UNEXECUTED_EDGE_ALPHA = 0.3
-    EXECUTED_LABEL_COLOR = 'black'
-    UNEXECUTED_LABEL_COLOR = '#A9A9A9'
 
-    def __init__(self, graph: AbstractGraph):
-        self.plot = None
+    ARROWHEAD_SIZE = 8
+
+    NODE_MARGIN = 0.75  # padding between layers
+    LAYER_Y_SPACING = 2.0  # vertical gap (could now be dynamic)
+    NODE_X_SPACING = 3.0  # horizontal gap for multiple nodes in a level
+
+    def __init__(self, graph):
         self.graph = graph
-        self.node_props = {}  # Store node properties for arrow calculations
-        self.graph_layout = {}
+        self.G = graph.networkx
+        self.root = "start"
 
-        # graph customisation options
-        self.node_radius = 1.0
-        self.char_width = 0.1
-        self.char_height = 0.1
-        self.padding = 0.1
+        trace = graph.get_final_trace()
+        self.executed_nodes = set(trace)
+        self.executed_edges = {(trace[i], trace[i+1]) for i in range(len(trace)-1)}
 
-        # Get executed elements for visual differentiation
-        final_trace = graph.get_final_trace()
-        self.executed_nodes = set(final_trace)
-        self.executed_edges = set()
-        for i in range(0, len(final_trace) - 1):
-            from_node = final_trace[i]
-            to_node = final_trace[i + 1]
-            self.executed_edges.add((from_node, to_node))
+        self.node_layout = {}
+        self.node_props = {}
 
-    def generate_html(self) -> str:
+    # ============================================================
+    # Layout
+    # ============================================================
+
+    def _compute_levels(self):
+        """Assign BFS levels."""
+        levels = {}
+        for node in nx.bfs_tree(self.G, self.root):
+            if node == self.root:
+                levels[node] = 0
+            else:
+                preds = list(self.G.predecessors(node)) + list(self.G.successors(node))
+                parent_level = min(levels[p] for p in preds if p in levels)
+                levels[node] = parent_level + 1
+        return levels
+
+    def _measure_rect(self, text: str):
         """
-        Generate html file from networkx graph via Bokeh
+        Compute rectangle width/height for multi-line text.
+        Width = longest line, height = number of lines * line height + padding.
         """
-        self._calculate_graph_layout()
-        self._initialise_plot()
-        self._add_nodes_with_labels()
-        self._add_edges()
-        return file_html(self.plot, CDN, "graph")
 
-    def _initialise_plot(self):
-        """
-        Define plot with width, height, x_range, y_range and enable tools.
-        x_range and y_range are padded. Plot needs to be a square
-        """
-        padding: float = self.GRAPH_PADDING_PERC / 100
+        lines = text.split("\n")
+        longest = max(len(line) for line in lines)
+        num_lines = len(lines)
 
-        x_range, y_range = zip(*self.graph_layout.values())
-        x_min = min(x_range) - padding * (max(x_range) - min(x_range))
-        x_max = max(x_range) + padding * (max(x_range) - min(x_range))
-        y_min = min(y_range) - padding * (max(y_range) - min(y_range))
-        y_max = max(y_range) + padding * (max(y_range) - min(y_range))
+        char_w = 0.15  # width per character
+        char_h = 0.50  # height per line
+        margin_x = 0.40
+        margin_y_top = 0.10
+        margin_y_bottom = 0.10  # slightly more to avoid clipping
 
-        # scale node radius based on range
-        nodes_range = max(x_max - x_min, y_max - y_min)
-        self.node_radius = nodes_range / 150
-        self.char_width = nodes_range / 150
-        self.char_height = nodes_range / 150
+        width = longest * char_w + margin_x
+        height = num_lines * char_h + margin_y_top + margin_y_bottom
 
-        # create plot
-        x_range = Range1d(min(x_min, y_min), max(x_max, y_max))
-        y_range = Range1d(min(x_min, y_min), max(x_max, y_max))
-
-        self.plot = Plot(width=self.GRAPH_SIZE_PX,
-                         height=self.GRAPH_SIZE_PX,
-                         x_range=x_range,
-                         y_range=y_range)
-
-        # add tools
-        self.plot.add_tools(ResetTool(), SaveTool(),
-                            WheelZoomTool(), PanTool())
-
-    def _calculate_text_dimensions(self, text: str) -> tuple[float, float]:
-        """Calculate width and height needed for text based on actual text length"""
-        # Calculate width based on character count
-        text_length = len(text)
-        width = (text_length * self.char_width) + (2 * self.padding)
-
-        # Reduced height for more compact rectangles
-        height = self.char_height + self.padding
+        if text == "start":
+            height = width
 
         return width, height
 
-    def _add_nodes_with_labels(self):
+    def _compute_layout(self):
+        levels = self._compute_levels()
+
+        # group by level
+        by_level = {}
+        for node, lvl in levels.items():
+            by_level.setdefault(lvl, []).append(node)
+
+        self.node_layout = {}
+        self.node_props = {}
+
+        # Compute vertical positions dynamically
+        layer_y_positions = {}
+        current_y = 0  # start at top
+        for lvl in sorted(by_level.keys()):
+            nodes = by_level[lvl]
+
+            # Compute max height in this level
+            max_h = 0
+            for n in nodes:
+                w, h = self._measure_rect(self.G.nodes[n]["label"])
+                max_h = max(max_h, h)
+                self.node_props[n] = {"w": w, "h": h}
+
+            # assign y for this level
+            layer_y_positions[lvl] = current_y
+
+            # next layer y = current y - max height - margin
+            current_y -= max_h + self.NODE_MARGIN
+
+        # Compute horizontal positions
+        for lvl, nodes in by_level.items():
+            nodes.sort()
+            total_width = 0
+            widths = []
+            heights = []
+
+            for n in nodes:
+                label = self.G.nodes[n]["label"]
+                w, h = self._measure_rect(label)
+                widths.append(w)
+                heights.append(h)
+                self.node_props[n] = {"w": w, "h": h}
+
+                total_width += widths[-1]
+
+            # add spacing
+            total_width += self.NODE_X_SPACING * (len(nodes) - 1)
+
+            # center horizontally
+            x_start = -total_width / 2
+            x = x_start
+            y = layer_y_positions[lvl]
+
+            for i, n in enumerate(nodes):
+                w = widths[i]
+                h = heights[i]
+                cx = x + w / 2
+                cy = y - h / 2
+                self.node_layout[n] = (cx, cy)
+                self.node_props[n]["x"] = cx
+                self.node_props[n]["y"] = cy
+                x += widths[i] + self.NODE_X_SPACING
+
+    # ============================================================
+    # Geometry
+    # ============================================================
+
+    def _line_to_rect_border(self, x1, y1, x2, y2, w, h):
         """
-        Add nodes with text labels inside them
+        Intersection of line (x1,y1)->(x2,y2) with rectangle centered at (x2,y2).
         """
-        node_labels = nx.get_node_attributes(self.graph.networkx, "label")
+        dx = x2 - x1
+        dy = y2 - y1
+        L = sqrt(dx*dx + dy*dy)
+        if L == 0:
+            return x2, y2
 
-        # Create data sources for nodes and labels
-        circle_data = dict(x=[], y=[], radius=[], label=[], color=[], text_color=[])
-        rect_data = dict(x=[], y=[], width=[], height=[], label=[], color=[], text_color=[])
-        text_data = dict(x=[], y=[], text=[], text_color=[])
+        dx /= L
+        dy /= L
 
-        for node in self.graph.networkx.nodes:
-            # Labels are always defined and cannot be lists
-            label = node_labels[node]
-            label = self._cap_name(label)
-            x, y = self.graph_layout[node]
+        tx = (w/2) / abs(dx) if dx != 0 else float("inf")
+        ty = (h/2) / abs(dy) if dy != 0 else float("inf")
+        t = min(tx, ty)
+        return x2 - dx*t, y2 - dy*t
 
-            # Determine if node is executed
-            is_executed = node in self.executed_nodes
-            node_color = self.EXECUTED_NODE_COLOR if is_executed else self.UNEXECUTED_NODE_COLOR
-            text_color = self.EXECUTED_TEXT_COLOR if is_executed else self.UNEXECUTED_TEXT_COLOR
+    # ============================================================
+    # Drawing
+    # ============================================================
 
-            if node == 'start':
-                # For start node (circle), calculate radius based on text width
-                text_width, text_height = self._calculate_text_dimensions(
-                    label)
-                # Calculate radius from text dimensions
-                radius = (text_width / 2.5)
+    def generate_html(self):
+        self._compute_layout()
 
-                circle_data['x'].append(x)
-                circle_data['y'].append(y)
-                circle_data['radius'].append(radius)
-                circle_data['label'].append(label)
-                circle_data['color'].append(node_color)
-                circle_data['text_color'].append(text_color)
+        fig = figure(width=800, height=800,
+                     toolbar_location="right",
+                     x_range=(-10, 10), y_range=(-20, 5))
 
-                # Store node properties for arrow calculations
-                self.node_props[node] = {
-                    'type': 'circle', 'x': x, 'y': y, 'radius': radius, 'label': label}
+        # --------------------------
+        # Nodes
+        # --------------------------
+        rects = dict(x=[], y=[], w=[], h=[], color=[])
+        label_data = dict(x=[], y=[], text=[], color=[])
 
-            else:
-                # For scenario nodes (rectangles), calculate dimensions based on text
-                text_width, text_height = self._calculate_text_dimensions(
-                    label)
+        rects = dict(x=[], y=[], w=[], h=[], color=[])
+        labels = dict(x=[], y=[], text=[], color=[])
 
-                rect_data['x'].append(x)
-                rect_data['y'].append(y)
-                rect_data['width'].append(text_width)
-                rect_data['height'].append(text_height)
-                rect_data['label'].append(label)
-                rect_data['color'].append(node_color)
-                rect_data['text_color'].append(text_color)
+        for node in self.G.nodes:
+            label = self.G.nodes[node]["label"]
+            x, y = self.node_layout[node]
 
-                # Store node properties for arrow calculations
-                self.node_props[node] = {'type': 'rect', 'x': x, 'y': y, 'width': text_width, 'height': text_height,
-                                         'label': label}
+            is_exec = node in self.executed_nodes
+            color = self.EXECUTED_NODE_COLOR if is_exec else self.UNEXECUTED_NODE_COLOR
+            text_color = self.EXECUTED_TEXT_COLOR if is_exec else self.UNEXECUTED_TEXT_COLOR
 
-            # Add text for all nodes
-            text_data['x'].append(x)
-            text_data['y'].append(y)
-            text_data['text'].append(label)
-            text_data['text_color'].append(text_color)
-
-        # Add circles for start node
-        if circle_data['x']:
-            circle_source = ColumnDataSource(circle_data)
-            circles = Circle(x='x', y='y', radius='radius',
-                             fill_color='color', line_color='color')
-            self.plot.add_glyph(circle_source, circles)
-
-        # Add rectangles for scenario nodes
-        if rect_data['x']:
-            rect_source = ColumnDataSource(rect_data)
-            rectangles = Rect(x='x', y='y', width='width', height='height',
-                              fill_color='color', line_color='color')
-            self.plot.add_glyph(rect_source, rectangles)
-
-        # Add text labels for all nodes
-        text_source = ColumnDataSource(text_data)
-        text_labels = Text(x='x', y='y', text='text',
-                           text_align='center', text_baseline='middle',
-                           text_color='text_color', text_font_size='9pt')
-        self.plot.add_glyph(text_source, text_labels)
-
-    def _get_edge_points(self, start_node, end_node):
-        """Calculate edge start and end points at node borders"""
-        start_props = self.node_props.get(start_node)
-        end_props = self.node_props.get(end_node)
-
-        # Node properties should always exist
-        if not start_props or not end_props:
-            raise ValueError(
-                f"Node properties not found for nodes: {start_node}, {end_node}")
-
-        # Calculate direction vector
-        dx = end_props['x'] - start_props['x']
-        dy = end_props['y'] - start_props['y']
-        distance = sqrt(dx * dx + dy * dy)
-
-        # Self-loops are handled separately, distance should never be 0
-        if distance == 0:
-            raise ValueError(
-                "Distance between different nodes should not be zero")
-
-        # Normalize direction vector
-        dx /= distance
-        dy /= distance
-
-        # Calculate start point at border
-        if start_props['type'] == 'circle':
-            start_x = start_props['x'] + dx * start_props['radius']
-            start_y = start_props['y'] + dy * start_props['radius']
-        else:
-            # Find where the line intersects the rectangle border
-            rect_width = start_props['width']
-            rect_height = start_props['height']
-
-            # Calculate scaling factors for x and y directions
-            scale_x = rect_width / (2 * abs(dx)) if dx != 0 else float('inf')
-            scale_y = rect_height / (2 * abs(dy)) if dy != 0 else float('inf')
-
-            # Use the smaller scale to ensure we hit the border
-            scale = min(scale_x, scale_y)
-
-            start_x = start_props['x'] + dx * scale
-            start_y = start_props['y'] + dy * scale
-
-        # Calculate end point at border (reverse direction)
-        # End nodes should never be circles for regular edges
-        if end_props['type'] == 'circle':
-            raise ValueError(
-                f"End node should not be a circle for regular edges: {end_node}")
-        else:
-            rect_width = end_props['width']
-            rect_height = end_props['height']
-
-            # Calculate scaling factors for x and y directions (reverse)
-            scale_x = rect_width / (2 * abs(dx)) if dx != 0 else float('inf')
-            scale_y = rect_height / (2 * abs(dy)) if dy != 0 else float('inf')
-
-            # Use the smaller scale to ensure we hit the border
-            scale = min(scale_x, scale_y)
-
-            end_x = end_props['x'] - dx * scale
-            end_y = end_props['y'] - dy * scale
-
-        return start_x, start_y, end_x, end_y
-
-    def add_self_loop(self, node_id: str):
-        """
-        Circular arc that starts and ends at the top side of the rectangle
-        Start at 1/4 width, end at 3/4 width, with a circular arc above
-        The arc itself ends with the arrowhead pointing into the rectangle
-        """
-        # Get node properties directly by node ID
-        node_props = self.node_props.get(node_id)
-
-        # Node properties should always exist
-        if node_props is None:
-            raise ValueError(f"Node properties not found for node: {node_id}")
-
-        # Self-loops should only be for rectangle nodes (scenarios)
-        if node_props['type'] != 'rect':
-            raise ValueError(
-                f"Self-loops should only be for rectangle nodes, got: {node_props['type']}")
-
-        x, y = node_props['x'], node_props['y']
-        width = node_props['width']
-        height = node_props['height']
-
-        # Start: 1/4 width from left, top side
-        start_x = x - width / 4
-        start_y = y + height / 2
-
-        # End: 3/4 width from left, top side
-        end_x = x + width / 4
-        end_y = y + height / 2
-
-        # Arc height above the rectangle
-        arc_height = width * 0.4
-
-        # Control points for a circular arc above
-        control1_x = x - width / 8
-        control1_y = y + height / 2 + arc_height
-
-        control2_x = x + width / 8
-        control2_y = y + height / 2 + arc_height
-
-        # Determine if edge is executed
-        is_executed = (node_id, node_id) in self.executed_edges
-        edge_color = self.EXECUTED_EDGE_COLOR if is_executed else self.UNEXECUTED_EDGE_COLOR
-        edge_width = self.EXECUTED_EDGE_WIDTH if is_executed else self.UNEXECUTED_EDGE_WIDTH
-        edge_alpha = self.EXECUTED_EDGE_ALPHA if is_executed else self.UNEXECUTED_EDGE_ALPHA
-
-        # Create the Bezier curve (the main arc) with the same thickness as straight lines
-        loop = Bezier(
-            x0=start_x, y0=start_y,
-            x1=end_x, y1=end_y,
-            cx0=control1_x, cy0=control1_y,
-            cx1=control2_x, cy1=control2_y,
-            line_color=edge_color,
-            line_width=edge_width,
-            line_alpha=edge_alpha,
-        )
-        self.plot.add_glyph(loop)
-
-        # Calculate the tangent direction at the end of the Bezier curve
-        # For a cubic Bezier, the tangent at the end point is from the last control point to the end point
-        tangent_x = end_x - control2_x
-        tangent_y = end_y - control2_y
-
-        # Normalize the tangent vector
-        tangent_length = sqrt(tangent_x ** 2 + tangent_y ** 2)
-        if tangent_length > 0:
-            tangent_x /= tangent_length
-            tangent_y /= tangent_length
-
-        # Add just the arrowhead (NormalHead) at the end point, oriented along the tangent
-        arrowhead = NormalHead(
-            size=NetworkVisualiser.ARROWHEAD_SIZE,
-            line_color=edge_color,
-            fill_color=edge_color,
-            line_width=edge_width
-        )
-
-        # Create a standalone arrowhead at the end point
-        # Strategy: use a very short Arrow that's essentially just the head
-        arrow = Arrow(
-            end=arrowhead,
-            x_start=end_x - tangent_x * 0.001,  # Almost zero length line
-            y_start=end_y - tangent_y * 0.001,
-            x_end=end_x,
-            y_end=end_y,
-            line_color=edge_color,
-            line_width=edge_width,
-            line_alpha=edge_alpha
-        )
-        self.plot.add_layout(arrow)
-
-        # Add edge label - positioned above the arc
-        label_x = x
-        label_y = y + height / 2 + arc_height * 0.6
-
-        return label_x, label_y
-
-    def _add_edges(self):
-        edge_labels = nx.get_edge_attributes(self.graph.networkx, "label")
-
-        # Create data sources for edges and edge labels
-        edge_text_data = dict(x=[], y=[], text=[], text_color=[])
-
-        for edge in self.graph.networkx.edges():
-            # Edge labels are always defined and cannot be lists
-            edge_label = edge_labels[edge]
-            edge_label = self._cap_name(edge_label)
-
-            # Determine if edge is executed
-            is_executed = edge in self.executed_edges
-            edge_color = self.EXECUTED_EDGE_COLOR if is_executed else self.UNEXECUTED_EDGE_COLOR
-            edge_width = self.EXECUTED_EDGE_WIDTH if is_executed else self.UNEXECUTED_EDGE_WIDTH
-            edge_alpha = self.EXECUTED_EDGE_ALPHA if is_executed else self.UNEXECUTED_EDGE_ALPHA
-            label_color = self.EXECUTED_LABEL_COLOR if is_executed else self.UNEXECUTED_LABEL_COLOR
-
-            edge_text_data['text'].append(edge_label)
-            edge_text_data['text_color'].append(label_color)
-
-            if edge[0] == edge[1]:
-                # Self-loop handled separately
-                label_x, label_y = self.add_self_loop(edge[0])
-                edge_text_data['x'].append(label_x)
-                edge_text_data['y'].append(label_y)
-
-            else:
-                # Calculate edge points at node borders
-                start_x, start_y, end_x, end_y = self._get_edge_points(
-                    edge[0], edge[1])
-
-                # Add arrow between the calculated points
-                arrow = Arrow(
-                    end=NormalHead(
-                        size=NetworkVisualiser.ARROWHEAD_SIZE,
-                        line_color=edge_color,
-                        fill_color=edge_color,
-                        line_width=edge_width),
-                    x_start=start_x, y_start=start_y,
-                    x_end=end_x, y_end=end_y,
-                    line_color=edge_color,
-                    line_width=edge_width,
-                    line_alpha=edge_alpha
+            if node == "start":
+                w, h = self._measure_rect(label)
+                diam = max(w, h)
+                fig.circle(x=x, y=y, radius=diam/2, color=color)
+                text_glyph = Text(
+                    x="x", y="y",
+                    text="text",
+                    text_align="center",
+                    text_baseline="middle",
+                    text_color="color",
+                    text_font_size="9pt"
                 )
-                self.plot.add_layout(arrow)
+                text_glyph.tags = ["scalable_text"]
+                fig.add_glyph(ColumnDataSource({"x": [x], "y": [y], "text": [label], "color": [text_color]}), text_glyph)
+                self.node_props[node] = {
+                    "diam": diam,
+                    "w": diam,  # needed for arrow computation
+                    "h": diam,
+                }
+            else:
+                w = self.node_props[node]["w"]
+                h = self.node_props[node]["h"]
 
-                # Collect edge label data (position at midpoint)
-                edge_text_data['x'].append((start_x + end_x) / 2)
-                edge_text_data['y'].append((start_y + end_y) / 2)
+                rects["x"].append(x)
+                rects["y"].append(y)
+                rects["w"].append(w)
+                rects["h"].append(h)
+                rects["color"].append(color)
 
-        # Add all edge labels at once
-        if edge_text_data['x']:
-            edge_text_source = ColumnDataSource(edge_text_data)
-            edge_labels_glyph = Text(x='x', y='y', text='text',
-                                     text_align='center', text_baseline='middle',
-                                     text_color='text_color', text_font_size='7pt')
-            self.plot.add_glyph(edge_text_source, edge_labels_glyph)
+                labels["x"].append(x - w / 2)  # left-aligned
+                labels["y"].append(y)
+                labels["text"].append(label)
+                labels["color"].append(text_color)
 
-    def _cap_name(self, name: str) -> str:
-        if len(name) < self.MAX_VERTEX_NAME_LEN or isinstance(self.graph, StateGraph) or isinstance(self.graph, ScenarioStateGraph):
-            return name
 
-        return f"{name[:(self.MAX_VERTEX_NAME_LEN - 3)]}..."
+        fig.rect("x", "y", "w", "h",
+                 fill_color="color", line_color="black",
+                 source=ColumnDataSource(rects))
 
-    def _calculate_graph_layout(self):
-        try:
-            self.graph_layout = nx.bfs_layout(
-                self.graph.networkx, 'start', align='horizontal')
-            # horizontal mirror
-            for node in self.graph_layout:
-                self.graph_layout[node] = (self.graph_layout[node][0],
-                                           -1 * self.graph_layout[node][1])
-        except nx.NetworkXException:
-            # if planar layout cannot find a graph without crossing edges
-            self.graph_layout = nx.arf_layout(self.graph.networkx, seed=42)
+        text_glyph = Text(
+            x="x", y="y",
+            text="text",
+            text_align="left",
+            text_baseline="middle",
+            text_color="color",
+            text_font_size="9pt"
+        )
+        text_glyph.tags = ["scalable_text"]
+
+        fig.add_glyph(ColumnDataSource(labels), text_glyph)
+
+        # --------------------------
+        # Edges
+        # --------------------------
+        for u, v in self.G.edges:
+            label = self.G[u][v].get("label")
+
+            ux, uy = self.node_layout[u]
+            vx, vy = self.node_layout[v]
+
+            is_exec = (u, v) in self.executed_edges
+            ec = self.EXECUTED_EDGE_COLOR if is_exec else self.UNEXECUTED_EDGE_COLOR
+            ew = self.EXECUTED_EDGE_WIDTH if is_exec else self.UNEXECUTED_EDGE_WIDTH
+            ea = self.EXECUTED_EDGE_ALPHA if is_exec else self.UNEXECUTED_EDGE_ALPHA
+
+            # border positions
+            ux2, uy2 = self._line_to_rect_border(vx, vy, ux, uy,
+                                                 self.node_props[u]["w"],
+                                                 self.node_props[u]["h"])
+            vx2, vy2 = self._line_to_rect_border(ux, uy, vx, vy,
+                                                 self.node_props[v]["w"],
+                                                 self.node_props[v]["h"])
+
+            fig.add_layout(Arrow(
+                x_start=ux2, y_start=uy2,
+                x_end=vx2, y_end=vy2,
+                end=NormalHead(size=self.ARROWHEAD_SIZE,
+                               fill_color=ec, line_color=ec),
+                line_color=ec, line_width=ew, line_alpha=ea
+            ))
+
+            if label:
+                mx, my = (ux2 + vx2) / 2, (uy2 + vy2) / 2
+                edge_label = Text(
+                    x="x", y="y", text="text",
+                    text_align="center", text_baseline="middle",
+                    text_color="black", text_font_size="7pt"
+                )
+                edge_label.tags = ["scalable_text"]
+                fig.add_glyph(
+                    ColumnDataSource(dict(x=[mx], y=[my], text=[label])),
+                    edge_label
+                )
+
+        # ============================================================
+        # Zoom-scaling for text (Bokeh 3.x API)
+        # ============================================================
+
+        # store initial span in tags
+        fig.x_range.tags = [{"initial_span": fig.x_range.end - fig.x_range.start}]
+        fig.y_range.tags = [{"initial_span": fig.y_range.end - fig.y_range.start}]
+
+        zoom_cb = CustomJS(args=dict(xr=fig.x_range, yr=fig.y_range, plot=fig), code="""
+            const xspan0 = xr.tags[0].initial_span;
+            const yspan0 = yr.tags[0].initial_span;
+
+            const xspan = xr.end - xr.start;
+            const yspan = yr.end - yr.start;
+
+            const zoom = Math.min(xspan0 / xspan, yspan0 / yspan);
+
+            for (const r of plot.renderers) {
+                if (r.glyph && r.glyph.tags && r.glyph.tags.includes("scalable_text")) {
+                    const base = 9;  // base pt size
+                    r.glyph.text_font_size = (base * zoom).toFixed(2) + "pt";
+                }
+            }
+            plot.request_render();
+        """)
+
+        fig.x_range.js_on_change("start", zoom_cb)
+        fig.x_range.js_on_change("end", zoom_cb)
+        fig.y_range.js_on_change("start", zoom_cb)
+        fig.y_range.js_on_change("end", zoom_cb)
+
+        return file_html(fig, CDN, "graph")

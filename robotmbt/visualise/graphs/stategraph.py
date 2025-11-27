@@ -1,3 +1,5 @@
+from robot.api import logger
+
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 from robotmbt.visualise.models import TraceInfo, StateInfo, ScenarioInfo
 from robotmbt.modelspace import ModelSpace
@@ -43,8 +45,7 @@ class StateGraph(AbstractGraph):
 
                 if (self.node_stack[-2], self.node_stack[-1]) not in self.networkx.edges:
                     self.networkx.add_edge(
-                        self.node_stack[-2], self.node_stack[-1], label=info.trace[-push_count+i].name)
-
+                        self.node_stack[-2], self.node_stack[-1], label=info.trace[-push_count + i].name)
 
         elif self.prev_trace_len > len(info.trace):
             # States removed - remove from stack
@@ -53,7 +54,7 @@ class StateGraph(AbstractGraph):
                 if len(self.node_stack) > 1:  # Always keep 'start'
                     self.node_stack.pop()
                 else:
-                    raise Exception("Tried to rollback more than was previously added to the stack!")
+                    logger.warn("Tried to rollback more than was previously added to the stack!")
 
         self.prev_trace_len = len(info.trace)
 

@@ -22,9 +22,6 @@ class ScenarioStateGraph(AbstractGraph):
         # add the start node
         self.networkx.add_node('start', label='start')
 
-        # indicates last scenario of trace
-        self.end_node = 'start'
-
         self.start_scenario: ScenarioInfo | None = None
         self.start_state: StateInfo | None = None
 
@@ -88,12 +85,6 @@ class ScenarioStateGraph(AbstractGraph):
         self._add_node(node)
         self.networkx.add_edge('start', node, label='')
 
-    def _set_ending_node(self, scenario: ScenarioInfo, state: StateInfo):
-        """
-        Update the end node.
-        """
-        self.end_node = self._get_or_create_id(scenario, state)
-
     def set_final_trace(self, info: TraceInfo):
         """
         Update the graph with information on the final trace.
@@ -103,7 +94,6 @@ class ScenarioStateGraph(AbstractGraph):
             self.start_state = info.state  # fallback if a trace with multiple nodes instantly materializes
         first_node = self.ids[self._get_or_create_id(self.start_scenario, self.start_state)]
         self._set_starting_node(first_node[0], first_node[1])
-        self._set_ending_node(info.trace[-1], info.state)
 
     @property
     def networkx(self) -> nx.DiGraph:

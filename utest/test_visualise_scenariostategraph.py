@@ -140,13 +140,6 @@ if VISUALISE:
             edge_labels = nx.get_edge_attributes(stg.networkx, "label")
             self.assertEqual(edge_labels[('start', node_id)], '')
 
-        def test_scenario_state_graph_set_end_node(self):
-            stg = ScenarioStateGraph()
-            si = ScenarioInfo('test')
-            node_id = stg._get_or_create_id(si, StateInfo(ModelSpace()))
-            stg._set_ending_node(si, StateInfo(ModelSpace()))
-            self.assertEqual(stg.end_node, node_id)
-
         def test_scenario_state_graph_set_final_trace(self):
             ts = TraceState(3)
             candidates = []
@@ -159,8 +152,6 @@ if VISUALISE:
             stg.set_final_trace(ti)
             # test start node
             self.assertIn(('start', 'node0'), stg.networkx.edges)
-            # test end node
-            self.assertEqual(stg.end_node, 'node2')
 
 if __name__ == '__main__':
     unittest.main()

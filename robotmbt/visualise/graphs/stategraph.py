@@ -26,6 +26,9 @@ class StateGraph(AbstractGraph):
         # Store executed nodes and edges for visual differentiation
         self.executed_nodes: set[str] = set()
         self.executed_edges: set[tuple[str, str]] = set()
+        
+        # Stack to track the current execution path
+        self.state_stack: list[str] = ['start']
         self.executed_nodes.add('start')
 
     def update_visualisation(self, info: TraceInfo):
@@ -45,14 +48,20 @@ class StateGraph(AbstractGraph):
             self._add_node(to_node)
 
             if self.prev_trace_len < len(info.trace):
+                # Moving forward - add new state to stack
                 if (from_node, to_node) not in self.networkx.edges:
                     self.networkx.add_edge(
                         from_node, to_node, label=scenario.name)
+                
+                # Update stack - push new state
+                self.state_stack.append(to_node)
                     
-                # Track executed elements
-                self.executed_nodes.add(from_node)
-                self.executed_nodes.add(to_node)
-                self.executed_edges.add((from_node, to_node))
+            elif self.prev_trace_len > len(info.trace):
+                # Backtracking - pop states from stack
+                pop_count = self.prev_trace_len - len(info.trace)
+                for _ in range(pop_count):
+                    if len(self.state_stack) > 1:  # Always keep 'start'
+                        self.state_stack.pop()
 
         self.prev_state = info.state
         self.prev_trace_len = len(info.trace)
@@ -78,6 +87,19 @@ class StateGraph(AbstractGraph):
 
     def set_final_trace(self, info: TraceInfo):
         self._set_ending_node(info.state)
+        
+        # Build sets of executed nodes and edges from the final state stack
+        self.executed_nodes.clear()
+        self.executed_edges.clear()
+        
+        # All states in the final stack are executed
+        self.executed_nodes.update(self.state_stack)
+        
+        # Build executed edges from consecutive states in the stack
+        for i in range(len(self.state_stack) - 1):
+            from_node = self.state_stack[i]
+            to_node = self.state_stack[i + 1]
+            self.executed_edges.add((from_node, to_node))
 
     def _set_ending_node(self, state: StateInfo):
         """

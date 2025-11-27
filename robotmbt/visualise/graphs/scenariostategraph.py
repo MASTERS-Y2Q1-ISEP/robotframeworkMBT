@@ -5,13 +5,6 @@ from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 from robotmbt.visualise.models import TraceInfo, ScenarioInfo, StateInfo
 
 
-def _gen_label(scenario: ScenarioInfo, state: StateInfo) -> str:
-    """
-    Creates the label for a node in a Scenario-State Graph from the scenario and state associated to it.
-    """
-    return scenario.name + "\n\r" + str(state)
-
-
 class ScenarioStateGraph(AbstractGraph):
     """
     The scenario-State graph keeps track of both the scenarios and states encountered.
@@ -64,20 +57,28 @@ class ScenarioStateGraph(AbstractGraph):
         """
         Get the ID for a scenario that has been added before, or create and store a new one.
         """
-        for i in self.ids.keys():
-            if self.ids[i][0].src_id == scenario.src_id and self.ids[i][1] == state and scenario.src_id is not None:
-                return i
+        if scenario.src_id is not None:
+            for i in self.ids.keys():
+                if self.ids[i][0].src_id == scenario.src_id and self.ids[i][1] == state:
+                    return i
 
         new_id = f"node{len(self.ids)}"
         self.ids[new_id] = (scenario, state)
         return new_id
+
+    @staticmethod
+    def _gen_label(scenario: ScenarioInfo, state: StateInfo) -> str:
+        """
+        Creates the label for a node in a Scenario-State Graph from the scenario and state associated to it.
+        """
+        return scenario.name + "\n\r" + str(state)
 
     def _add_node(self, node: str):
         """
         Add node if it doesn't already exist.
         """
         if node not in self.networkx.nodes:
-            self.networkx.add_node(node, label=_gen_label(self.ids[node][0], self.ids[node][1]))
+            self.networkx.add_node(node, label=self._gen_label(self.ids[node][0], self.ids[node][1]))
 
     def _set_starting_node(self, scenario: ScenarioInfo, state: StateInfo):
         """

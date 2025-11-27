@@ -2,7 +2,7 @@ import unittest
 import networkx as nx
 from robotmbt.tracestate import TraceState
 try:
-    from robotmbt.visualise.graphs.scenariostategraph import ScenarioStateGraph, _gen_label
+    from robotmbt.visualise.graphs.scenariostategraph import ScenarioStateGraph
     from robotmbt.visualise.models import TraceInfo, ScenarioInfo, ModelSpace, StateInfo
 
     VISUALISE = True
@@ -56,7 +56,7 @@ if VISUALISE:
             stg._add_node('test')
             self.assertIn('test', stg.networkx.nodes)
             self.assertEqual(stg.networkx.nodes['test']['label'],
-                             _gen_label(ScenarioInfo('test'), StateInfo(ModelSpace())))
+                             ScenarioStateGraph._gen_label(ScenarioInfo('test'), StateInfo(ModelSpace())))
 
         def test_scenario_state_graph_add_existing_node(self):
             stg = ScenarioStateGraph()
@@ -76,13 +76,13 @@ if VISUALISE:
 
             self.assertIn('node0', stg.networkx.nodes)
             self.assertEqual(stg.networkx.nodes['node0']['label'],
-                             _gen_label(ScenarioInfo(str(0)), StateInfo(ModelSpace())))
+                             ScenarioStateGraph._gen_label(ScenarioInfo(str(0)), StateInfo(ModelSpace())))
             self.assertIn('node1', stg.networkx.nodes)
             self.assertEqual(stg.networkx.nodes['node1']['label'],
-                             _gen_label(ScenarioInfo(str(1)), StateInfo(ModelSpace())))
+                             ScenarioStateGraph._gen_label(ScenarioInfo(str(1)), StateInfo(ModelSpace())))
             self.assertIn('node2', stg.networkx.nodes)
             self.assertEqual(stg.networkx.nodes['node2']['label'],
-                             _gen_label(ScenarioInfo(str(2)), StateInfo(ModelSpace())))
+                             ScenarioStateGraph._gen_label(ScenarioInfo(str(2)), StateInfo(ModelSpace())))
 
         def test_scenario_state_graph_update_visualisation_edges(self):
             ts = TraceState(3)
@@ -120,7 +120,8 @@ if VISUALISE:
             node_id = stg._get_or_create_id(si, StateInfo(ModelSpace()))
             # node
             self.assertIn(node_id, stg.networkx.nodes)
-            self.assertEqual(stg.networkx.nodes[node_id]['label'], _gen_label(si, StateInfo(ModelSpace())))
+            self.assertEqual(stg.networkx.nodes[node_id]['label'],
+                             ScenarioStateGraph._gen_label(si, StateInfo(ModelSpace())))
 
             # edge
             self.assertIn(('start', node_id), stg.networkx.edges)
@@ -161,5 +162,5 @@ if VISUALISE:
             # test end node
             self.assertEqual(stg.end_node, 'node2')
 
-            if __name__ == '__main__':
-                unittest.main()
+if __name__ == '__main__':
+    unittest.main()

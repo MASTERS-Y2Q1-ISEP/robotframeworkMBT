@@ -1,4 +1,5 @@
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
+from robotmbt.visualise.graphs.scenariostategraph import ScenarioStateGraph
 from robotmbt.visualise.graphs.stategraph import StateGraph
 from bokeh.palettes import Spectral4
 from bokeh.models import (
@@ -421,7 +422,7 @@ class NetworkVisualiser:
             self.plot.add_glyph(edge_text_source, edge_labels_glyph)
 
     def _cap_name(self, name: str) -> str:
-        if len(name) < self.MAX_VERTEX_NAME_LEN or isinstance(self.graph, StateGraph):
+        if len(name) < self.MAX_VERTEX_NAME_LEN or isinstance(self.graph, StateGraph) or isinstance(self.graph, ScenarioStateGraph):
             return name
 
         return f"{name[:(self.MAX_VERTEX_NAME_LEN - 3)]}..."

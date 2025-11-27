@@ -1,5 +1,5 @@
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
-from robotmbt.visualise.models import TraceInfo, StateInfo
+from robotmbt.visualise.models import TraceInfo, StateInfo, ScenarioInfo
 from robotmbt.modelspace import ModelSpace
 import networkx as nx
 
@@ -20,7 +20,7 @@ class StateGraph(AbstractGraph):
         # add the start node
         self.networkx.add_node('start', label='start')
 
-        self.prev_state = None
+        # To check if we've backtracked
         self.prev_trace_len = 0
 
         # Stack to track the current execution path
@@ -31,26 +31,20 @@ class StateGraph(AbstractGraph):
         This will add nodes the newly reached state (if we did not roll back), as well as an edge from the previous to
         the current state labeled with the scenario that took it there.
         """
-        if len(info.trace) == 0:
-            self.prev_trace_len = 0
-            self.prev_state = None
-            return
-
-        scenario = info.trace[-1]
-
-        from_node = self._get_or_create_id(self.prev_state)
-        to_node = self._get_or_create_id(info.state)
+        node = self._get_or_create_id(info.state)
 
         if self.prev_trace_len < len(info.trace):
             # New state added - add to stack
-            self.node_stack.append(to_node)
+            push_count = len(info.trace) - self.prev_trace_len
+            for i in range(push_count):
+                self.node_stack.append(node)
+                self._add_node(self.node_stack[-2])
+                self._add_node(self.node_stack[-1])
 
-            self._add_node(from_node)
-            self._add_node(to_node)
+                if (self.node_stack[-2], self.node_stack[-1]) not in self.networkx.edges:
+                    self.networkx.add_edge(
+                        self.node_stack[-2], self.node_stack[-1], label=info.trace[-push_count+i].name)
 
-            if (from_node, to_node) not in self.networkx.edges:
-                self.networkx.add_edge(
-                    from_node, to_node, label=scenario.name)
 
         elif self.prev_trace_len > len(info.trace):
             # States removed - remove from stack
@@ -61,7 +55,6 @@ class StateGraph(AbstractGraph):
                 else:
                     raise Exception("Tried to rollback more than was previously added to the stack!")
 
-        self.prev_state = info.state
         self.prev_trace_len = len(info.trace)
 
     def set_final_trace(self, info: TraceInfo):

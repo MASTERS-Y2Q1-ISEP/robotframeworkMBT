@@ -27,14 +27,14 @@ class NetworkVisualiser:
     # in px, needs to be equal for height and width otherwise calculations are wrong
     GRAPH_SIZE_PX: int = 600
     MAX_VERTEX_NAME_LEN: int = 20  # no. of characters
-    
+
     # Colors and styles for executed vs unexecuted elements
     EXECUTED_NODE_COLOR = Spectral4[0]  # Bright blue
-    UNEXECUTED_NODE_COLOR = '#D3D3D3'   # Light gray
+    UNEXECUTED_NODE_COLOR = '#D3D3D3'  # Light gray
     EXECUTED_TEXT_COLOR = 'white'
-    UNEXECUTED_TEXT_COLOR = '#A9A9A9'   # Dark gray
+    UNEXECUTED_TEXT_COLOR = '#A9A9A9'  # Dark gray
     EXECUTED_EDGE_COLOR = (12, 12, 12)  # Black
-    UNEXECUTED_EDGE_COLOR = '#808080'   # Gray
+    UNEXECUTED_EDGE_COLOR = '#808080'  # Gray
     EXECUTED_EDGE_WIDTH = 2.5
     UNEXECUTED_EDGE_WIDTH = 1.2
     EXECUTED_EDGE_ALPHA = 0.7
@@ -53,7 +53,7 @@ class NetworkVisualiser:
         self.char_width = 0.1
         self.char_height = 0.1
         self.padding = 0.1
-        
+
         # Get executed elements for visual differentiation
         final_trace = graph.get_final_trace()
         self.executed_nodes = set(final_trace)
@@ -132,7 +132,7 @@ class NetworkVisualiser:
             label = node_labels[node]
             label = self._cap_name(label)
             x, y = self.graph_layout[node]
-            
+
             # Determine if node is executed
             is_executed = node in self.executed_nodes
             node_color = self.EXECUTED_NODE_COLOR if is_executed else self.UNEXECUTED_NODE_COLOR
@@ -371,7 +371,7 @@ class NetworkVisualiser:
             # Edge labels are always defined and cannot be lists
             edge_label = edge_labels[edge]
             edge_label = self._cap_name(edge_label)
-            
+
             # Determine if edge is executed
             is_executed = edge in self.executed_edges
             edge_color = self.EXECUTED_EDGE_COLOR if is_executed else self.UNEXECUTED_EDGE_COLOR

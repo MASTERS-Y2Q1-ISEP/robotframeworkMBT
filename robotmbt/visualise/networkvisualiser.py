@@ -55,7 +55,13 @@ class NetworkVisualiser:
         self.padding = 0.1
         
         # Get executed elements for visual differentiation
-        self.executed_nodes, self.executed_edges = graph.get_executed_elements()
+        final_trace = graph.get_final_trace()
+        self.executed_nodes = set(final_trace)
+        self.executed_edges = set()
+        for i in range(0, len(final_trace) - 1):
+            from_node = final_trace[i]
+            to_node = final_trace[i + 1]
+            self.executed_edges.add((from_node, to_node))
 
     def generate_html(self) -> str:
         """

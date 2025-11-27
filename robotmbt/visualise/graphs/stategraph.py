@@ -20,7 +20,7 @@ class StateGraph(AbstractGraph):
         # add the start node
         self.networkx.add_node('start', label='start')
 
-        self.prev_state = StateInfo(ModelSpace())
+        self.prev_state = None
         self.prev_trace_len = 0
 
         # Stack to track the current execution path
@@ -32,16 +32,13 @@ class StateGraph(AbstractGraph):
         the current state labeled with the scenario that took it there.
         """
         if len(info.trace) == 0:
-            self.prev_trace_len = len(info.trace)
-            self.prev_state = info.state
+            self.prev_trace_len = 0
+            self.prev_state = None
             return
 
         scenario = info.trace[-1]
 
-        if len(info.trace) > 1:
-            from_node = self._get_or_create_id(self.prev_state)
-        else:
-            from_node = 'start'
+        from_node = self._get_or_create_id(self.prev_state)
         to_node = self._get_or_create_id(info.state)
 
         if self.prev_trace_len < len(info.trace):
@@ -61,6 +58,8 @@ class StateGraph(AbstractGraph):
             for _ in range(pop_count):
                 if len(self.node_stack) > 1:  # Always keep 'start'
                     self.node_stack.pop()
+                else:
+                    raise Exception("Tried to rollback more than was previously added to the stack!")
 
         self.prev_state = info.state
         self.prev_trace_len = len(info.trace)
@@ -73,10 +72,13 @@ class StateGraph(AbstractGraph):
         # The final trace is simply the state stack we've been keeping track of
         return self.node_stack
 
-    def _get_or_create_id(self, state: StateInfo) -> str:
+    def _get_or_create_id(self, state: StateInfo | None) -> str:
         """
         Get the ID for a state that has been added before, or create and store a new one.
         """
+        if state is None:
+            return 'start'
+
         for i in self.ids.keys():
             if self.ids[i] == state:
                 return i

@@ -24,7 +24,7 @@ class StateGraph(AbstractGraph):
         self.prev_trace_len = 0
 
         # Stack to track the current execution path
-        self.state_stack: list[str] = ['start']
+        self.node_stack: list[str] = ['start']
 
     def update_visualisation(self, info: TraceInfo):
         """
@@ -43,12 +43,12 @@ class StateGraph(AbstractGraph):
             from_node = 'start'
         to_node = self._get_or_create_id(info.state)
 
-        self._add_node(from_node)
-        self._add_node(to_node)
-
         if self.prev_trace_len < len(info.trace):
             # New state added - add to stack
-            self.state_stack.append(to_node)
+            self.node_stack.append(to_node)
+
+            self._add_node(from_node)
+            self._add_node(to_node)
 
             if (from_node, to_node) not in self.networkx.edges:
                 self.networkx.add_edge(
@@ -58,8 +58,8 @@ class StateGraph(AbstractGraph):
             # States removed - remove from stack
             pop_count = self.prev_trace_len - len(info.trace)
             for _ in range(pop_count):
-                if len(self.state_stack) > 1:  # Always keep 'start'
-                    self.state_stack.pop()
+                if len(self.node_stack) > 1:  # Always keep 'start'
+                    self.node_stack.pop()
 
         self.prev_state = info.state
         self.prev_trace_len = len(info.trace)
@@ -70,7 +70,7 @@ class StateGraph(AbstractGraph):
 
     def get_final_trace(self) -> list[str]:
         # The final trace is simply the state stack we've been keeping track of
-        return self.state_stack
+        return self.node_stack
 
     def _get_or_create_id(self, state: StateInfo) -> str:
         """

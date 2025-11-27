@@ -162,6 +162,33 @@ if VISUALISE:
             self.assertEqual(edge_labels[('node0', 'node1')], '2')
             self.assertEqual(edge_labels[('node1', 'node0')], '3')
 
+        def test_state_graph_update_self_loop(self):
+            sg = StateGraph()
+
+            scenario1 = ScenarioInfo('1')
+            scenario2 = ScenarioInfo('2')
+
+            space1 = create_space_with_prop("prop", [("value", "some_value")])
+
+            ti1 = TraceInfo([scenario1], space1)
+            ti2 = TraceInfo([scenario1, scenario2], space1)
+
+            sg.update_visualisation(ti1)
+            sg.update_visualisation(ti2)
+
+            self.assertEqual(len(sg.networkx.nodes), 2)
+            self.assertEqual(len(sg.networkx.edges), 2)
+
+            self.assertEqual(sg.networkx.nodes['start']['label'], 'start')
+            self.assertEqual(sg.networkx.nodes['node0']['label'], str(StateInfo(space1)))
+
+            self.assertIn(('start', 'node0'), sg.networkx.edges)
+            self.assertIn(('node0', 'node0'), sg.networkx.edges)
+
+            edge_labels = nx.get_edge_attributes(sg.networkx, "label")
+            self.assertEqual(edge_labels[('start', 'node0')], '1')
+            self.assertEqual(edge_labels[('node0', 'node0')], '2')
+
 
     def create_space_with_prop(name: str, attrs: list[tuple[str, Any]]) -> ModelSpace:
         space = ModelSpace()

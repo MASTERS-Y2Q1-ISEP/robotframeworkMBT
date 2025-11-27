@@ -359,7 +359,7 @@ class NetworkVisualiser:
         label_x = x
         label_y = y + height / 2 + arc_height * 0.6
 
-        return label_x, label_y, is_executed
+        return label_x, label_y
 
     def _add_edges(self):
         edge_labels = nx.get_edge_attributes(self.graph.networkx, "label")
@@ -384,7 +384,7 @@ class NetworkVisualiser:
 
             if edge[0] == edge[1]:
                 # Self-loop handled separately
-                label_x, label_y, is_executed_loop = self.add_self_loop(edge[0])
+                label_x, label_y = self.add_self_loop(edge[0])
                 edge_text_data['x'].append(label_x)
                 edge_text_data['y'].append(label_y)
 

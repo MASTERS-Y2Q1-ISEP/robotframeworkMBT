@@ -38,8 +38,9 @@ class StateGraph(AbstractGraph):
 
         scenario = info.trace[-1]
 
-        from_node = self._get_or_create_id(self.prev_state)
-        if len(info.trace) == 1:
+        if len(info.trace) > 1:
+            from_node = self._get_or_create_id(self.prev_state)
+        else:
             from_node = 'start'
         to_node = self._get_or_create_id(info.state)
 

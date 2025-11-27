@@ -1,9 +1,11 @@
 import unittest
 import networkx as nx
 from robotmbt.tracestate import TraceState
+
 try:
     from robotmbt.visualise.graphs.scenariograph import ScenarioGraph
     from robotmbt.visualise.models import TraceInfo, ScenarioInfo, ModelSpace
+
     VISUALISE = True
 except ImportError:
     VISUALISE = False
@@ -127,8 +129,8 @@ if VISUALISE:
             for node in trace:
                 self.assertIn(node, sg.networkx.nodes)
             # confirm the edges exist
-            for i in range(0, len(trace)-1):
-                self.assertIn((trace[i], trace[i+1]), sg.networkx.edges)
+            for i in range(0, len(trace) - 1):
+                self.assertIn((trace[i], trace[i + 1]), sg.networkx.edges)
 
 if __name__ == '__main__':
     unittest.main()

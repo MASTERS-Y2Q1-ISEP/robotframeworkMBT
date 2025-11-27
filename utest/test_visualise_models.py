@@ -49,8 +49,8 @@ if VISUALISE:
             prop1.value = 1
             space.props['prop1'] = prop1
             s = StateInfo(space)
-            self.assertTrue('prop1:\n' in str(s))
-            self.assertTrue('value=1\n' in str(s))
+            self.assertTrue('prop1:' in str(s))
+            self.assertTrue('value=1' in str(s))
 
         def test_stateInfo_prop_val_empty(self):
             space = ModelSpace()

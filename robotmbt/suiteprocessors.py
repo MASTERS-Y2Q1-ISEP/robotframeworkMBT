@@ -53,7 +53,6 @@ except ImportError:
     VISUALISE = False
 
 
-
 class SuiteProcessors:
     @staticmethod
     def echo(in_suite):

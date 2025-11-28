@@ -48,15 +48,6 @@ class ScenarioGraph(AbstractGraph):
     def get_final_trace(self) -> list[str]:
         return self.final_trace
 
-            if i == 0 and ('start', from_node) not in self.networkx.edges:
-                self.networkx.add_edge('start', from_node, label='')
-
-    def set_final_trace(self, info: TraceInfo):
-        self.final_trace.extend(map(lambda s: self._get_or_create_id(s), info.trace))
-
-    def get_final_trace(self) -> list[str]:
-        return self.final_trace
-
     def _get_or_create_id(self, scenario: ScenarioInfo) -> str:
         """
         Get the ID for a scenario that has been added before, or create and store a new one.

@@ -1,8 +1,7 @@
 from robot.api import logger
 
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
-from robotmbt.visualise.models import TraceInfo, StateInfo, ScenarioInfo
-from robotmbt.modelspace import ModelSpace
+from robotmbt.visualise.models import TraceInfo, StateInfo
 import networkx as nx
 
 
@@ -60,19 +59,18 @@ class StateGraph(AbstractGraph):
 
     def set_final_trace(self, info: TraceInfo):
         # We already have the final trace in state_stack, so we don't need to do anything
-        pass
+        # But do a sanity check
+        if self.prev_trace_len != len(info.trace):
+            logger.warn("Final trace was of a different length than our stack was based on!")
 
     def get_final_trace(self) -> list[str]:
         # The final trace is simply the state stack we've been keeping track of
         return self.node_stack
 
-    def _get_or_create_id(self, state: StateInfo | None) -> str:
+    def _get_or_create_id(self, state: StateInfo) -> str:
         """
         Get the ID for a state that has been added before, or create and store a new one.
         """
-        if state is None:
-            return 'start'
-
         for i in self.ids.keys():
             if self.ids[i] == state:
                 return i

@@ -1,5 +1,6 @@
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 from robotmbt.visualise.graphs.stategraph import StateGraph
+from robotmbt.visualise.graphs.scenariostategraph import ScenarioStateGraph
 from bokeh.palettes import Spectral4
 from bokeh.models import (
     Plot, Range1d, Circle, Rect,

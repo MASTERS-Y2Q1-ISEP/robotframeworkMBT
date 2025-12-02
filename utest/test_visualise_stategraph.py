@@ -31,8 +31,8 @@ if VISUALISE:
         def test_state_graph_ids_duplicate_state(self):
             sg = StateGraph()
 
-            s0 = StateInfo.create_state_with_prop("prop", [("value", "some_value")])
-            s1 = StateInfo.create_state_with_prop("prop", [("value", "some_value")])
+            s0 = StateInfo._create_state_with_prop("prop", [("value", "some_value")])
+            s1 = StateInfo._create_state_with_prop("prop", [("value", "some_value")])
 
             id0 = sg._get_or_create_id(s0)
             id1 = sg._get_or_create_id(s1)
@@ -42,10 +42,10 @@ if VISUALISE:
         def test_state_graph_ids_different_states(self):
             sg = StateGraph()
 
-            s00 = StateInfo.create_state_with_prop("prop", [("value", "some_value")])
-            s01 = StateInfo.create_state_with_prop("prop", [("value", "some_value")])
-            s10 = StateInfo.create_state_with_prop("prop", [("value", "another_value")])
-            s11 = StateInfo.create_state_with_prop("prop", [("value", "another_value")])
+            s00 = StateInfo._create_state_with_prop("prop", [("value", "some_value")])
+            s01 = StateInfo._create_state_with_prop("prop", [("value", "some_value")])
+            s10 = StateInfo._create_state_with_prop("prop", [("value", "another_value")])
+            s11 = StateInfo._create_state_with_prop("prop", [("value", "another_value")])
 
             id00 = sg._get_or_create_id(s00)
             id01 = sg._get_or_create_id(s01)
@@ -73,7 +73,7 @@ if VISUALISE:
             self.assertIn('start', sg.networkx.nodes)
             self.assertNotIn('test', sg.networkx.nodes)
 
-            sg.ids['test'] = StateInfo.create_state_with_prop("prop", [("value", "some_value")])
+            sg.ids['test'] = StateInfo._create_state_with_prop("prop", [("value", "some_value")])
             sg._add_node('test')
 
             self.assertEqual(len(sg.networkx.nodes), 2)
@@ -102,7 +102,7 @@ if VISUALISE:
             sg = StateGraph()
 
             scenario = ScenarioInfo('1')
-            space = StateInfo.create_state_with_prop("prop", [("value", "some_value")])
+            space = StateInfo._create_state_with_prop("prop", [("value", "some_value")])
             sg.update_visualisation(TraceInfo([scenario], space))
 
             self.assertEqual(sg.networkx.nodes['start']['label'], 'start')
@@ -120,9 +120,9 @@ if VISUALISE:
             scenario2 = ScenarioInfo('2')
             scenario3 = ScenarioInfo('3')
 
-            space1 = StateInfo.create_state_with_prop("prop", [("value", "some_value")])
-            space2 = StateInfo.create_state_with_prop("prop", [("value", "other_value")])
-            space3 = StateInfo.create_state_with_prop("prop", [("value", "another_value")])
+            space1 = StateInfo._create_state_with_prop("prop", [("value", "some_value")])
+            space2 = StateInfo._create_state_with_prop("prop", [("value", "other_value")])
+            space3 = StateInfo._create_state_with_prop("prop", [("value", "another_value")])
 
             ti1 = TraceInfo([scenario1], space1)
             ti2 = TraceInfo([scenario1, scenario2], space2)
@@ -158,8 +158,8 @@ if VISUALISE:
             scenario1 = ScenarioInfo('1')
             scenario2 = ScenarioInfo('2')
 
-            space0 = StateInfo.create_state_with_prop("prop", [("value", "some_value")])
-            space1 = StateInfo.create_state_with_prop("prop", [("value", "other_value")])
+            space0 = StateInfo._create_state_with_prop("prop", [("value", "some_value")])
+            space1 = StateInfo._create_state_with_prop("prop", [("value", "other_value")])
 
             ti1 = TraceInfo([scenario0], space0)
             ti2 = TraceInfo([scenario0, scenario1], space1)
@@ -192,7 +192,7 @@ if VISUALISE:
             scenario1 = ScenarioInfo('1')
             scenario2 = ScenarioInfo('2')
 
-            space = StateInfo.create_state_with_prop("prop", [("value", "some_value")])
+            space = StateInfo._create_state_with_prop("prop", [("value", "some_value")])
 
             ti1 = TraceInfo([scenario1], space)
             ti2 = TraceInfo([scenario1, scenario2], space)
@@ -227,11 +227,11 @@ if VISUALISE:
             scenario1 = ScenarioInfo('1')
             scenario2 = ScenarioInfo('2')
 
-            space0 = StateInfo.create_state_with_prop("prop", [("value", "some_value")])
-            space1 = StateInfo.create_state_with_prop("prop", [("value", "other_value")])
-            space2 = StateInfo.create_state_with_prop("prop", [("value", "another_value")])
-            space3 = StateInfo.create_state_with_prop("prop", [("value", "more_value")])
-            space4 = StateInfo.create_state_with_prop("prop", [("value", "yet_another_value")])
+            space0 = StateInfo._create_state_with_prop("prop", [("value", "some_value")])
+            space1 = StateInfo._create_state_with_prop("prop", [("value", "other_value")])
+            space2 = StateInfo._create_state_with_prop("prop", [("value", "another_value")])
+            space3 = StateInfo._create_state_with_prop("prop", [("value", "more_value")])
+            space4 = StateInfo._create_state_with_prop("prop", [("value", "yet_another_value")])
 
             self.assertEqual(len(sg.networkx.nodes), 1)
             self.assertEqual(len(sg.networkx.edges), 0)
@@ -278,9 +278,9 @@ if VISUALISE:
             scenario1 = ScenarioInfo('1')
             scenario2 = ScenarioInfo('2')
 
-            space0 = StateInfo.create_state_with_prop("prop", [("value", "some_value")])
-            space1 = StateInfo.create_state_with_prop("prop", [("value", "other_value")])
-            space2 = StateInfo.create_state_with_prop("prop", [("value", "another_value")])
+            space0 = StateInfo._create_state_with_prop("prop", [("value", "some_value")])
+            space1 = StateInfo._create_state_with_prop("prop", [("value", "other_value")])
+            space2 = StateInfo._create_state_with_prop("prop", [("value", "another_value")])
 
             sg.update_visualisation(TraceInfo([scenario0], space0))
             sg.update_visualisation(TraceInfo([scenario0, scenario1], space1))
@@ -305,11 +305,11 @@ if VISUALISE:
             scenario1 = ScenarioInfo('1')
             scenario2 = ScenarioInfo('2')
 
-            space0 = StateInfo.create_state_with_prop("prop", [("value", "some_value")])
-            space1 = StateInfo.create_state_with_prop("prop", [("value", "other_value")])
-            space2 = StateInfo.create_state_with_prop("prop", [("value", "another_value")])
-            space3 = StateInfo.create_state_with_prop("prop", [("value", "more_value")])
-            space4 = StateInfo.create_state_with_prop("prop", [("value", "yet_another_value")])
+            space0 = StateInfo._create_state_with_prop("prop", [("value", "some_value")])
+            space1 = StateInfo._create_state_with_prop("prop", [("value", "other_value")])
+            space2 = StateInfo._create_state_with_prop("prop", [("value", "another_value")])
+            space3 = StateInfo._create_state_with_prop("prop", [("value", "more_value")])
+            space4 = StateInfo._create_state_with_prop("prop", [("value", "yet_another_value")])
 
             sg.update_visualisation(TraceInfo([scenario0], space0))
             sg.update_visualisation(TraceInfo([scenario0, scenario1], space1))

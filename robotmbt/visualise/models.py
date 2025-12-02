@@ -34,7 +34,7 @@ class StateInfo:
     """
 
     @classmethod
-    def create_state_with_prop(cls, name: str, attrs: list[tuple[str, Any]]):
+    def _create_state_with_prop(cls, name: str, attrs: list[tuple[str, Any]]):
         space = ModelSpace()
         prop = ModelSpace()
         for (key, val) in attrs:

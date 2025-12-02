@@ -31,19 +31,19 @@ jobs:
             echo "-- Formatting issues found! --"
             echo "------------------------------"
             echo "apply_changes=true" >> $GITHUB_OUTPUT
-            # exit 1
+            exit 1
           else
             echo "No formatting issues found."
             echo "apply_changes=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Apply autopep8 changes (if needed)
-        if: steps.check.outputs.apply_changes == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          autopep8 --in-place --recursive .
-          git config --global user.name "autopep8-bot"
-          git config --global user.email "autopep8-bot@example.com"
-          git add .
-          git commit -m "Apply autopep8 formatting"
-          git push
+#      - name: Apply autopep8 changes (if needed)
+#        if: steps.check.outputs.apply_changes == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+#        run: |
+#          autopep8 --in-place --recursive .
+#          git config --global user.name "autopep8-bot"
+#          git config --global user.email "autopep8-bot@example.com"
+#          git add .
+#          git commit -m "Apply autopep8 formatting"
+#          git push
 

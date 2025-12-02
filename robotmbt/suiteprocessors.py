@@ -165,8 +165,7 @@ class SuiteProcessors:
 
     def __update_visualisation(self):
         if self.visualiser is not None:
-            self.visualiser.update_visualisation(
-                TraceInfo.from_trace_state(self.tracestate, self.active_model))
+            self.visualiser.update_trace(self.tracestate, self.active_model)
 
     def __last_candidate_changed_nothing(self) -> bool:
         if len(self.tracestate) < 2:

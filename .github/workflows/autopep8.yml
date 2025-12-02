@@ -1,19 +1,44 @@
-# This action works with pull requests and pushes
-name: Continuous Integration
+name: autopep8 Check
 
-on:
-  pull_request:
-#  push:          # we don't do this on master push because it's disabled
-#    branches:
-#    - master
+on: [push, pull_request]
 
 jobs:
-  build:
+  autopep8-check:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v3
-      with:
-        # Make sure the actual branch is checked out when running on pull requests
-        ref: ${{ github.head_ref }}
-    - uses: creyD/action_autopep8@v3.1
+      - uses: actions/checkout@v4
+        with:
+          # Fetch all history for all branches and tags (needed for the bot commit)
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install autopep8
+        run: pip install autopep8
+
+      - name: Check formatting with autopep8
+        id: check
+        run: |
+          # Check if autopep8 would make changes
+          if ! autopep8 --diff --recursive .; then
+            echo "Formatting issues found."
+            echo "apply_changes=true" >> $GITHUB_OUTPUT
+            exit 1
+          else
+            echo "No formatting issues found."
+            echo "apply_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+#      - name: Apply autopep8 changes (if needed)
+#        if: steps.check.outputs.apply_changes == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+#        run: |
+#          autopep8 --in-place --recursive .
+#          git config --global user.name "autopep8-bot"
+#          git config --global user.email "autopep8-bot@example.com"
+#          git add .
+#          git commit -m "Apply autopep8 formatting"
+#          git push
+

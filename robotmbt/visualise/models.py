@@ -83,20 +83,16 @@ class TraceInfo:
     This keeps track of all information we need from all steps in trace exploration:
     - current_trace: the trace currently being built up, a list of scenario/state pairs in order of execution
     - all_traces: all valid traces encountered in trace exploration, up until the point they could not go any further
+    - previous_length: used to identify backtracking
     """
 
     def __init__(self):
-        self.current_trace = []
-        self.all_traces = []
+        self.current_trace: list[tuple[ScenarioInfo, StateInfo]] = []
+        self.all_traces: list[list[tuple[ScenarioInfo, StateInfo]]] = []
         self.previous_length = 0
+        self.pushed = False
 
-    def update_trace_wrap(self, trace: TraceState, state: ModelSpace):
-        if len(trace.get_trace()) > 0:
-            self.update_trace(ScenarioInfo(trace.get_trace()[-1]), StateInfo(state), len(trace.get_trace()))
-        else:
-            self.update_trace(ScenarioInfo(trace.get_trace()[-1]), StateInfo(state), 0)
-
-    def update_trace(self, scenario: ScenarioInfo, state: StateInfo, length: int):
+    def update_trace(self, scenario: ScenarioInfo | None, state: StateInfo, length: int):
         if length > self.previous_length:
             # New state - push
             self._push(scenario, state, length - self.previous_length)
@@ -123,10 +119,14 @@ class TraceInfo:
     def _push(self, scenario: ScenarioInfo, state: StateInfo, n: int):
         for _ in range(n):
             self.current_trace.append((scenario, state))
+        self.pushed = True
 
     def _pop(self, n: int):
+        if self.pushed:
+            self.all_traces.append(self.current_trace.copy())
         for _ in range(n):
             self.current_trace.pop()
+        self.pushed = False
 
     def encountered_scenarios(self) -> set[ScenarioInfo]:
         res = set()
@@ -146,7 +146,7 @@ class TraceInfo:
 
         return res
 
-    def encountered_scenario_state_pairs(self) -> set[tuple[StateInfo, StateInfo]]:
+    def encountered_scenario_state_pairs(self) -> set[tuple[ScenarioInfo, StateInfo]]:
         res = set()
 
         for trace in self.all_traces:

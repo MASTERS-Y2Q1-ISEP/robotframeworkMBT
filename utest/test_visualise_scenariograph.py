@@ -106,7 +106,7 @@ if VISUALISE:
 
             self.assertEqual(sg.networkx.nodes['start']['label'], 'start')
 
-            sg.update_visualisation(TraceInfo([scenario0], ModelSpace()))
+            sg.update_visualisation(TraceInfo([scenario0], StateInfo(ModelSpace())))
 
             self.assertEqual(len(sg.networkx.nodes), 2)
             self.assertEqual(len(sg.networkx.edges), 1)
@@ -117,7 +117,7 @@ if VISUALISE:
             self.assertEqual(sg.networkx.nodes['start']['label'], 'start')
             self.assertEqual(sg.networkx.nodes['node0']['label'], '0')
 
-            sg.update_visualisation(TraceInfo([scenario0, scenario1], ModelSpace()))
+            sg.update_visualisation(TraceInfo([scenario0, scenario1], StateInfo(ModelSpace())))
 
             self.assertEqual(len(sg.networkx.nodes), 3)
             self.assertEqual(len(sg.networkx.edges), 2)
@@ -130,7 +130,7 @@ if VISUALISE:
             self.assertEqual(sg.networkx.nodes['node0']['label'], '0')
             self.assertEqual(sg.networkx.nodes['node1']['label'], '1')
 
-            sg.update_visualisation(TraceInfo([scenario0, scenario1, scenario2], ModelSpace()))
+            sg.update_visualisation(TraceInfo([scenario0, scenario1, scenario2], StateInfo(ModelSpace())))
 
             self.assertEqual(len(sg.networkx.nodes), 4)
             self.assertEqual(len(sg.networkx.edges), 3)
@@ -155,7 +155,7 @@ if VISUALISE:
             self.assertEqual(len(sg.networkx.nodes), 1)
             self.assertEqual(len(sg.networkx.edges), 0)
 
-            sg.update_visualisation(TraceInfo([scenario0], ModelSpace()))
+            sg.update_visualisation(TraceInfo([scenario0], StateInfo(ModelSpace())))
 
             self.assertEqual(len(sg.networkx.nodes), 2)
             self.assertEqual(len(sg.networkx.edges), 1)
@@ -164,7 +164,7 @@ if VISUALISE:
 
             self.assertEqual(sg.networkx.edges[('start', 'node0')]['label'], '')
 
-            sg.update_visualisation(TraceInfo([scenario0, scenario1], ModelSpace()))
+            sg.update_visualisation(TraceInfo([scenario0, scenario1], StateInfo(ModelSpace())))
 
             self.assertEqual(len(sg.networkx.nodes), 3)
             self.assertEqual(len(sg.networkx.edges), 2)
@@ -175,7 +175,7 @@ if VISUALISE:
             self.assertEqual(sg.networkx.edges[('start', 'node0')]['label'], '')
             self.assertEqual(sg.networkx.edges[('node0', 'node1')]['label'], '')
 
-            sg.update_visualisation(TraceInfo([scenario0, scenario1, scenario2], ModelSpace()))
+            sg.update_visualisation(TraceInfo([scenario0, scenario1, scenario2], StateInfo(ModelSpace())))
 
             self.assertEqual(len(sg.networkx.nodes), 4)
             self.assertEqual(len(sg.networkx.edges), 3)
@@ -196,7 +196,7 @@ if VISUALISE:
             self.assertEqual(len(sg.networkx.nodes), 1)
             self.assertEqual(len(sg.networkx.edges), 0)
 
-            sg.update_visualisation(TraceInfo([scenario], ModelSpace()))
+            sg.update_visualisation(TraceInfo([scenario], StateInfo(ModelSpace())))
 
             self.assertEqual(len(sg.networkx.nodes), 2)
             self.assertEqual(len(sg.networkx.edges), 1)
@@ -222,42 +222,42 @@ if VISUALISE:
             self.assertEqual(len(sg.networkx.nodes), 1)
             self.assertEqual(len(sg.networkx.edges), 0)
 
-            sg.update_visualisation(TraceInfo([scenario0], ModelSpace()))
+            sg.update_visualisation(TraceInfo([scenario0], StateInfo(ModelSpace())))
 
             self.assertEqual(len(sg.networkx.nodes), 2)
             self.assertEqual(len(sg.networkx.edges), 1)
 
-            sg.update_visualisation(TraceInfo([scenario0, scenario2], ModelSpace()))
+            sg.update_visualisation(TraceInfo([scenario0, scenario2], StateInfo(ModelSpace())))
 
             self.assertEqual(len(sg.networkx.nodes), 3)
             self.assertEqual(len(sg.networkx.edges), 2)
 
-            sg.update_visualisation(TraceInfo([scenario0, scenario2, scenario1], ModelSpace()))
+            sg.update_visualisation(TraceInfo([scenario0, scenario2, scenario1], StateInfo(ModelSpace())))
 
             self.assertEqual(len(sg.networkx.nodes), 4)
             self.assertEqual(len(sg.networkx.edges), 3)
 
-            sg.update_visualisation(TraceInfo([scenario0, scenario2], ModelSpace()))
+            sg.update_visualisation(TraceInfo([scenario0, scenario2], StateInfo(ModelSpace())))
 
             self.assertEqual(len(sg.networkx.nodes), 4)
             self.assertEqual(len(sg.networkx.edges), 3)
 
-            sg.update_visualisation(TraceInfo([scenario0], ModelSpace()))
+            sg.update_visualisation(TraceInfo([scenario0], StateInfo(ModelSpace())))
 
             self.assertEqual(len(sg.networkx.nodes), 4)
             self.assertEqual(len(sg.networkx.edges), 3)
 
-            sg.update_visualisation(TraceInfo([scenario0, scenario3], ModelSpace()))
+            sg.update_visualisation(TraceInfo([scenario0, scenario3], StateInfo(ModelSpace())))
 
             self.assertEqual(len(sg.networkx.nodes), 5)
             self.assertEqual(len(sg.networkx.edges), 4)
 
-            sg.update_visualisation(TraceInfo([scenario0, scenario3, scenario1], ModelSpace()))
+            sg.update_visualisation(TraceInfo([scenario0, scenario3, scenario1], StateInfo(ModelSpace())))
 
             self.assertEqual(len(sg.networkx.nodes), 5)
             self.assertEqual(len(sg.networkx.edges), 5)
 
-            sg.update_visualisation(TraceInfo([scenario0, scenario3, scenario1, scenario2], ModelSpace()))
+            sg.update_visualisation(TraceInfo([scenario0, scenario3, scenario1, scenario2], StateInfo(ModelSpace())))
 
             self.assertEqual(len(sg.networkx.nodes), 5)
             self.assertEqual(len(sg.networkx.edges), 6)
@@ -269,11 +269,11 @@ if VISUALISE:
             scenario1 = ScenarioInfo('1')
             scenario2 = ScenarioInfo('2')
 
-            sg.update_visualisation(TraceInfo([scenario0], ModelSpace()))
-            sg.update_visualisation(TraceInfo([scenario0, scenario1], ModelSpace()))
-            sg.update_visualisation(TraceInfo([scenario0, scenario1, scenario2], ModelSpace()))
+            sg.update_visualisation(TraceInfo([scenario0], StateInfo(ModelSpace())))
+            sg.update_visualisation(TraceInfo([scenario0, scenario1], StateInfo(ModelSpace())))
+            sg.update_visualisation(TraceInfo([scenario0, scenario1, scenario2], StateInfo(ModelSpace())))
 
-            sg.set_final_trace(TraceInfo([scenario0, scenario1, scenario2], ModelSpace()))
+            sg.set_final_trace(TraceInfo([scenario0, scenario1, scenario2], StateInfo(ModelSpace())))
 
             trace = sg.get_final_trace()
 
@@ -294,15 +294,15 @@ if VISUALISE:
             scenario1 = ScenarioInfo('1')
             scenario2 = ScenarioInfo('2')
 
-            sg.update_visualisation(TraceInfo([scenario0], ModelSpace()))
-            sg.update_visualisation(TraceInfo([scenario0, scenario2], ModelSpace()))
-            sg.update_visualisation(TraceInfo([scenario0, scenario2, scenario1], ModelSpace()))
-            sg.update_visualisation(TraceInfo([scenario0, scenario2], ModelSpace()))
-            sg.update_visualisation(TraceInfo([scenario0], ModelSpace()))
-            sg.update_visualisation(TraceInfo([scenario0, scenario1], ModelSpace()))
-            sg.update_visualisation(TraceInfo([scenario0, scenario1, scenario2], ModelSpace()))
+            sg.update_visualisation(TraceInfo([scenario0], StateInfo(ModelSpace())))
+            sg.update_visualisation(TraceInfo([scenario0, scenario2], StateInfo(ModelSpace())))
+            sg.update_visualisation(TraceInfo([scenario0, scenario2, scenario1], StateInfo(ModelSpace())))
+            sg.update_visualisation(TraceInfo([scenario0, scenario2], StateInfo(ModelSpace())))
+            sg.update_visualisation(TraceInfo([scenario0], StateInfo(ModelSpace())))
+            sg.update_visualisation(TraceInfo([scenario0, scenario1], StateInfo(ModelSpace())))
+            sg.update_visualisation(TraceInfo([scenario0, scenario1, scenario2], StateInfo(ModelSpace())))
 
-            sg.set_final_trace(TraceInfo([scenario0, scenario1, scenario2], ModelSpace()))
+            sg.set_final_trace(TraceInfo([scenario0, scenario1, scenario2], StateInfo(ModelSpace())))
 
             trace = sg.get_final_trace()
 

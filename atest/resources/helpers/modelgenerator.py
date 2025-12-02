@@ -3,7 +3,7 @@ import string
 
 from robot.api.deco import keyword  # type:ignore
 from robotmbt.modelspace import ModelSpace
-from robotmbt.visualise.models import TraceInfo, ScenarioInfo
+from robotmbt.visualise.models import TraceInfo, ScenarioInfo, StateInfo
 from robotmbt.visualise.graphs.scenariograph import ScenarioGraph
 
 
@@ -14,7 +14,7 @@ class ModelGenerator:
         scenarios: list[ScenarioInfo] = ModelGenerator.generate_scenario_names(
             scenario_count)
 
-        return TraceInfo(scenarios, ModelSpace())
+        return TraceInfo(scenarios, StateInfo(ModelSpace()))
 
     @keyword(name="Ensure Scenario Present")  # type: ignore
     def ensure_scenario_present(self, trace_info: TraceInfo, scenario_name: str) -> TraceInfo:

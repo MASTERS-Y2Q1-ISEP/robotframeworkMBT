@@ -23,14 +23,28 @@ jobs:
         id: check
         run: |
           # Check if autopep8 would make changes
-          if ! autopep8 --diff --recursive .; then
-            echo "Formatting issues found."
+          formatting_issues=$(autopep8 --diff --recursive .)
+          if [[ formatting_issues ]] then
+            echo "Formatting issues found:"
+            printf "%s\n" "$formatting_issues"
+            echo "------------------------------"
+            echo "-- Formatting issues found! --"
+            echo "------------------------------"
             echo "apply_changes=true" >> $GITHUB_OUTPUT
             exit 1
           else
             echo "No formatting issues found."
             echo "apply_changes=false" >> $GITHUB_OUTPUT
           fi
+
+#          if ! [[ $(autopep8 --diff --recursive .) ]] then
+#            echo "Formatting issues found."
+#            echo "apply_changes=true" >> $GITHUB_OUTPUT
+#            exit 1
+#          else
+#            echo "No formatting issues found."
+#            echo "apply_changes=false" >> $GITHUB_OUTPUT
+#          fi
 
 #      - name: Apply autopep8 changes (if needed)
 #        if: steps.check.outputs.apply_changes == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'

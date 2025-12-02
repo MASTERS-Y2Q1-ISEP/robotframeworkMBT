@@ -71,7 +71,6 @@ class StepArgument:
         self._value: any = None
         self._codestr: str | None = None
         self.value: any = value
-        self.value = value
         self.is_default: bool = is_default  # indicates that the argument was not
         # filled in from the scenario. This argment's value is taken
         # from the keyword's default as provided by Robot.

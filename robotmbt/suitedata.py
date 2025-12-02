@@ -149,6 +149,7 @@ class Step:
         # Decouples StepArguments from the step text (refinement use case)
         self.detached: bool = False
         # Modelling information is available as a dictionary.
+        # TODO: Maybe use a data structure for this instead of a dict with specific keys.
         # The standard format is dict(IN=[], OUT=[]) and can
         # optionally contain an error field.
         # IN and OUT are lists of Python evaluatable expressions.

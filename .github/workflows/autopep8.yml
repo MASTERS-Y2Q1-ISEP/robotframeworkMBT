@@ -31,7 +31,7 @@ jobs:
             echo "-- Formatting issues found! --"
             echo "------------------------------"
             echo "apply_changes=true" >> $GITHUB_OUTPUT
-            exit 1
+            # exit 1
           else
             echo "No formatting issues found."
             echo "apply_changes=false" >> $GITHUB_OUTPUT

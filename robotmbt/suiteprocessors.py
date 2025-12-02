@@ -118,13 +118,13 @@ class SuiteProcessors:
             logger.debug("Direct trace not available. Allowing repetition of scenarios")
             self._try_to_reach_full_coverage(allow_duplicate_scenarios=True)
             if not self.tracestate.coverage_reached():
-                self.__update_visualisation()
+                self.__write_visualisation()
                 raise Exception("Unable to compose a consistent suite")
 
         self.out_suite.scenarios = self.tracestate.get_trace()
         self._report_tracestate_wrapup()
 
-        self.__update_visualisation()
+        self.__write_visualisation()
 
         return self.out_suite
 
@@ -167,6 +167,10 @@ class SuiteProcessors:
         if self.visualiser is not None:
             self.visualiser.update_visualisation(
                 TraceInfo.from_trace_state(self.tracestate, self.active_model))
+
+    def __write_visualisation(self):
+        if self.visualiser is not None:
+            logger.info(self.visualiser.generate_visualisation(), html=True)
 
     def __last_candidate_changed_nothing(self) -> bool:
         if len(self.tracestate) < 2:

@@ -59,7 +59,7 @@ class TraceState:
         return self._snapshots[-1].model if self._snapshots else None
 
     @property
-    def tried(self) -> tuple[int]:
+    def tried(self) -> tuple[int, ...]:
         """returns the indices that were rejected or previously inserted at the current position"""
         return tuple(self._tried[-1])
 

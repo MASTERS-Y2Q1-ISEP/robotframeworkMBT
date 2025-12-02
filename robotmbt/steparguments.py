@@ -64,7 +64,7 @@ class StepArgument:
     NAMED = 'NAMED'
     FREE_NAMED = 'FREE_NAMED'
 
-    def __init__(self, arg_name: str, value: any, kind: str | None = None, is_default=False):
+    def __init__(self, arg_name: str, value: any, kind: str | None = None, is_default: bool = False):
         self.name: str = arg_name
         self.org_value: any = value
         self.kind: str | None = kind  # one of the values from the kind list
@@ -73,7 +73,7 @@ class StepArgument:
         self.value: any = value
         # is_default indicates that the argument was not filled in from the scenario. This
         # argment's value is taken from the keyword's default as provided by Robot.
-        self.is_default = is_default
+        self.is_default: bool = is_default  
 
     @property
     def arg(self) -> str:
@@ -98,7 +98,7 @@ class StepArgument:
         return self._codestr
 
     def copy(self):
-    # -> Self:
+        # -> Self
         cp = StepArgument(self.arg.strip('${}'), self.value, self.kind, self.is_default)
         cp.org_value = self.org_value
         return cp

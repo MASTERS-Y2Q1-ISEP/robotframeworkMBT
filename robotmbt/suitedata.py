@@ -107,8 +107,7 @@ class Scenario:
         With stepindex 0 the first part has no steps and all steps are in the last part. With
         stepindex 1 the first step is in the first part, the other in the last part, and so on.
         """
-        assert stepindex <= len(
-            self.steps), "Split index out of range. Not enough steps in scenario."
+        assert stepindex <= len(self.steps), "Split index out of range. Not enough steps in scenario."
         front = self.copy()
         front.teardown = None
         front.steps = self.steps[:stepindex]
@@ -128,11 +127,10 @@ class Step:
         # org_pn_args are the positional and named arguments as parsed
         # from the Robot text ('posA' , 'posB', 'named1=namedA')
         self.org_pn_args = args
-
         # Parent scenario for easy searching and processing.
         self.parent: Suite | Scenario = parent
-
         # For when a keyword's return value is assigned to a variable.
+        # Taken directly from Robot.
         self.assign: tuple[str] = assign
 
         # gherkin_kw is one of 'given', 'when', 'then', or None for non-bdd keywords.
@@ -142,10 +140,8 @@ class Step:
 
         # Robot keyword with its embedded arguments in ${...} notation.
         self.signature: str | None = None
-
         # embedded arguments list of StepArgument objects.
         self.args: StepArguments = StepArguments()
-
         # Decouples StepArguments from the step text (refinement use case)
         self.detached: bool = False
 
@@ -156,7 +152,7 @@ class Step:
         # The `vocab.attribute` form can then be used to express relations
         # between properties from the domain vocabulaire.
         # Custom processors can define their own attributes.
-        self.model_info = dict()
+        self.model_info: dict[str, str | list[str]] = dict()
 
     def __str__(self):
         return self.keyword
@@ -166,8 +162,7 @@ class Step:
 
     def copy(self):
         # -> Self
-        cp = Step(self.org_step, *self.org_pn_args,
-                  parent=self.parent, assign=self.assign)
+        cp = Step(self.org_step, *self.org_pn_args, parent=self.parent, assign=self.assign)
         cp.gherkin_kw = self.gherkin_kw
         cp.signature = self.signature
         cp.args = StepArguments(self.args)
@@ -297,8 +292,8 @@ class Step:
         # Robot's mapping favours positional when possible, even when the name is used
         # in the keyword call. The validator is sensitive to these differences.
         p, n = spec.map(positionals, nameds)
+        # for some reason .map() returns [None] instead of the empty list when there are no arguments
         if p == [None]:
-            # for some reason .map() returns [None] instead of the empty list when there are no arguments
             p = []
         # Use the Robot mechanism for validation to yield familiar error messages
         ArgumentValidator(spec).validate(p, n)
@@ -324,8 +319,7 @@ class Step:
             key = elms[1].strip()
             expressions = [e.strip() for e in elms[-1].split("|") if e]
             while lines and not lines[0].startswith(":"):
-                expressions.extend([e.strip()
-                                    for e in lines.pop(0).split("|") if e])
+                expressions.extend([e.strip() for e in lines.pop(0).split("|") if e])
             model_info[key] = expressions
         if not model_info:
             raise ValueError("When present, *model info* cannot be empty")

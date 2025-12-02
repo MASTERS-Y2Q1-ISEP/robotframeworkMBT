@@ -67,38 +67,43 @@ class AbstractGraph(ABC):
         if node not in self.networkx.nodes:
             self.networkx.add_node(node, label=self.create_node_label(self.ids[node]))
 
+    @staticmethod
     @abstractmethod
-    def select_node_info(self, pair: tuple[ScenarioInfo, StateInfo]) -> ScenarioInfo | StateInfo | tuple[
+    def select_node_info(pair: tuple[ScenarioInfo, StateInfo]) -> ScenarioInfo | StateInfo | tuple[
         ScenarioInfo, StateInfo]:
         """
         Select the info to use to compare nodes and generate their labels for a specific graph type.
         """
         pass
 
+    @staticmethod
     @abstractmethod
-    def select_edge_info(self, pair: tuple[ScenarioInfo, StateInfo]) -> ScenarioInfo | StateInfo | tuple[
+    def select_edge_info(pair: tuple[ScenarioInfo, StateInfo]) -> ScenarioInfo | StateInfo | tuple[
         ScenarioInfo, StateInfo] | None:
         """
         Select the info to use to generate the label for each edge for a specific graph type.
         """
         pass
 
+    @staticmethod
     @abstractmethod
-    def create_node_label(self, info: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo]) -> str:
+    def create_node_label(info: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo]) -> str:
         """
         Create the label for a node given its chosen information.
         """
         pass
 
+    @staticmethod
     @abstractmethod
-    def create_edge_label(self, info: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo] | None) -> str:
+    def create_edge_label(info: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo] | None) -> str:
         """
         Create the label for an edge given its chosen information.
         """
         pass
 
+    @staticmethod
     @abstractmethod
-    def nodes_equal(self, node1: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo],
+    def nodes_equal(node1: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo],
                     node2: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo]) -> bool:
         """
         Check whether two nodes are equal given their chosen information.

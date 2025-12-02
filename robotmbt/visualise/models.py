@@ -78,6 +78,16 @@ class StateInfo:
         return res
 
 
+def _sanity_check(expected, scenario, state):
+    (prev_scen, prev_state) = expected
+    if prev_scen.src_id != scenario.src_id:
+        logger.warn(
+            f'TraceInfo got out of sync!\nExpected scenario: {prev_scen}\nActual scenario: {scenario}')
+    if prev_state != state:
+        logger.warn(
+            f'TraceInfo got out of sync!\nExpected state: {prev_state}\nActual state: {state}')
+
+
 class TraceInfo:
     """
     This keeps track of all information we need from all steps in trace exploration:
@@ -104,17 +114,11 @@ class TraceInfo:
 
             # Sanity check
             if len(self.current_trace) > 0:
-                (prev_scen, prev_state) = self.current_trace[-1]
-                if prev_scen != scenario or prev_state != state:
-                    logger.warn(
-                        f'TraceInfo got out of sync!\n\nExpected state: {prev_state}\nActual state: {state}\n\nExpected scenario: {prev_scen}\nActual scenario: {scenario}')
+                _sanity_check(self.current_trace[-1], scenario, state)
         else:
             # No change - sanity check
             if len(self.current_trace) > 0:
-                (prev_scen, prev_state) = self.current_trace[-1]
-                if prev_scen != scenario or prev_state != state:
-                    logger.warn(
-                        f'TraceInfo got out of sync!\n\nExpected state: {prev_state}\nActual state: {state}\n\nExpected scenario: {prev_scen}\nActual scenario: {scenario}')
+                _sanity_check(self.current_trace[-1], scenario, state)
 
     def _push(self, scenario: ScenarioInfo, state: StateInfo, n: int):
         for _ in range(n):
@@ -156,4 +160,7 @@ class TraceInfo:
         return res
 
     def __repr__(self) -> str:
-        return f"TraceInfo(traces=[{[f'[{[str(pair) for pair in trace]}]' for trace in self.all_traces]}], current=[{[str(pair) for pair in self.current_trace]}])"
+        return f"TraceInfo(traces=[{[f'[{[stringy_pair(pair) for pair in trace]}]' for trace in self.all_traces]}], current=[{[stringy_pair(pair) for pair in self.current_trace]}])"
+
+def stringy_pair(pair: tuple[ScenarioInfo, StateInfo]) -> str:
+    return f"Scenario={pair[0].name}, State={pair[1]}"

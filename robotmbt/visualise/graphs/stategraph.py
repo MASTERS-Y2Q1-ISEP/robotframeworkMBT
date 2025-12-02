@@ -8,20 +8,25 @@ class StateGraph(AbstractGraph):
     It represents states as nodes, and scenarios as edges.
     """
 
-    def select_node_info(self, pair: tuple[ScenarioInfo, StateInfo]) -> ScenarioInfo | StateInfo | tuple[
+    @staticmethod
+    def select_node_info(pair: tuple[ScenarioInfo, StateInfo]) -> ScenarioInfo | StateInfo | tuple[
         ScenarioInfo, StateInfo]:
         return pair[1]
 
-    def select_edge_info(self, pair: tuple[ScenarioInfo, StateInfo]) -> ScenarioInfo | StateInfo | tuple[
+    @staticmethod
+    def select_edge_info(pair: tuple[ScenarioInfo, StateInfo]) -> ScenarioInfo | StateInfo | tuple[
         ScenarioInfo, StateInfo] | None:
         return pair[0]
 
-    def create_edge_label(self, info: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo] | None) -> str:
+    @staticmethod
+    def create_edge_label(info: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo] | None) -> str:
         return info.name
 
-    def create_node_label(self, info: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo]) -> str:
+    @staticmethod
+    def create_node_label(info: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo]) -> str:
         return str(info)
 
-    def nodes_equal(self, node1: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo],
+    @staticmethod
+    def nodes_equal(node1: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo],
                     node2: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo]) -> bool:
         return node1 == node2

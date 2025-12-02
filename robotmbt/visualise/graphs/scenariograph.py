@@ -1,6 +1,5 @@
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
-from robotmbt.visualise.models import TraceInfo, ScenarioInfo, StateInfo
-import networkx as nx
+from robotmbt.visualise.models import ScenarioInfo, StateInfo
 
 
 class ScenarioGraph(AbstractGraph):
@@ -9,20 +8,25 @@ class ScenarioGraph(AbstractGraph):
     It represents scenarios as nodes, and the trace as edges.
     """
 
-    def select_node_info(self, pair: tuple[ScenarioInfo, StateInfo]) -> ScenarioInfo | StateInfo | tuple[
+    @staticmethod
+    def select_node_info(pair: tuple[ScenarioInfo, StateInfo]) -> ScenarioInfo | StateInfo | tuple[
         ScenarioInfo, StateInfo]:
         return pair[0]
 
-    def select_edge_info(self, pair: tuple[ScenarioInfo, StateInfo]) -> ScenarioInfo | StateInfo | tuple[
+    @staticmethod
+    def select_edge_info(pair: tuple[ScenarioInfo, StateInfo]) -> ScenarioInfo | StateInfo | tuple[
         ScenarioInfo, StateInfo] | None:
         return None
 
-    def create_node_label(self, info: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo]) -> str:
+    @staticmethod
+    def create_node_label(info: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo]) -> str:
         return info.name
 
-    def create_edge_label(self, info: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo] | None) -> str:
+    @staticmethod
+    def create_edge_label(info: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo] | None) -> str:
         return ''
 
-    def nodes_equal(self, node1: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo],
+    @staticmethod
+    def nodes_equal(node1: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo],
                     node2: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo]) -> bool:
         return node1.src_id == node2.src_id

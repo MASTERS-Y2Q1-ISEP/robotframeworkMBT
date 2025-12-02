@@ -172,6 +172,11 @@ class SuiteProcessors:
             if self.visualiser is not None:
                 self.visualiser.update_visualisation(TraceInfo(self.tracestate, self.active_model))
         return tracestate
+    
+    def __update_visualisation(self):
+        if self.visualiser is not None:
+            self.visualiser.update_visualisation(
+                TraceInfo.from_trace_state(self.tracestate, self.active_model))
 
     @staticmethod
     def __last_candidate_changed_nothing(tracestate: TraceState) -> bool:

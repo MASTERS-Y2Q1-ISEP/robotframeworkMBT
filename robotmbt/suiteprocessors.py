@@ -169,7 +169,7 @@ class SuiteProcessors:
 
     def __write_visualisation(self):
         if self.visualiser is not None:
-            logger.write(self.visualiser.generate_visualisation(), html=True)
+            logger.info(self.visualiser.generate_visualisation(), html=True)
 
     def __last_candidate_changed_nothing(self) -> bool:
         if len(self.tracestate) < 2:

@@ -72,13 +72,17 @@ class Suite:
 class Scenario:
     def __init__(self, name: str, parent=None):
         self.name: str = name
+
         # Parent scenario for easy searching, processing and referencing
-        self.parent: Suite | None = parent
         # after steps and scenarios have been potentially moved around
+        self.parent: Suite | None = parent
+
         # Can be a single step or None, may also be a str in tests
         self.setup: Step | None = None
+
         # Can be a single step or None, may also be a str in tests
         self.teardown: Step | None = None
+
         self.steps: list[Step] = []
         self.src_id: int | None = None
         self.data_choices: dict | SubstitutionMap = {}  # may be Dummy type in a test
@@ -111,8 +115,7 @@ class Scenario:
         With stepindex 0 the first part has no steps and all steps are in the last part. With
         stepindex 1 the first step is in the first part, the other in the last part, and so on.
         """
-        assert stepindex <= len(
-            self.steps), "Split index out of range. Not enough steps in scenario."
+        assert stepindex <= len(self.steps), "Split index out of range. Not enough steps in scenario."
         front = self.copy()
         front.teardown = None
         front.steps = self.steps[:stepindex]
@@ -126,43 +129,35 @@ class Step:
     def __init__(self, steptext: str, *args, parent: Suite | Scenario, assign: tuple[str] = (),
                  prev_gherkin_kw: str | None = None):
         # first keyword cell of the Robot line, including step_kw,
-        self.org_step: str = steptext
-
         # excluding positional args, excluding variable assignment.
+        self.org_step: str = steptext
         # positional and named arguments as parsed from Robot text ('posA' , 'posB', 'named1=namedA')
         self.org_pn_args = args
-
         # Parent scenario for easy searching and processing.
         self.parent: Suite | Scenario = parent
-
         # For when a keyword's return value is assigned to a variable.
-        self.assign: tuple[str] = assign
-
         # Taken directly from Robot.
+        self.assign: tuple[str] = assign
+        # 'given', 'when', 'then' or None for non-bdd keywords.
         self.gherkin_kw: str | None = self.step_kw \
             if str(self.step_kw).lower() in ['given', 'when', 'then', 'none'] \
             else prev_gherkin_kw
-
-        # 'given', 'when', 'then' or None for non-bdd keywords.
         # Robot keyword with its embedded arguments in ${...} notation.
         self.signature: str | None = None
-
         # embedded arguments list of StepArgument objects.
         self.args: StepArguments = StepArguments()
-
         # Decouples StepArguments from the step text (refinement use case)
         self.detached: bool = False
-
         # Modelling information is available as a dictionary.
         # TODO: Maybe use a data structure for this instead of a dict with specific keys.
-        self.model_info: dict[str, str | list[str]] = dict()
-        # The standard format of `model_info` is dict(IN=[], OUT=[]) and can
+        # The standard format is dict(IN=[], OUT=[]) and can
         # optionally contain an error field.
         # IN and OUT are lists of Python evaluatable expressions.
         # The `new vocab` form can be used to create new domain objects.
         # The `vocab.attribute` form can then be used to express relations
         # between properties from the domain vocabulaire.
         # Custom processors can define their own attributes.
+        self.model_info: dict[str, str | list[str]] = dict()
 
     def __str__(self):
         return self.keyword
@@ -172,8 +167,7 @@ class Step:
 
     def copy(self):
         # -> Self
-        cp = Step(self.org_step, *self.org_pn_args,
-                  parent=self.parent, assign=self.assign)
+        cp = Step(self.org_step, *self.org_pn_args, parent=self.parent, assign=self.assign)
         cp.gherkin_kw = self.gherkin_kw
         cp.signature = self.signature
         cp.args = StepArguments(self.args)
@@ -298,16 +292,18 @@ class Step:
 
     @staticmethod
     def __validate_arguments(spec, positionals, nameds):
-        p, n = spec.map(positionals, nameds) # Robot uses a slightly different mapping for positional and named arguments.
-                                             # We keep the notation from the scenario (with or without the argument's name).
-                                             # Robot's mapping favours positional when possible, even when the name is used
-                                             # in the keyword call. The validator is sensitive to these differences.
+        # Robot uses a slightly different mapping for positional and named arguments.
+        # We keep the notation from the scenario (with or without the argument's name).
+        # Robot's mapping favours positional when possible, even when the name is used
+        # in the keyword call. The validator is sensitive to these differences.
+        p, n = spec.map(positionals, nameds)
+        # for some reason .map() returns [None] instead of the empty list when there are no arguments
         if p == [None]:
-            # for some reason .map() returns [None] instead of the empty list when there are no arguments
             p = []
-        ArgumentValidator(spec).validate(p, n) # Use the Robot mechanism for validation to yield familiar error messages
+        # Use the Robot mechanism for validation to yield familiar error messages
+        ArgumentValidator(spec).validate(p, n)
 
-    def __parse_model_info(self, docu):
+    def __parse_model_info(self, docu: str) -> dict[str, list[str]]:
         model_info = dict()
         mi_index = docu.find("*model info*")
         if mi_index == -1:
@@ -328,8 +324,7 @@ class Step:
             key = elms[1].strip()
             expressions = [e.strip() for e in elms[-1].split("|") if e]
             while lines and not lines[0].startswith(":"):
-                expressions.extend([e.strip()
-                                    for e in lines.pop(0).split("|") if e])
+                expressions.extend([e.strip() for e in lines.pop(0).split("|") if e])
             model_info[key] = expressions
         if not model_info:
             raise ValueError("When present, *model info* cannot be empty")

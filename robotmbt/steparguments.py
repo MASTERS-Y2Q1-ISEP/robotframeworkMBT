@@ -64,16 +64,17 @@ class StepArgument:
     NAMED = 'NAMED'
     FREE_NAMED = 'FREE_NAMED'
 
-    def __init__(self, arg_name :str, value :any, kind :str|None = None, is_default :bool =False):
-        self.name = arg_name
-        self.org_value = value
-        self.kind = kind # one of the values from the kind list
-        self._value = None
-        self._codestr = None
-        self.value = value
-        self.is_default = is_default # indicates that the argument was not
-                # filled in from the scenario. This argment's value is taken
-                # from the keyword's default as provided by Robot.
+    def __init__(self, arg_name: str, value: any, kind: str | None = None, is_default: bool = False):
+        self.name: str              = arg_name
+        self.org_value: any         = value
+        self.kind: str | None       = kind  # one of the values from the kind list
+        self._value: any            = None
+        self._codestr: str | None   = None
+        self.value: any             = value
+        # indicates that the argument was not
+        # filled in from the scenario. This argment's value is taken
+        # from the keyword's default as provided by Robot.
+        self.is_default: bool       = is_default  
 
     @property
     def arg(self) -> str:

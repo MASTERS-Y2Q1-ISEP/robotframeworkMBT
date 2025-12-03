@@ -59,7 +59,7 @@ class TraceState:
     @property
     def model(self) -> ModelSpace | None:
         """returns the model as it is at the end of the current trace"""
-        return self._snapshots[-1].model if self._trace else None
+        return self._snapshots[-1].model.copy() if self._trace else None
 
     @property
     def tried(self) -> tuple[int, ...]:

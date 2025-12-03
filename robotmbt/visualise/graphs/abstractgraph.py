@@ -1,15 +1,21 @@
 from abc import ABC, abstractmethod
+from typing import Generic, TypeVar
+
 from robotmbt.visualise.models import TraceInfo, ScenarioInfo, StateInfo
 import networkx as nx
 
 
-class AbstractGraph(ABC):
+NodeInfo = TypeVar('NodeInfo')
+EdgeInfo = TypeVar('EdgeInfo')
+
+
+class AbstractGraph(ABC, Generic[NodeInfo, EdgeInfo]):
     def __init__(self, info: TraceInfo):
         # The underlying storage - a NetworkX DiGraph
-        self.networkx = nx.DiGraph()
+        self.networkx: nx.DiGraph = nx.DiGraph()
 
         # Keep track of node IDs
-        self.ids = {}
+        self.ids: dict[str, NodeInfo] = {}
 
         # Add the start node
         self.networkx.add_node('start', label='start')
@@ -48,12 +54,12 @@ class AbstractGraph(ABC):
         """
         return self.final_trace
 
-    def _get_or_create_id(self, info: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo]) -> str:
+    def _get_or_create_id(self, info: NodeInfo) -> str:
         """
         Get the ID for a state that has been added before, or create and store a new one.
         """
         for i in self.ids.keys():
-            if self.nodes_equal(self.ids[i], info):
+            if self.ids[i] == info:
                 return i
 
         new_id = f"node{len(self.ids)}"
@@ -69,8 +75,7 @@ class AbstractGraph(ABC):
 
     @staticmethod
     @abstractmethod
-    def select_node_info(pair: tuple[ScenarioInfo, StateInfo]) -> ScenarioInfo | StateInfo | tuple[
-        ScenarioInfo, StateInfo]:
+    def select_node_info(pair: tuple[ScenarioInfo, StateInfo]) -> NodeInfo:
         """
         Select the info to use to compare nodes and generate their labels for a specific graph type.
         """
@@ -78,8 +83,7 @@ class AbstractGraph(ABC):
 
     @staticmethod
     @abstractmethod
-    def select_edge_info(pair: tuple[ScenarioInfo, StateInfo]) -> ScenarioInfo | StateInfo | tuple[
-        ScenarioInfo, StateInfo] | None:
+    def select_edge_info(pair: tuple[ScenarioInfo, StateInfo]) -> EdgeInfo:
         """
         Select the info to use to generate the label for each edge for a specific graph type.
         """
@@ -87,7 +91,7 @@ class AbstractGraph(ABC):
 
     @staticmethod
     @abstractmethod
-    def create_node_label(info: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo]) -> str:
+    def create_node_label(info: NodeInfo) -> str:
         """
         Create the label for a node given its chosen information.
         """
@@ -95,17 +99,8 @@ class AbstractGraph(ABC):
 
     @staticmethod
     @abstractmethod
-    def create_edge_label(info: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo] | None) -> str:
+    def create_edge_label(info: EdgeInfo) -> str:
         """
         Create the label for an edge given its chosen information.
-        """
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def nodes_equal(node1: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo],
-                    node2: ScenarioInfo | StateInfo | tuple[ScenarioInfo, StateInfo]) -> bool:
-        """
-        Check whether two nodes are equal given their chosen information.
         """
         pass

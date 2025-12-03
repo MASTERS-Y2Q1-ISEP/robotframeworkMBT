@@ -4,7 +4,6 @@ from robot.api import logger
 
 from robotmbt.modelspace import ModelSpace
 from robotmbt.suitedata import Scenario
-from robotmbt.tracestate import TraceState
 
 
 class ScenarioInfo:
@@ -26,6 +25,9 @@ class ScenarioInfo:
 
     def __str__(self):
         return f"Scenario {self.src_id}: {self.name}"
+
+    def __eq__(self, other):
+        return self.src_id == other.src_id
 
 
 class StateInfo:
@@ -80,7 +82,7 @@ class StateInfo:
 
 def _sanity_check(expected, scenario, state):
     (prev_scen, prev_state) = expected
-    if prev_scen.src_id != scenario.src_id:
+    if prev_scen != scenario:
         logger.warn(
             f'TraceInfo got out of sync!\nExpected scenario: {prev_scen}\nActual scenario: {scenario}')
     if prev_state != state:

@@ -37,8 +37,12 @@ class TraceSnapShot:
     def __init__(self, id: str, inserted_scenario: str | Scenario, model_state: ModelSpace, drought: int = 0):
         self.id: str = id
         self.scenario: str | Scenario = inserted_scenario
-        self.model: ModelSpace = model_state.copy()
+        self._model: ModelSpace = model_state.copy()
         self.coverage_drought: int = drought
+
+    @property
+    def model(self) -> ModelSpace:
+        return self._model.copy()
 
 
 class TraceState:
@@ -59,7 +63,7 @@ class TraceState:
     @property
     def model(self) -> ModelSpace | None:
         """returns the model as it is at the end of the current trace"""
-        return self._snapshots[-1].model.copy() if self._trace else None
+        return self._snapshots[-1].model if self._trace else None
 
     @property
     def tried(self) -> tuple[int, ...]:

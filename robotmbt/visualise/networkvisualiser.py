@@ -17,6 +17,11 @@ from math import sqrt
 import networkx as nx
 
 
+def generate_html(graph: AbstractGraph) -> str:
+    vis = NetworkVisualiser(graph)
+    return vis.generate_html()
+
+
 class NetworkVisualiser:
     """
     Generate plot with Bokeh

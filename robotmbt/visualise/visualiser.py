@@ -1,8 +1,8 @@
 from robotmbt.modelspace import ModelSpace
 from robotmbt.tracestate import TraceState
+from robotmbt.visualise import networkvisualiser
 from robotmbt.visualise.graphs.reducedSDVgraph import ReducedSDVGraph
 from robotmbt.visualise.graphs.scenariodeltavaluegraph import ScenarioDeltaValueGraph
-from robotmbt.visualise import networkvisualiser
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 from robotmbt.visualise.graphs.scenariograph import ScenarioGraph
 from robotmbt.visualise.graphs.stategraph import StateGraph
@@ -50,10 +50,10 @@ class Visualiser:
             graph: AbstractGraph = ReducedSDVGraph(self.trace_info)
         else:
             graph: AbstractGraph = ScenarioStateGraph(self.trace_info)
-        
+
         vis = networkvisualiser.NetworkVisualiser(graph, self.suite_name)
         html_bokeh = vis.generate_html()
-        
+
         graph_size = networkvisualiser.NetworkVisualiser.GRAPH_SIZE_PX
-        
+
         return f'<iframe srcdoc="{html.escape(html_bokeh)}" width="{graph_size}px" height="{graph_size}px"></iframe>'

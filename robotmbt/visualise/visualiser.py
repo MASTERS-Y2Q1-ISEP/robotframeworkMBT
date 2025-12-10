@@ -1,6 +1,6 @@
 from robotmbt.modelspace import ModelSpace
 from robotmbt.tracestate import TraceState
-from robotmbt.visualise.networkvisualiser import NetworkVisualiser
+from robotmbt.visualise import networkvisualiser
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 from robotmbt.visualise.graphs.scenariograph import ScenarioGraph
 from robotmbt.visualise.graphs.stategraph import StateGraph
@@ -41,8 +41,8 @@ class Visualiser:
             graph: AbstractGraph = StateGraph(self.trace_info)
         else:
             graph: AbstractGraph = ScenarioStateGraph(self.trace_info)
-        html_bokeh = NetworkVisualiser(graph).generate_html()
+        html_bokeh = networkvisualiser.generate_html(graph)
         return f"<iframe srcdoc=\"{html.escape(html_bokeh)}\", \
-            width=\"{NetworkVisualiser.GRAPH_SIZE_PX}px\", \
-            height=\"{NetworkVisualiser.GRAPH_SIZE_PX}px\">\
+            width=600px\", \
+            height=600px\">\
             </iframe>"

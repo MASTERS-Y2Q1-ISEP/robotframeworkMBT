@@ -1,5 +1,4 @@
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
-from robotmbt.visualise.graphs.scenariostategraph import ScenarioStateGraph
 from robotmbt.visualise.graphs.stategraph import StateGraph
 from robotmbt.visualise.graphs.scenariostategraph import ScenarioStateGraph
 from bokeh.palettes import Spectral4
@@ -13,6 +12,11 @@ from bokeh.embed import file_html
 from bokeh.resources import CDN
 from math import sqrt
 import networkx as nx
+
+
+def generate_html(graph: AbstractGraph) -> str:
+    vis = NetworkVisualiser(graph)
+    return vis.generate_html()
 
 
 class NetworkVisualiser:

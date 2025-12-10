@@ -1,324 +1,445 @@
-from bokeh.core.property.vectorization import value
-from bokeh.embed import file_html
-from bokeh.models import ColumnDataSource, Rect, Text, ResetTool, SaveTool, WheelZoomTool, PanTool, Plot, Range1d, \
-    Title, FullscreenTool, CustomJS, Segment, Arrow, NormalHead
-
-from grandalf.graphs import Vertex as GVertex, Edge as GEdge, Graph as GGraph
-from grandalf.layouts import SugiyamaLayout
-
-from networkx import DiGraph
-
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
-
-# Padding between different nodes
-HORIZONTAL_PADDING_BETWEEN_NODES = 50
-VERTICAL_PADDING_BETWEEN_NODES = 50
-
-# Padding within the nodes between the borders and inner text
-HORIZONTAL_PADDING_WITHIN_NODES = 5
-VERTICAL_PADDING_WITHIN_NODES = 5
-
-# Colors for different parts of the graph
-FINAL_TRACE_NODE_COLOR = '#CCCC00'
-OTHER_NODE_COLOR = '#999989'
-
-# Dimensions of the plot in the window
-INNER_WINDOW_WIDTH = 846
-INNER_WINDOW_HEIGHT = 882
+from robotmbt.visualise.graphs.stategraph import StateGraph
+from robotmbt.visualise.graphs.scenariostategraph import ScenarioStateGraph
+from bokeh.palettes import Spectral4
+from bokeh.models import (
+    Plot, Range1d, Circle, Rect,
+    Arrow, NormalHead,
+    Bezier, ColumnDataSource, ResetTool,
+    SaveTool, WheelZoomTool, PanTool, Text
+)
+from bokeh.embed import file_html
+from bokeh.resources import CDN
+from math import sqrt
+import networkx as nx
 
 
-def generate_html(graph: AbstractGraph, suite_name: str) -> str:
-    return NetworkVisualiser(graph, suite_name).generate_html()
-
-
-class Node:
-    def __init__(self, node_id: str, label: str, x: int, y: int, width: float, height: float):
-        self.node_id = node_id
-        self.label = label
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-
-
-class Edge:
-    def __init__(self, from_node: str, to_node: str, label: str, points: list[tuple[float, float]]):
-        self.from_node = from_node
-        self.to_node = to_node
-        self.label = label
-        self.points = points
+def generate_html(graph: AbstractGraph) -> str:
+    vis = NetworkVisualiser(graph)
+    return vis.generate_html()
 
 
 class NetworkVisualiser:
-    def __init__(self, graph: AbstractGraph, suite_name: str):
-        # Extract what we need from the graph
-        self.networkx: DiGraph = graph.networkx
-        self.final_trace = graph.get_final_trace()
+    """
+    Generate plot with Bokeh
+    """
 
-        # Set up a Bokeh figure
-        self.plot = Plot()
+    ARROWHEAD_SIZE: int = 6  # Consistent arrowhead size
+    EDGE_WIDTH: float = 2.0
+    EDGE_ALPHA: float = 0.7
+    EDGE_COLOUR: str | tuple[int, int, int] = (
+        12, 12, 12)  # 'visual studio black'
+    GRAPH_PADDING_PERC: int = 15  # %
+    # in px, needs to be equal for height and width otherwise calculations are wrong
+    GRAPH_SIZE_PX: int = 600
+    MAX_VERTEX_NAME_LEN: int = 20  # no. of characters
 
-        # Create Sugiyama layout
-        nodes, edges = self._create_layout()
+    # Colors and styles for executed vs unexecuted elements
+    EXECUTED_NODE_COLOR = Spectral4[0]  # Bright blue
+    UNEXECUTED_NODE_COLOR = '#D3D3D3'  # Light gray
+    EXECUTED_TEXT_COLOR = '#C8C8C8'
+    UNEXECUTED_TEXT_COLOR = '#A9A9A9'  # Dark gray
+    EXECUTED_EDGE_COLOR = (12, 12, 12)  # Black
+    UNEXECUTED_EDGE_COLOR = '#808080'  # Gray
+    EXECUTED_EDGE_WIDTH = 2.5
+    UNEXECUTED_EDGE_WIDTH = 1.2
+    EXECUTED_EDGE_ALPHA = 0.7
+    UNEXECUTED_EDGE_ALPHA = 0.3
+    EXECUTED_LABEL_COLOR = 'black'
+    UNEXECUTED_LABEL_COLOR = '#A9A9A9'
 
-        # Add the nodes to the graph
-        self._add_nodes(nodes)
+    def __init__(self, graph: AbstractGraph):
+        self.plot = None
+        self.graph = graph
+        self.node_props = {}  # Store node properties for arrow calculations
+        self.graph_layout = {}
 
-        # Add the edges to the graph
-        self._add_edges(edges)
+        # graph customisation options
+        self.node_radius = 1.0
+        self.char_width = 0.1
+        self.char_height = 0.1
+        self.padding = 0.1
 
-        # Add our features to the graph (e.g. tools)
-        self._add_features(suite_name)
+        # Get executed elements for visual differentiation
+        final_trace = graph.get_final_trace()
+        self.executed_nodes = set(final_trace)
+        self.executed_edges = set()
+        for i in range(0, len(final_trace) - 1):
+            from_node = final_trace[i]
+            to_node = final_trace[i + 1]
+            self.executed_edges.add((from_node, to_node))
 
-    def generate_html(self):
-        return file_html(self.plot, 'inline', "graph")
+    def generate_html(self) -> str:
+        """
+        Generate html file from networkx graph via Bokeh
+        """
+        self._calculate_graph_layout()
+        self._initialise_plot()
+        self._add_nodes_with_labels()
+        self._add_edges()
+        return file_html(self.plot, CDN, "graph")
 
-    def _add_nodes(self, nodes: list[Node]):
-        # The ColumnDataSources to store our nodes and edges in Bokeh's format
-        node_source: ColumnDataSource = ColumnDataSource(
-            {'id': [], 'x': [], 'y': [], 'w': [], 'h': [], 'color': []})
-        node_label_source: ColumnDataSource = ColumnDataSource(
-            {'id': [], 'x': [], 'y': [], 'label': []})
+    def _initialise_plot(self):
+        """
+        Define plot with width, height, x_range, y_range and enable tools.
+        x_range and y_range are padded. Plot needs to be a square
+        """
+        padding: float = self.GRAPH_PADDING_PERC / 100
 
-        # Add all nodes to the column data sources
-        for node in nodes:
-            node_source.data['id'].append(node.node_id)
-            node_source.data['x'].append(node.x)
-            node_source.data['y'].append(-node.y)
-            node_source.data['w'].append(node.width)
-            node_source.data['h'].append(node.height)
-            node_source.data['color'].append(
-                FINAL_TRACE_NODE_COLOR if node.node_id in self.final_trace else OTHER_NODE_COLOR)
+        x_range, y_range = zip(*self.graph_layout.values())
+        x_min = min(x_range) - padding * (max(x_range) - min(x_range))
+        x_max = max(x_range) + padding * (max(x_range) - min(x_range))
+        y_min = min(y_range) - padding * (max(y_range) - min(y_range))
+        y_max = max(y_range) + padding * (max(y_range) - min(y_range))
 
-            node_label_source.data['id'].append(node.node_id)
-            node_label_source.data['x'].append(node.x - node.width / 2 + HORIZONTAL_PADDING_WITHIN_NODES)
-            node_label_source.data['y'].append(-node.y)
-            node_label_source.data['label'].append(node.label)
+        # scale node radius based on range
+        nodes_range = max(x_max - x_min, y_max - y_min)
+        self.node_radius = nodes_range / 150
+        self.char_width = nodes_range / 150
+        self.char_height = nodes_range / 150
 
-        # Add the glyphs for nodes and their labels
-        node_glyph = Rect(x='x', y='y', width='w', height='h', fill_color='color')
-        self.plot.add_glyph(node_source, node_glyph)
+        # create plot
+        x_range = Range1d(min(x_min, y_min), max(x_max, y_max))
+        y_range = Range1d(min(x_min, y_min), max(x_max, y_max))
 
-        node_label_glyph = Text(x='x', y='y', text='label', text_align='left', text_baseline='middle',
-                                text_font_size='16pt', text_font=value("Courier New"))
-        node_label_glyph.tags = ["scalable_text16"]
-        self.plot.add_glyph(node_label_source, node_label_glyph)
+        self.plot = Plot(width=self.GRAPH_SIZE_PX,
+                         height=self.GRAPH_SIZE_PX,
+                         x_range=x_range,
+                         y_range=y_range)
 
-    def _add_edges(self, edges: list[Edge]):
-        # The ColumnDataSources to store our edges in Bokeh's format
-        edge_part_source: ColumnDataSource = ColumnDataSource(
-            {'from': [], 'to': [], 'start_x': [], 'start_y': [], 'end_x': [], 'end_y': []})
-        edge_arrow_source: ColumnDataSource = ColumnDataSource(
-            {'from': [], 'to': [], 'start_x': [], 'start_y': [], 'end_x': [], 'end_y': []})
-        edge_label_source: ColumnDataSource = ColumnDataSource({'from': [], 'to': [], 'x': [], 'y': [], 'label': []})
-
-        for edge in edges:
-            start_x, start_y = 0, 0
-            end_x, end_y = 0, 0
-            # Add edges going through the calculated points
-            for i in range(len(edge.points) - 1):
-                start_x, start_y = edge.points[i]
-                end_x, end_y = edge.points[i + 1]
-                if i < len(edge.points) - 2:
-                    # Middle part of edge without arrow
-                    edge_part_source.data['from'].append(edge.from_node)
-                    edge_part_source.data['to'].append(edge.to_node)
-                    edge_part_source.data['start_x'].append(start_x)
-                    edge_part_source.data['start_y'].append(-start_y)
-                    edge_part_source.data['end_x'].append(end_x)
-                    edge_part_source.data['end_y'].append(-end_y)
-                else:
-                    # End of edge with arrow
-                    edge_arrow_source.data['from'].append(edge.from_node)
-                    edge_arrow_source.data['to'].append(edge.to_node)
-                    edge_arrow_source.data['start_x'].append(start_x)
-                    edge_arrow_source.data['start_y'].append(-start_y)
-                    edge_arrow_source.data['end_x'].append(end_x)
-                    edge_arrow_source.data['end_y'].append(-end_y)
-
-            # Add the label
-            edge_label_source.data['from'].append(edge.from_node)
-            edge_label_source.data['to'].append(edge.to_node)
-            edge_label_source.data['x'].append((start_x + end_x) / 2)
-            edge_label_source.data['y'].append(- (start_y + end_y) / 2)
-            edge_label_source.data['label'].append(edge.label)
-
-        # Add the glyphs for edges and their labels
-        edge_part_glyph = Segment(x0='start_x', y0='start_y', x1='end_x', y1='end_y')
-        self.plot.add_glyph(edge_part_source, edge_part_glyph)
-
-        arrow_layout = Arrow(
-            end=NormalHead(size=10),
-            x_start='start_x', y_start='start_y',
-            x_end='end_x', y_end='end_y',
-            source=edge_arrow_source
-        )
-        self.plot.add_layout(arrow_layout)
-
-        edge_label_glyph = Text(x='x', y='y', text='label', text_align='center', text_baseline='middle',
-                                text_font_size='8pt', text_font=value("Courier New"))
-        edge_label_glyph.tags = ["scalable_text8"]
-        self.plot.add_glyph(edge_label_source, edge_label_glyph)
-
-    def _create_layout(self) -> tuple[list[Node], list[Edge]]:
-        vertices = []
-        edges = []
-        flips = []
-
-        start = None
-        for node_id in self.networkx.nodes:
-            v = GVertex(node_id)
-            w, h = _calculate_dimensions(self.networkx.nodes[node_id]['label'])
-            v.view = NodeView(w, h)
-            vertices.append(v)
-            if node_id == 'start':
-                start = v
-
-        flip = _flip_edges([e for e in self.networkx.edges])
-
-        for (from_id, to_id) in self.networkx.edges:
-            from_node = _find_node(vertices, from_id)
-            to_node = _find_node(vertices, to_id)
-            e = GEdge(from_node, to_node)
-            e.view = EdgeView()
-            edges.append(e)
-            if (from_id, to_id) in flip:
-                flips.append(e)
-
-        g = GGraph(vertices, edges)
-
-        sugiyama = SugiyamaLayout(g.C[0])
-        sugiyama.init_all(roots=[start], inverted_edges=flips)
-        sugiyama.draw()
-
-        ns = []
-        for v in g.C[0].sV:
-            node_id = v.data
-            label = self.networkx.nodes[node_id]['label']
-            (x, y) = v.view.xy
-            (w, h) = _calculate_dimensions(label)
-            ns.append(Node(node_id, label, x, y, w, h))
-
-        es = []
-        for e in g.C[0].sE:
-            from_id = e.v[0].data
-            to_id = e.v[1].data
-            label = self.networkx.edges[(from_id, to_id)]['label']
-            points = e.view.points
-            es.append(Edge(from_id, to_id, label, points))
-
-        return ns, es
-
-    def _add_features(self, suite_name: str):
-        # add title
-        self.plot.add_layout(Title(text=suite_name, align="center"), "above")
-
-        # Add the different tools
+        # add tools
         self.plot.add_tools(ResetTool(), SaveTool(),
-                            WheelZoomTool(), PanTool(),
-                            FullscreenTool())
+                            WheelZoomTool(), PanTool())
 
-        # Specify the default range - these values represent the aspect ratio of the actual view in the window
-        self.plot.x_range = Range1d(-INNER_WINDOW_WIDTH / 2, INNER_WINDOW_WIDTH / 2)
-        self.plot.y_range = Range1d(-INNER_WINDOW_HEIGHT + VERTICAL_PADDING_BETWEEN_NODES,
-                                    VERTICAL_PADDING_BETWEEN_NODES)
-        self.plot.x_range.tags = [{"initial_span": INNER_WINDOW_WIDTH}]
-        self.plot.y_range.tags = [{"initial_span": INNER_WINDOW_HEIGHT}]
+    def _calculate_text_dimensions(self, text: str) -> tuple[float, float]:
+        """Calculate width and height needed for text based on actual text length"""
+        # Calculate width based on character count
+        text_length = len(text)
+        width = (text_length * self.char_width) + (2 * self.padding)
 
-        zoom_cb = CustomJS(args=dict(xr=self.plot.x_range, yr=self.plot.y_range, plot=self.plot), code="""
-            const xspan0 = xr.tags[0].initial_span;
-            const yspan0 = yr.tags[0].initial_span;
+        # Reduced height for more compact rectangles
+        height = self.char_height + self.padding
 
-            const xspan = xr.end - xr.start;
-            const yspan = yr.end - yr.start;
+        return width, height
 
-            const zoom = Math.min(xspan0 / xspan, yspan0 / yspan);
+    def _add_nodes_with_labels(self):
+        """
+        Add nodes with text labels inside them
+        """
+        node_labels = nx.get_node_attributes(self.graph.networkx, "label")
 
-            for (const r of plot.renderers) {
-                if (r.glyph && r.glyph.tags && r.glyph.tags.includes("scalable_text16")) {
-                    const base = 16;  // base pt size
-                    r.glyph.text_font_size = (base * zoom).toFixed(2) + "pt";
-                }
-                if (r.glyph && r.glyph.tags && r.glyph.tags.includes("scalable_text8")) {
-                    const base = 8;  // base pt size
-                    r.glyph.text_font_size = (base * zoom).toFixed(2) + "pt";
-                }
-            }
-            plot.request_render();
-        """)
+        # Create data sources for nodes and labels
+        circle_data = dict(x=[], y=[], radius=[], label=[], color=[], text_color=[])
+        rect_data = dict(x=[], y=[], width=[], height=[], label=[], color=[], text_color=[])
+        text_data = dict(x=[], y=[], text=[], text_color=[])
 
-        self.plot.x_range.js_on_change("start", zoom_cb)
-        self.plot.x_range.js_on_change("end", zoom_cb)
-        self.plot.y_range.js_on_change("start", zoom_cb)
-        self.plot.y_range.js_on_change("end", zoom_cb)
+        for node in self.graph.networkx.nodes:
+            # Labels are always defined and cannot be lists
+            label = node_labels[node]
+            label = self._cap_name(label)
+            x, y = self.graph_layout[node]
 
+            # Determine if node is executed
+            is_executed = node in self.executed_nodes
+            node_color = self.EXECUTED_NODE_COLOR if is_executed else self.UNEXECUTED_NODE_COLOR
+            text_color = self.EXECUTED_TEXT_COLOR if is_executed else self.UNEXECUTED_TEXT_COLOR
 
-class NodeView:
-    def __init__(self, width: float, height: float):
-        self.w, self.h = width, height
-        self.xy = (0, 0)
+            if node == 'start':
+                # For start node (circle), calculate radius based on text width
+                text_width, text_height = self._calculate_text_dimensions(
+                    label)
+                # Calculate radius from text dimensions
+                radius = (text_width / 2.5)
 
+                circle_data['x'].append(x)
+                circle_data['y'].append(y)
+                circle_data['radius'].append(radius)
+                circle_data['label'].append(label)
+                circle_data['color'].append(node_color)
+                circle_data['text_color'].append(text_color)
 
-class EdgeView:
-    def __init__(self):
-        self.points = []
+                # Store node properties for arrow calculations
+                self.node_props[node] = {
+                    'type': 'circle', 'x': x, 'y': y, 'radius': radius, 'label': label}
 
-    def setpath(self, points: list[tuple[float, float]]):
-        self.points = points
+            else:
+                # For scenario nodes (rectangles), calculate dimensions based on text
+                text_width, text_height = self._calculate_text_dimensions(
+                    label)
 
+                rect_data['x'].append(x)
+                rect_data['y'].append(y)
+                rect_data['width'].append(text_width)
+                rect_data['height'].append(text_height)
+                rect_data['label'].append(label)
+                rect_data['color'].append(node_color)
+                rect_data['text_color'].append(text_color)
 
-def _find_node(nodes: list[GVertex], node_id: str):
-    for node in nodes:
-        if node.data == node_id:
-            return node
-    return None
+                # Store node properties for arrow calculations
+                self.node_props[node] = {'type': 'rect', 'x': x, 'y': y, 'width': text_width, 'height': text_height,
+                                         'label': label}
 
+            # Add text for all nodes
+            text_data['x'].append(x)
+            text_data['y'].append(y)
+            text_data['text'].append(label)
+            text_data['text_color'].append(text_color)
 
-def _calculate_dimensions(label: str) -> tuple[float, float]:
-    lines = label.splitlines()
-    width = 0
-    for line in lines:
-        width = max(width, len(line) * 19.25)
-    height = len(lines) * 43 - 9
-    return width + 2 * HORIZONTAL_PADDING_WITHIN_NODES, height + 2 * VERTICAL_PADDING_WITHIN_NODES
+        # Add circles for start node
+        if circle_data['x']:
+            circle_source = ColumnDataSource(circle_data)
+            circles = Circle(x='x', y='y', radius='radius',
+                             fill_color='color', line_color='color')
+            self.plot.add_glyph(circle_source, circles)
 
+        # Add rectangles for scenario nodes
+        if rect_data['x']:
+            rect_source = ColumnDataSource(rect_data)
+            rectangles = Rect(x='x', y='y', width='width', height='height',
+                              fill_color='color', line_color='color')
+            self.plot.add_glyph(rect_source, rectangles)
 
-def _flip_edges(edges: list[tuple[str, str]]) -> list[tuple[str, str]]:
-    # Step 1: Build adjacency list from edges
-    adj = {}
-    for u, v in edges:
-        if u not in adj:
-            adj[u] = []
-        adj[u].append(v)
+        # Add text labels for all nodes
+        text_source = ColumnDataSource(text_data)
+        text_labels = Text(x='x', y='y', text='text',
+                           text_align='center', text_baseline='middle',
+                           text_color='text_color', text_font_size='9pt')
+        self.plot.add_glyph(text_source, text_labels)
 
-    # Step 2: Helper function to detect cycles
-    def dfs(node, visited, rec_stack, cycle_edges):
-        visited[node] = True
-        rec_stack[node] = True
+    def _get_edge_points(self, start_node, end_node):
+        """Calculate edge start and end points at node borders"""
+        start_props = self.node_props.get(start_node)
+        end_props = self.node_props.get(end_node)
 
-        if node in adj:
-            for neighbor in adj[node]:
-                edge = (node, neighbor)
+        # Node properties should always exist
+        if not start_props or not end_props:
+            raise ValueError(
+                f"Node properties not found for nodes: {start_node}, {end_node}")
 
-                if not visited.get(neighbor, False):
-                    if dfs(neighbor, visited, rec_stack, cycle_edges):
-                        cycle_edges.append(edge)
-                elif rec_stack.get(neighbor, False):
-                    # Found a cycle, add the edge to the cycle_edges list
-                    cycle_edges.append(edge)
+        # Calculate direction vector
+        dx = end_props['x'] - start_props['x']
+        dy = end_props['y'] - start_props['y']
+        distance = sqrt(dx * dx + dy * dy)
 
-        rec_stack[node] = False
-        return False
+        # Self-loops are handled separately, distance should never be 0
+        if distance == 0:
+            raise ValueError(
+                "Distance between different nodes should not be zero")
 
-    # Step 3: Detect cycles
-    visited = {}
-    rec_stack = {}
-    cycle_edges = []
+        # Normalize direction vector
+        dx /= distance
+        dy /= distance
 
-    for node in adj:
-        if not visited.get(node, False):
-            dfs(node, visited, rec_stack, cycle_edges)
+        # Calculate start point at border
+        if start_props['type'] == 'circle':
+            start_x = start_props['x'] + dx * start_props['radius']
+            start_y = start_props['y'] + dy * start_props['radius']
+        else:
+            # Find where the line intersects the rectangle border
+            rect_width = start_props['width']
+            rect_height = start_props['height']
 
-    # Step 4: Return the list of edges that need to be flipped
-    # In this case, the cycle_edges are the ones that we need to "break" by flipping
-    return cycle_edges
+            # Calculate scaling factors for x and y directions
+            scale_x = rect_width / (2 * abs(dx)) if dx != 0 else float('inf')
+            scale_y = rect_height / (2 * abs(dy)) if dy != 0 else float('inf')
+
+            # Use the smaller scale to ensure we hit the border
+            scale = min(scale_x, scale_y)
+
+            start_x = start_props['x'] + dx * scale
+            start_y = start_props['y'] + dy * scale
+
+        # Calculate end point at border (reverse direction)
+        # End nodes should never be circles for regular edges
+        if end_props['type'] == 'circle':
+            raise ValueError(
+                f"End node should not be a circle for regular edges: {end_node}")
+        else:
+            rect_width = end_props['width']
+            rect_height = end_props['height']
+
+            # Calculate scaling factors for x and y directions (reverse)
+            scale_x = rect_width / (2 * abs(dx)) if dx != 0 else float('inf')
+            scale_y = rect_height / (2 * abs(dy)) if dy != 0 else float('inf')
+
+            # Use the smaller scale to ensure we hit the border
+            scale = min(scale_x, scale_y)
+
+            end_x = end_props['x'] - dx * scale
+            end_y = end_props['y'] - dy * scale
+
+        return start_x, start_y, end_x, end_y
+
+    def add_self_loop(self, node_id: str):
+        """
+        Circular arc that starts and ends at the top side of the rectangle
+        Start at 1/4 width, end at 3/4 width, with a circular arc above
+        The arc itself ends with the arrowhead pointing into the rectangle
+        """
+        # Get node properties directly by node ID
+        node_props = self.node_props.get(node_id)
+
+        # Node properties should always exist
+        if node_props is None:
+            raise ValueError(f"Node properties not found for node: {node_id}")
+
+        # Self-loops should only be for rectangle nodes (scenarios)
+        if node_props['type'] != 'rect':
+            raise ValueError(
+                f"Self-loops should only be for rectangle nodes, got: {node_props['type']}")
+
+        x, y = node_props['x'], node_props['y']
+        width = node_props['width']
+        height = node_props['height']
+
+        # Start: 1/4 width from left, top side
+        start_x = x - width / 4
+        start_y = y + height / 2
+
+        # End: 3/4 width from left, top side
+        end_x = x + width / 4
+        end_y = y + height / 2
+
+        # Arc height above the rectangle
+        arc_height = width * 0.4
+
+        # Control points for a circular arc above
+        control1_x = x - width / 8
+        control1_y = y + height / 2 + arc_height
+
+        control2_x = x + width / 8
+        control2_y = y + height / 2 + arc_height
+
+        # Determine if edge is executed
+        is_executed = (node_id, node_id) in self.executed_edges
+        edge_color = self.EXECUTED_EDGE_COLOR if is_executed else self.UNEXECUTED_EDGE_COLOR
+        edge_width = self.EXECUTED_EDGE_WIDTH if is_executed else self.UNEXECUTED_EDGE_WIDTH
+        edge_alpha = self.EXECUTED_EDGE_ALPHA if is_executed else self.UNEXECUTED_EDGE_ALPHA
+
+        # Create the Bezier curve (the main arc) with the same thickness as straight lines
+        loop = Bezier(
+            x0=start_x, y0=start_y,
+            x1=end_x, y1=end_y,
+            cx0=control1_x, cy0=control1_y,
+            cx1=control2_x, cy1=control2_y,
+            line_color=edge_color,
+            line_width=edge_width,
+            line_alpha=edge_alpha,
+        )
+        self.plot.add_glyph(loop)
+
+        # Calculate the tangent direction at the end of the Bezier curve
+        # For a cubic Bezier, the tangent at the end point is from the last control point to the end point
+        tangent_x = end_x - control2_x
+        tangent_y = end_y - control2_y
+
+        # Normalize the tangent vector
+        tangent_length = sqrt(tangent_x ** 2 + tangent_y ** 2)
+        if tangent_length > 0:
+            tangent_x /= tangent_length
+            tangent_y /= tangent_length
+
+        # Add just the arrowhead (NormalHead) at the end point, oriented along the tangent
+        arrowhead = NormalHead(
+            size=NetworkVisualiser.ARROWHEAD_SIZE,
+            line_color=edge_color,
+            fill_color=edge_color,
+            line_width=edge_width
+        )
+
+        # Create a standalone arrowhead at the end point
+        # Strategy: use a very short Arrow that's essentially just the head
+        arrow = Arrow(
+            end=arrowhead,
+            x_start=end_x - tangent_x * 0.001,  # Almost zero length line
+            y_start=end_y - tangent_y * 0.001,
+            x_end=end_x,
+            y_end=end_y,
+            line_color=edge_color,
+            line_width=edge_width,
+            line_alpha=edge_alpha
+        )
+        self.plot.add_layout(arrow)
+
+        # Add edge label - positioned above the arc
+        label_x = x
+        label_y = y + height / 2 + arc_height * 0.6
+
+        return label_x, label_y
+
+    def _add_edges(self):
+        edge_labels = nx.get_edge_attributes(self.graph.networkx, "label")
+
+        # Create data sources for edges and edge labels
+        edge_text_data = dict(x=[], y=[], text=[], text_color=[])
+
+        for edge in self.graph.networkx.edges():
+            # Edge labels are always defined and cannot be lists
+            edge_label = edge_labels[edge]
+            edge_label = self._cap_name(edge_label)
+
+            # Determine if edge is executed
+            is_executed = edge in self.executed_edges
+            edge_color = self.EXECUTED_EDGE_COLOR if is_executed else self.UNEXECUTED_EDGE_COLOR
+            edge_width = self.EXECUTED_EDGE_WIDTH if is_executed else self.UNEXECUTED_EDGE_WIDTH
+            edge_alpha = self.EXECUTED_EDGE_ALPHA if is_executed else self.UNEXECUTED_EDGE_ALPHA
+            label_color = self.EXECUTED_LABEL_COLOR if is_executed else self.UNEXECUTED_LABEL_COLOR
+
+            edge_text_data['text'].append(edge_label)
+            edge_text_data['text_color'].append(label_color)
+
+            if edge[0] == edge[1]:
+                # Self-loop handled separately
+                label_x, label_y = self.add_self_loop(edge[0])
+                edge_text_data['x'].append(label_x)
+                edge_text_data['y'].append(label_y)
+
+            else:
+                # Calculate edge points at node borders
+                start_x, start_y, end_x, end_y = self._get_edge_points(
+                    edge[0], edge[1])
+
+                # Add arrow between the calculated points
+                arrow = Arrow(
+                    end=NormalHead(
+                        size=NetworkVisualiser.ARROWHEAD_SIZE,
+                        line_color=edge_color,
+                        fill_color=edge_color,
+                        line_width=edge_width),
+                    x_start=start_x, y_start=start_y,
+                    x_end=end_x, y_end=end_y,
+                    line_color=edge_color,
+                    line_width=edge_width,
+                    line_alpha=edge_alpha
+                )
+                self.plot.add_layout(arrow)
+
+                # Collect edge label data (position at midpoint)
+                edge_text_data['x'].append((start_x + end_x) / 2)
+                edge_text_data['y'].append((start_y + end_y) / 2)
+
+        # Add all edge labels at once
+        if edge_text_data['x']:
+            edge_text_source = ColumnDataSource(edge_text_data)
+            edge_labels_glyph = Text(x='x', y='y', text='text',
+                                     text_align='center', text_baseline='middle',
+                                     text_color='text_color', text_font_size='7pt')
+            self.plot.add_glyph(edge_text_source, edge_labels_glyph)
+
+    def _cap_name(self, name: str) -> str:
+        if len(name) < self.MAX_VERTEX_NAME_LEN or isinstance(self.graph, StateGraph) or isinstance(self.graph, ScenarioStateGraph):
+            return name
+
+        return f"{name[:(self.MAX_VERTEX_NAME_LEN - 3)]}..."
+
+    def _calculate_graph_layout(self):
+        try:
+            self.graph_layout = nx.bfs_layout(
+                self.graph.networkx, 'start', align='horizontal')
+            # horizontal mirror
+            for node in self.graph_layout:
+                self.graph_layout[node] = (self.graph_layout[node][0],
+                                           -1 * self.graph_layout[node][1])
+        except nx.NetworkXException:
+            # if planar layout cannot find a graph without crossing edges
+            self.graph_layout = nx.arf_layout(self.graph.networkx, seed=42)

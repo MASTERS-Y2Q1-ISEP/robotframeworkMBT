@@ -1,7 +1,4 @@
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
-from robotmbt.visualise.graphs.reducedSDVgraph import ReducedSDVGraph
-from robotmbt.visualise.graphs.scenariodeltavaluegraph import ScenarioDeltaValueGraph
-from robotmbt.visualise.graphs.scenariostategraph import ScenarioStateGraph
 from robotmbt.visualise.graphs.stategraph import StateGraph
 from robotmbt.visualise.graphs.scenariostategraph import ScenarioStateGraph
 from bokeh.palettes import Spectral4
@@ -9,13 +6,18 @@ from bokeh.models import (
     Plot, Range1d, Circle, Rect,
     Arrow, NormalHead,
     Bezier, ColumnDataSource, ResetTool,
-    SaveTool, WheelZoomTool, PanTool, Text,
-    FullscreenTool, Title
+    SaveTool, WheelZoomTool, PanTool, Text
 )
 from bokeh.embed import file_html
 from bokeh.resources import CDN
 from math import sqrt
 import networkx as nx
+
+
+def generate_html(graph: AbstractGraph) -> str:
+    vis = NetworkVisualiser(graph)
+    return vis.generate_html()
+
 
 class NetworkVisualiser:
     """
@@ -46,10 +48,9 @@ class NetworkVisualiser:
     EXECUTED_LABEL_COLOR = 'black'
     UNEXECUTED_LABEL_COLOR = '#A9A9A9'
 
-    def __init__(self, graph: AbstractGraph, suite_name: str = ""):
+    def __init__(self, graph: AbstractGraph):
         self.plot = None
         self.graph = graph
-        self.suite_name = suite_name
         self.node_props = {}  # Store node properties for arrow calculations
         self.graph_layout = {}
 
@@ -106,13 +107,9 @@ class NetworkVisualiser:
                          x_range=x_range,
                          y_range=y_range)
 
-        # add title
-        self.plot.add_layout(Title(text=self.suite_name, align="center"), "above")
-
         # add tools
         self.plot.add_tools(ResetTool(), SaveTool(),
-                            WheelZoomTool(), PanTool(),
-                            FullscreenTool())
+                            WheelZoomTool(), PanTool())
 
     def _calculate_text_dimensions(self, text: str) -> tuple[float, float]:
         """Calculate width and height needed for text based on actual text length"""
@@ -430,9 +427,7 @@ class NetworkVisualiser:
             self.plot.add_glyph(edge_text_source, edge_labels_glyph)
 
     def _cap_name(self, name: str) -> str:
-        if len(name) < self.MAX_VERTEX_NAME_LEN or isinstance(self.graph, StateGraph) \
-                or isinstance(self.graph, ScenarioStateGraph) or isinstance(self.graph, ScenarioDeltaValueGraph)\
-                or isinstance(self.graph, ReducedSDVGraph):
+        if len(name) < self.MAX_VERTEX_NAME_LEN or isinstance(self.graph, StateGraph) or isinstance(self.graph, ScenarioStateGraph):
             return name
 
         return f"{name[:(self.MAX_VERTEX_NAME_LEN - 3)]}..."

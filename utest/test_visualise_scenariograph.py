@@ -74,7 +74,7 @@ if VISUALISE:
             sg = ScenarioGraph(info)
 
             sg.ids['test'] = ScenarioInfo('test')
-            sg._add_node('test')
+            sg._add_node('test', 1)
 
             self.assertEqual(len(sg.networkx.nodes), 2)
 
@@ -92,7 +92,7 @@ if VISUALISE:
             self.assertIn('start', sg.networkx.nodes)
             self.assertEqual(sg.networkx.nodes['start']['label'], 'start')
 
-            sg._add_node('start')
+            sg._add_node('start', 0)
 
             self.assertEqual(len(sg.networkx.nodes), 1)
             self.assertIn('start', sg.networkx.nodes)

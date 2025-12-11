@@ -18,7 +18,7 @@ class AbstractGraph(ABC, Generic[NodeInfo, EdgeInfo]):
         self.ids: dict[str, NodeInfo] = {}
 
         # Add the start node
-        self.networkx.add_node('start', label='start')
+        self.networkx.add_node('start', label='start', distance=0)
 
         # Add nodes and edges for all traces
         for trace in info.all_traces:
@@ -28,8 +28,8 @@ class AbstractGraph(ABC, Generic[NodeInfo, EdgeInfo]):
                 else:
                     from_node = 'start'
                 to_node = self._get_or_create_id(self.select_node_info(trace[i]))
-                self._add_node(from_node)
-                self._add_node(to_node)
+                self._add_node(from_node, i)
+                self._add_node(to_node, self.networkx.nodes[from_node]['distance'] + 1)
                 self.networkx.add_edge(from_node, to_node,
                                        label=self.create_edge_label(self.select_edge_info(trace[i])))
 
@@ -42,8 +42,8 @@ class AbstractGraph(ABC, Generic[NodeInfo, EdgeInfo]):
                 from_node = 'start'
             to_node = self._get_or_create_id(self.select_node_info(info.current_trace[i]))
             self.final_trace.append(to_node)
-            self._add_node(from_node)
-            self._add_node(to_node)
+            self._add_node(from_node, i)
+            self._add_node(to_node, self.networkx.nodes[from_node]['distance'] + 1)
             self.networkx.add_edge(from_node, to_node,
                                    label=self.create_edge_label(self.select_edge_info(info.current_trace[i])))
 
@@ -66,12 +66,16 @@ class AbstractGraph(ABC, Generic[NodeInfo, EdgeInfo]):
         self.ids[new_id] = info
         return new_id
 
-    def _add_node(self, node: str):
+    def _add_node(self, node: str, distance: int) -> None:
         """
         Add node if it doesn't already exist.
         """
         if node not in self.networkx.nodes:
-            self.networkx.add_node(node, label=self.create_node_label(self.ids[node]))
+            self.networkx.add_node(node, label=self.create_node_label(self.ids[node]), distance=distance)
+        elif 'distance' not in self.networkx.nodes[node]:
+            self.networkx.nodes[node]['distance'] = distance
+        else:
+            self.networkx.nodes[node]['distance'] = min(distance, self.networkx.nodes[node]['distance'])
 
     @staticmethod
     @abstractmethod

@@ -79,7 +79,7 @@ if VISUALISE:
             self.assertNotIn('test', sg.networkx.nodes)
 
             sg.ids['test'] = StateInfo._create_state_with_prop("prop", [("value", "some_value")])
-            sg._add_node('test')
+            sg._add_node('test', 1)
 
             self.assertEqual(len(sg.networkx.nodes), 2)
 
@@ -98,7 +98,7 @@ if VISUALISE:
             self.assertIn('start', sg.networkx.nodes)
             self.assertEqual(sg.networkx.nodes['start']['label'], 'start')
 
-            sg._add_node('start')
+            sg._add_node('start', 0)
 
             self.assertEqual(len(sg.networkx.nodes), 1)
             self.assertIn('start', sg.networkx.nodes)

@@ -24,12 +24,11 @@ class ReducedSDVGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, str]]], N
                                                     'label': old_labels[set(equiv_class).pop()]},
                                                 edge_data=lambda x, y: {'label': ''})
         nodes = self.networkx.nodes
-        new_ids: dict[str, tuple[ScenarioInfo, set[tuple[str, str]]]] = {}
-        for id in self.ids.keys():
-            for node in nodes:
-                if id in node:
-                    new_ids[node] = self.ids[id]
-        self.ids = new_ids
+        for i in range(len(self.final_trace)):
+            current_node = self.final_trace[i]
+            for new_node in nodes:
+                if current_node in new_node:
+                    self.final_trace[i] = new_node
 
     @staticmethod
     def select_node_info(pairs: list[tuple[ScenarioInfo, StateInfo]], index: int) \

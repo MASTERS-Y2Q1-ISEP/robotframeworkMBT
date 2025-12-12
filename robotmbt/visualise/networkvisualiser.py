@@ -1,4 +1,5 @@
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
+from robotmbt.visualise.graphs.reducedSDVgraph import ReducedSDVGraph
 from robotmbt.visualise.graphs.scenariodeltavaluegraph import ScenarioDeltaValueGraph
 from robotmbt.visualise.graphs.scenariostategraph import ScenarioStateGraph
 from robotmbt.visualise.graphs.stategraph import StateGraph
@@ -425,7 +426,8 @@ class NetworkVisualiser:
 
     def _cap_name(self, name: str) -> str:
         if len(name) < self.MAX_VERTEX_NAME_LEN or isinstance(self.graph, StateGraph) \
-                or isinstance(self.graph, ScenarioStateGraph) or isinstance(self.graph, ScenarioDeltaValueGraph):
+                or isinstance(self.graph, ScenarioStateGraph) or isinstance(self.graph, ScenarioDeltaValueGraph)\
+                or isinstance(self.graph, ReducedSDVGraph):
             return name
 
         return f"{name[:(self.MAX_VERTEX_NAME_LEN - 3)]}..."

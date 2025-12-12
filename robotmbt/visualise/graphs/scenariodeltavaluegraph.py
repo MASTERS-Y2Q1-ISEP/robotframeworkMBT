@@ -4,7 +4,7 @@ from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 from robotmbt.visualise.models import ScenarioInfo, StateInfo
 
 
-class ScenarioDeltaValueGraph(AbstractGraph[ScenarioInfo, set[tuple[str, str]]]):
+class ScenarioDeltaValueGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, str]]], None]):
     """
     fsef
     """

@@ -1,0 +1,52 @@
+import networkx
+from robotmbt.modelspace import ModelSpace
+
+from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
+from robotmbt.visualise.graphs.scenariodeltavaluegraph import ScenarioDeltaValueGraph
+from robotmbt.visualise.models import ScenarioInfo, StateInfo, TraceInfo
+
+
+class ReducedSDVGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, str]]], None]):
+
+    def chain_equiv(self, node1, node2) -> bool:
+        context = self.networkx
+        if not node1 == 'start' and not node2 == 'start' and self.ids[node1][0] == self.ids[node2][0] and \
+                (context.has_edge(node1, node2) or context.has_edge(node2, node1)):
+            return len(set(context.edges(node1)) ^ set(context.edges(node2))) <= 2
+        else:
+            return False
+
+    def __init__(self, info: TraceInfo):
+        super().__init__(info)
+        old_labels = networkx.get_node_attributes(self.networkx, "label")
+        self.networkx = networkx.quotient_graph(self.networkx, lambda x, y: self.chain_equiv(x, y),
+                                                node_data=lambda equiv_class: {
+                                                    'label': old_labels[set(equiv_class).pop()]},
+                                                edge_data=lambda x, y: {'label': ''})
+        nodes = self.networkx.nodes
+        new_ids: dict[str, tuple[ScenarioInfo, set[tuple[str, str]]]] = {}
+        for id in self.ids.keys():
+            for node in nodes:
+                if id in node:
+                    new_ids[node] = self.ids[id]
+        self.ids = new_ids
+
+    @staticmethod
+    def select_node_info(pairs: list[tuple[ScenarioInfo, StateInfo]], index: int) \
+            -> tuple[ScenarioInfo, set[tuple[str, str]]]:
+        if index == 0:
+            return pairs[0][0], StateInfo(ModelSpace()).difference(pairs[0][1])
+        else:
+            return pairs[index][0], pairs[index - 1][1].difference(pairs[index][1])
+
+    @staticmethod
+    def select_edge_info(pair: tuple[ScenarioInfo, StateInfo]) -> None:
+        return None
+
+    @staticmethod
+    def create_node_label(info: tuple[ScenarioInfo, set[tuple[str, str]]]) -> str:
+        return f"{info[0].name}\n{ScenarioDeltaValueGraph.assignment_rep(info[1])}"
+
+    @staticmethod
+    def create_edge_label(info: None) -> str:
+        return ''

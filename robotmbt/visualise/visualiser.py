@@ -1,5 +1,6 @@
 from robotmbt.modelspace import ModelSpace
 from robotmbt.tracestate import TraceState
+from robotmbt.visualise.graphs.reducedSDVgraph import ReducedSDVGraph
 from robotmbt.visualise.graphs.scenariodeltavaluegraph import ScenarioDeltaValueGraph
 from robotmbt.visualise.networkvisualiser import NetworkVisualiser
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
@@ -25,7 +26,7 @@ class Visualiser:
 
     def __init__(self, graph_type: str):
         if graph_type != 'scenario' and graph_type != 'state' and graph_type != 'scenario-state' \
-                and graph_type != 'scenario-delta-value':
+                and graph_type != 'scenario-delta-value' and graph_type != 'reduced-sdv':
             raise ValueError(f"Unknown graph type: {graph_type}!")
         self.graph_type: str = graph_type
         self.trace_info: TraceInfo = TraceInfo()
@@ -43,6 +44,8 @@ class Visualiser:
             graph: AbstractGraph = StateGraph(self.trace_info)
         elif self.graph_type == 'scenario-delta-value':
             graph: AbstractGraph = ScenarioDeltaValueGraph(self.trace_info)
+        elif self.graph_type == 'reduced-sdv':
+            graph: AbstractGraph = ReducedSDVGraph(self.trace_info)
         else:
             graph: AbstractGraph = ScenarioStateGraph(self.trace_info)
         html_bokeh = NetworkVisualiser(graph).generate_html()

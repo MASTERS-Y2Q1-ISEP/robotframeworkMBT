@@ -412,10 +412,12 @@ class SuiteProcessors:
                         modded_arg, constraint = self._parse_modifier_expression(expr, step.args)
                         if step.args[modded_arg].is_default:
                             continue
-                        if step.args[modded_arg].kind in [StepArgument.EMBEDDED, StepArgument.POSITIONAL, StepArgument.NAMED]:
+                        if step.args[modded_arg].kind in [StepArgument.EMBEDDED, 
+                                                          StepArgument.POSITIONAL,
+                                                          StepArgument.NAMED]:
                             org_example = step.args[modded_arg].org_value
                             if step.gherkin_kw == 'then':
-                                constraint = None # No new constraints are processed for then-steps
+                                constraint = None  # No new constraints are processed for then-steps
                                 if org_example not in subs.substitutions:
                                     # if a then-step signals the first use of an example value, it is considered a new definition
                                     subs.substitute(org_example, [org_example])
@@ -423,7 +425,7 @@ class SuiteProcessors:
                             if not constraint and org_example not in subs.substitutions:
                                 raise ValueError(f"No options to choose from at first assignment to {org_example}")
                             if constraint and constraint != '.*':
-                                options =  m.process_expression(constraint, step.args)
+                                options = m.process_expression(constraint, step.args)
                                 if options == 'exec':
                                     raise ValueError(f"Invalid constraint for argument substitution: {expr}")
                                 if not options:
@@ -518,7 +520,8 @@ class SuiteProcessors:
             seed = seed.strip()
 
         if str(seed).lower() == 'none':
-            logger.info(f"Using system's random seed for trace generation. This trace cannot be rerun. Use `seed=new` to generate a reusable seed.")
+            logger.info(
+                f"Using system's random seed for trace generation. This trace cannot be rerun. Use `seed=new` to generate a reusable seed.")
         elif str(seed).lower() == 'new':
             new_seed = SuiteProcessors._generate_seed()
             logger.info(f"seed={new_seed} (use seed to rerun this trace)")

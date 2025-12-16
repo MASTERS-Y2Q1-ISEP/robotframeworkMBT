@@ -9,7 +9,8 @@ from bokeh.models import (
     Plot, Range1d, Circle, Rect,
     Arrow, NormalHead,
     Bezier, ColumnDataSource, ResetTool,
-    SaveTool, WheelZoomTool, PanTool, Text
+    SaveTool, WheelZoomTool, PanTool, Text,
+    FullscreenTool
 )
 from bokeh.embed import file_html
 from bokeh.resources import CDN
@@ -110,9 +111,9 @@ class NetworkVisualiser:
                          x_range=x_range,
                          y_range=y_range)
 
-        # add tools
         self.plot.add_tools(ResetTool(), SaveTool(),
-                            WheelZoomTool(), PanTool())
+                            WheelZoomTool(), PanTool(),
+                            FullscreenTool())
 
     def _calculate_text_dimensions(self, text: str) -> tuple[float, float]:
         """Calculate width and height needed for text based on actual text length"""

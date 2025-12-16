@@ -10,7 +10,7 @@ from bokeh.models import (
     Arrow, NormalHead,
     Bezier, ColumnDataSource, ResetTool,
     SaveTool, WheelZoomTool, PanTool, Text,
-    FullscreenTool
+    FullscreenTool, Title
 )
 from bokeh.embed import file_html
 from bokeh.resources import CDN
@@ -18,8 +18,8 @@ from math import sqrt
 import networkx as nx
 
 
-def generate_html(graph: AbstractGraph) -> str:
-    vis = NetworkVisualiser(graph)
+def generate_html(graph: AbstractGraph, suite_name: str = "") -> str:
+    vis = NetworkVisualiser(graph, suite_name)
     return vis.generate_html()
 
 
@@ -52,9 +52,10 @@ class NetworkVisualiser:
     EXECUTED_LABEL_COLOR = 'black'
     UNEXECUTED_LABEL_COLOR = '#A9A9A9'
 
-    def __init__(self, graph: AbstractGraph):
+    def __init__(self, graph: AbstractGraph, suite_name: str = ""):
         self.plot = None
         self.graph = graph
+        self.suite_name = suite_name
         self.node_props = {}  # Store node properties for arrow calculations
         self.graph_layout = {}
 
@@ -111,6 +112,10 @@ class NetworkVisualiser:
                          x_range=x_range,
                          y_range=y_range)
 
+        # add title
+        self.plot.add_layout(Title(text=self.suite_name, align="center"), "above")
+
+        # add tools
         self.plot.add_tools(ResetTool(), SaveTool(),
                             WheelZoomTool(), PanTool(),
                             FullscreenTool())

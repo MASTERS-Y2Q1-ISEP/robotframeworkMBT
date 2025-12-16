@@ -24,12 +24,14 @@ class Visualiser:
         # just calls __init__, but without having underscores etc.
         return cls(graph_type)
 
-    def __init__(self, graph_type: str):
+    def __init__(self, graph_type: str, suite_name: str = ""):
         if graph_type != 'scenario' and graph_type != 'state' and graph_type != 'scenario-state' \
                 and graph_type != 'scenario-delta-value' and graph_type != 'reduced-sdv':
             raise ValueError(f"Unknown graph type: {graph_type}!")
+
         self.graph_type: str = graph_type
         self.trace_info: TraceInfo = TraceInfo()
+        self.suite_name = suite_name
 
     def update_trace(self, trace: TraceState, state: ModelSpace):
         if len(trace.get_trace()) > 0:
@@ -48,7 +50,7 @@ class Visualiser:
             graph: AbstractGraph = ReducedSDVGraph(self.trace_info)
         else:
             graph: AbstractGraph = ScenarioStateGraph(self.trace_info)
-        html_bokeh = networkvisualiser.generate_html(graph)
+        html_bokeh = networkvisualiser.generate_html(graph, self.suite_name)
         return f"<iframe srcdoc=\"{html.escape(html_bokeh)}\", \
             width=600px\", \
             height=600px\">\

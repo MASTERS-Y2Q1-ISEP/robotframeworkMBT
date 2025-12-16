@@ -491,7 +491,7 @@ class StubArgument(SimpleNamespace):
 
 
 class StubStepArguments(list):
-    modified = True # trigger modified status to get arguments processed, rather then just echoed
+    modified = True  # trigger modified status to get arguments processed, rather then just echoed
 
 
 class StubArgument(SimpleNamespace):

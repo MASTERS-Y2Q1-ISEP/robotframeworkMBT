@@ -30,6 +30,7 @@ class ReducedSDVGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, str]]], N
                                                 node_data=lambda equiv_class: {
                                                     'label': old_labels[set(equiv_class).pop()]},
                                                 edge_data=lambda x, y: {'label': ''})
+        # TODO make generated label more obvious to be equivalence class
         nodes = self.networkx.nodes
         for i in range(len(self.final_trace)):
             current_node = self.final_trace[i]

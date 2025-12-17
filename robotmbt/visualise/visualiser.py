@@ -11,6 +11,9 @@ from robotmbt.visualise.models import TraceInfo, StateInfo, ScenarioInfo
 import html
 
 
+GRAPH_SIZE = 600
+
+
 class Visualiser:
     """
     The Visualiser class bridges the different concerns to provide
@@ -54,6 +57,4 @@ class Visualiser:
         vis = networkvisualiser.NetworkVisualiser(graph, self.suite_name)
         html_bokeh = vis.generate_html()
 
-        graph_size = networkvisualiser.NetworkVisualiser.GRAPH_SIZE_PX
-
-        return f'<iframe srcdoc="{html.escape(html_bokeh)}" width="{graph_size}px" height="{graph_size}px"></iframe>'
+        return f'<iframe srcdoc="{html.escape(html_bokeh)}" width="{GRAPH_SIZE}px" height="{GRAPH_SIZE}px"></iframe>'

@@ -10,6 +10,10 @@ from networkx import DiGraph
 
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 
+# Padding between different nodes
+HORIZONTAL_PADDING_BETWEEN_NODES = 50
+VERTICAL_PADDING_BETWEEN_NODES = 50
+
 # Padding within the nodes between the borders and inner text
 HORIZONTAL_PADDING_WITHIN_NODES = 5
 VERTICAL_PADDING_WITHIN_NODES = 5

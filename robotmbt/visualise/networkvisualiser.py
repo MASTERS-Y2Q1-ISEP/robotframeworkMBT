@@ -17,12 +17,6 @@ from bokeh.resources import CDN
 from math import sqrt
 import networkx as nx
 
-
-def generate_html(graph: AbstractGraph, suite_name: str = "") -> str:
-    vis = NetworkVisualiser(graph, suite_name)
-    return vis.generate_html()
-
-
 class NetworkVisualiser:
     """
     Generate plot with Bokeh

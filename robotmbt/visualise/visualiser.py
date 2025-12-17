@@ -50,7 +50,11 @@ class Visualiser:
             graph: AbstractGraph = ReducedSDVGraph(self.trace_info)
         else:
             graph: AbstractGraph = ScenarioStateGraph(self.trace_info)
-        html_bokeh = networkvisualiser.generate_html(graph, self.suite_name)
+        
+        # Create NetworkVisualiser instance and call its generate_html method
+        vis = networkvisualiser.NetworkVisualiser(graph, self.suite_name)
+        html_bokeh = vis.generate_html()
+        
         return f"<iframe srcdoc=\"{html.escape(html_bokeh)}\", \
             width=600px\", \
             height=600px\">\

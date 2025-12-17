@@ -3,7 +3,6 @@ from robotmbt.visualise.graphs.reducedSDVgraph import ReducedSDVGraph
 from robotmbt.visualise.graphs.scenariodeltavaluegraph import ScenarioDeltaValueGraph
 from robotmbt.visualise.graphs.scenariostategraph import ScenarioStateGraph
 from robotmbt.visualise.graphs.stategraph import StateGraph
-from robotmbt.visualise.graphs.scenariostategraph import ScenarioStateGraph
 from bokeh.palettes import Spectral4
 from bokeh.models import (
     Plot, Range1d, Circle, Rect,
@@ -12,25 +11,26 @@ from bokeh.models import (
     SaveTool, WheelZoomTool, PanTool, Text,
     FullscreenTool, Title
 )
+from bokeh.layouts import column
 from bokeh.embed import file_html
 from bokeh.resources import CDN
 from math import sqrt
 import networkx as nx
+
 
 class NetworkVisualiser:
     """
     Generate plot with Bokeh
     """
 
-    ARROWHEAD_SIZE: int = 6  # Consistent arrowhead size
+    ARROWHEAD_SIZE: int = 6
     EDGE_WIDTH: float = 2.0
     EDGE_ALPHA: float = 0.7
-    EDGE_COLOUR: str | tuple[int, int, int] = (
-        12, 12, 12)  # 'visual studio black'
+    EDGE_COLOUR: str | tuple[int, int, int] = (12, 12, 12)
     GRAPH_PADDING_PERC: int = 15  # %
     # in px, needs to be equal for height and width otherwise calculations are wrong
     GRAPH_SIZE_PX: int = 600
-    MAX_VERTEX_NAME_LEN: int = 20  # no. of characters
+    MAX_VERTEX_NAME_LEN: int = 20  # number of characters
 
     # Colors and styles for executed vs unexecuted elements
     EXECUTED_NODE_COLOR = Spectral4[0]  # Bright blue
@@ -76,7 +76,151 @@ class NetworkVisualiser:
         self._initialise_plot()
         self._add_nodes_with_labels()
         self._add_edges()
-        return file_html(self.plot, CDN, "graph")
+        
+        # Create legend using Bokeh components
+        legend = self._create_bokeh_legend()
+        
+        # Create a column layout with plot and legend
+        layout = column(self.plot, legend, sizing_mode='fixed')
+        
+        return file_html(layout, CDN, "graph")
+
+    def _create_bokeh_legend(self):
+        """
+        Create a legend using only Bokeh components
+        """
+        y_padding = 10
+        legend_height = 200
+        legend_width = self.GRAPH_SIZE_PX
+        
+        # Create a plot for the legend with no axes or tools
+        legend_plot = Plot(
+            width=legend_width,
+            height=legend_height,
+            x_range=Range1d(0, legend_width),
+            y_range=Range1d(-y_padding, legend_height + y_padding), # Padding applied to prevent clipping at edges
+            toolbar_location=None,
+            outline_line_color='#dddddd',
+            outline_line_width=1,
+            background_fill_color='white',
+            border_fill_color='white',
+            min_border=10
+        )
+        
+        # Remove grid and axes
+        legend_plot.grid.visible = False
+        legend_plot.axis.visible = False
+        
+        # Square properties for vertices
+        square_x = 30
+        square_width = 20
+        square_left = square_x - square_width/2
+        square_right = square_x + square_width/2
+        
+        # Y positions for legend items
+        title_y = 180
+        executed_square_y = 140
+        unexecuted_square_y = 100
+        executed_arrow_y = 60
+        unexecuted_arrow_y = 20
+        
+        # Vertices
+        vertex_source = ColumnDataSource(data=dict(
+            x=[square_x, square_x],
+            y=[executed_square_y, unexecuted_square_y],
+            width=[square_width, square_width],
+            height=[20, 20],
+            fill_color=[self.EXECUTED_NODE_COLOR, self.UNEXECUTED_NODE_COLOR],
+            line_color=['#333333', '#999999']
+        ))
+        
+        # Vertex labels
+        vertex_labels_source = ColumnDataSource(data=dict(
+            x=[60, 60],
+            y=[executed_square_y, unexecuted_square_y],
+            text=[
+                "Executed vertex (reached in final trace)",
+                "Unexecuted vertex (not reached in final trace)"
+            ]
+        ))
+        
+        # Vertex rectangles
+        vertices = Rect(x='x', y='y', width='width', height='height',
+                    fill_color='fill_color', line_color='line_color',
+                    line_width=1)
+        legend_plot.add_glyph(vertex_source, vertices)
+        
+        # Vertex labels
+        vertex_text = Text(x='x', y='y', text='text',
+                        text_align='left', text_baseline='middle',
+                        text_font_size='10pt', text_color='#333333')
+        legend_plot.add_glyph(vertex_labels_source, vertex_text)
+        
+        # Executed edge arrow
+        executed_arrow = Arrow(
+            end=NormalHead(
+                size=8,
+                line_color=self.EXECUTED_EDGE_COLOR,
+                fill_color=self.EXECUTED_EDGE_COLOR,
+                line_width=self.EXECUTED_EDGE_WIDTH
+            ),
+            x_start=square_left,
+            y_start=executed_arrow_y,
+            x_end=square_right,
+            y_end=executed_arrow_y,
+            line_color=self.EXECUTED_EDGE_COLOR,
+            line_width=self.EXECUTED_EDGE_WIDTH,
+            line_alpha=self.EXECUTED_EDGE_ALPHA
+        )
+        legend_plot.add_layout(executed_arrow)
+        
+        # Unexecuted edge arrow
+        unexecuted_arrow = Arrow(
+            end=NormalHead(
+                size=7,
+                line_color=self.UNEXECUTED_EDGE_COLOR,
+                fill_color=self.UNEXECUTED_EDGE_COLOR,
+                line_width=self.UNEXECUTED_EDGE_WIDTH
+            ),
+            x_start=square_left,
+            y_start=unexecuted_arrow_y,
+            x_end=square_right,
+            y_end=unexecuted_arrow_y,
+            line_color=self.UNEXECUTED_EDGE_COLOR,
+            line_width=self.UNEXECUTED_EDGE_WIDTH,
+            line_alpha=self.UNEXECUTED_EDGE_ALPHA
+        )
+        legend_plot.add_layout(unexecuted_arrow)
+        
+        # Edge labels
+        edge_labels_source = ColumnDataSource(data=dict(
+            x=[60, 60],
+            y=[executed_arrow_y, unexecuted_arrow_y],
+            text=[
+                "Executed edge (traversed in final trace)",
+                "Unexecuted edge (not traversed in final trace)"
+            ]
+        ))
+        
+        edge_text = Text(x='x', y='y', text='text',
+                        text_align='left', text_baseline='middle',
+                        text_font_size='10pt', text_color='#333333')
+        legend_plot.add_glyph(edge_labels_source, edge_text)
+        
+        # Legend title
+        title_source = ColumnDataSource(data=dict(
+            x=[legend_width / 2],
+            y=[title_y],
+            text=["Legend"]
+        ))
+        
+        title_text = Text(x='x', y='y', text='text',
+                        text_align='center', text_baseline='middle',
+                        text_font_size='11pt', text_font_style='bold',
+                        text_color='#333333')
+        legend_plot.add_glyph(title_source, title_text)
+        
+        return legend_plot
 
     def _initialise_plot(self):
         """

@@ -62,7 +62,6 @@ class Visualiser:
         else:
             graph: AbstractGraph = ScenarioStateGraph(self.trace_info)
 
-        vis = networkvisualiser.NetworkVisualiser(graph, self.suite_name)
-        html_bokeh = vis.generate_html()
+        html_bokeh = networkvisualiser.NetworkVisualiser(graph, self.suite_name).generate_html()
 
         return f'<iframe srcdoc="{html.escape(html_bokeh)}" width="{GRAPH_SIZE}px" height="{GRAPH_SIZE}px"></iframe>'

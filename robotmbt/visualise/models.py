@@ -49,10 +49,16 @@ class StateInfo:
     def difference(self, new_state) -> set[tuple[str, str]]:
         left: dict[str, dict | str] = self.properties.copy()
         for key in left.keys():
-            left[key] = str(left[key])
+            res = ""
+            for k, v in left[key].items():
+                res += f"\n\t{k}={v}"
+            left[key] = res
         right: dict[str, dict | str] = new_state.properties.copy()
         for key in right.keys():
-            right[key] = str(right[key])
+            res = ""
+            for k, v in right[key].items():
+                res += f"\n\t{k}={v}"
+            right[key] = res
         temp: set[tuple[str, str]] = set(right.items()) - set(left.items())  # type inference goes doodoo here
         return temp
 

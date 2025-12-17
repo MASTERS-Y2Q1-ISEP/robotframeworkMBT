@@ -148,7 +148,7 @@ if VISUALISE:
             state = StateInfo._create_state_with_prop("prop", [("value", "some_value")])
 
             stg.ids['test'] = (scenario, state)
-            stg._add_node('test', 1)
+            stg._add_node('test')
 
             self.assertEqual(len(stg.networkx.nodes), 2)
 
@@ -168,7 +168,7 @@ if VISUALISE:
             self.assertIn('start', stg.networkx.nodes)
             self.assertEqual(stg.networkx.nodes['start']['label'], 'start')
 
-            stg._add_node('start', 0)
+            stg._add_node('start')
 
             self.assertEqual(len(stg.networkx.nodes), 1)
             self.assertIn('start', stg.networkx.nodes)

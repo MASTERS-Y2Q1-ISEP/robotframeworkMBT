@@ -14,6 +14,9 @@ from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 HORIZONTAL_PADDING_WITHIN_NODES = 5
 VERTICAL_PADDING_WITHIN_NODES = 5
 
+FONT_SIZE_VERTEX_PT = 25
+FONT_SIZE_EDGE_PT = 12
+
 # Colors for different parts of the graph
 FINAL_TRACE_NODE_COLOR = '#CCCC00'
 OTHER_NODE_COLOR = '#999989'
@@ -49,7 +52,7 @@ class NetworkVisualiser:
         self.start = graph.start_node
 
         # Set up a Bokeh figure
-        self.plot = Plot()
+        self.plot = Plot(output_backend="svg")
 
         # Create Sugiyama layout
         nodes, edges = self._create_layout()
@@ -75,15 +78,17 @@ class NetworkVisualiser:
 
         # Add all nodes to the column data sources
         for node in nodes:
-            _add_node_to_sources(node, self.final_trace, node_source, node_label_source)
+            _add_node_to_sources(node, self.final_trace,
+                                 node_source, node_label_source)
 
         # Add the glyphs for nodes and their labels
-        node_glyph = Rect(x='x', y='y', width='w', height='h', fill_color='color')
+        node_glyph = Rect(x='x', y='y', width='w',
+                          height='h', fill_color='color')
         self.plot.add_glyph(node_source, node_glyph)
 
         node_label_glyph = Text(x='x', y='y', text='label', text_align='left', text_baseline='middle',
-                                text_font_size='16pt', text_font=value("Courier New"))
-        node_label_glyph.tags = ["scalable_text16"]
+                                text_font_size=f'{FONT_SIZE_VERTEX_PT}pt', text_font=value("Courier New"))
+        node_label_glyph.tags = ["scalable_text_vertex"]
         self.plot.add_glyph(node_label_source, node_label_glyph)
 
     def _add_edges(self, nodes: list[Node], edges: list[Edge]):
@@ -95,14 +100,16 @@ class NetworkVisualiser:
         edge_bezier_source: ColumnDataSource = ColumnDataSource(
             {'from': [], 'to': [], 'start_x': [], 'start_y': [], 'end_x': [], 'end_y': [], 'control1_x': [],
              'control1_y': [], 'control2_x': [], 'control2_y': []})
-        edge_label_source: ColumnDataSource = ColumnDataSource({'from': [], 'to': [], 'x': [], 'y': [], 'label': []})
+        edge_label_source: ColumnDataSource = ColumnDataSource(
+            {'from': [], 'to': [], 'x': [], 'y': [], 'label': []})
 
         for edge in edges:
             _add_edge_to_sources(nodes, edge, edge_part_source, edge_arrow_source, edge_bezier_source,
                                  edge_label_source)
 
         # Add the glyphs for edges and their labels
-        edge_part_glyph = Segment(x0='start_x', y0='start_y', x1='end_x', y1='end_y')
+        edge_part_glyph = Segment(
+            x0='start_x', y0='start_y', x1='end_x', y1='end_y')
         self.plot.add_glyph(edge_part_source, edge_part_glyph)
 
         arrow_layout = Arrow(
@@ -118,8 +125,8 @@ class NetworkVisualiser:
         self.plot.add_glyph(edge_bezier_source, edge_bezier_glyph)
 
         edge_label_glyph = Text(x='x', y='y', text='label', text_align='center', text_baseline='middle',
-                                text_font_size='8pt', text_font=value("Courier New"))
-        edge_label_glyph.tags = ["scalable_text8"]
+                                text_font_size=f'{FONT_SIZE_EDGE_PT}pt', text_font=value("Courier New"))
+        edge_label_glyph.tags = ["scalable_text_edge"]
         self.plot.add_glyph(edge_label_source, edge_label_glyph)
 
     def _create_layout(self) -> tuple[list[Node], list[Edge]]:
@@ -181,12 +188,13 @@ class NetworkVisualiser:
                             FullscreenTool())
 
         # Specify the default range - these values represent the aspect ratio of the actual view in the window
-        self.plot.x_range = Range1d(-INNER_WINDOW_WIDTH / 2, INNER_WINDOW_WIDTH / 2)
+        self.plot.x_range = Range1d(-INNER_WINDOW_WIDTH /
+                                    2, INNER_WINDOW_WIDTH / 2)
         self.plot.y_range = Range1d(-INNER_WINDOW_HEIGHT, 0)
         self.plot.x_range.tags = [{"initial_span": INNER_WINDOW_WIDTH}]
         self.plot.y_range.tags = [{"initial_span": INNER_WINDOW_HEIGHT}]
 
-        zoom_cb = CustomJS(args=dict(xr=self.plot.x_range, yr=self.plot.y_range, plot=self.plot), code="""
+        zoom_cb = CustomJS(args=dict(xr=self.plot.x_range, yr=self.plot.y_range, plot=self.plot), code=f"""
             const xspan0 = xr.tags[0].initial_span;
             const yspan0 = yr.tags[0].initial_span;
 
@@ -195,16 +203,16 @@ class NetworkVisualiser:
 
             const zoom = Math.min(xspan0 / xspan, yspan0 / yspan);
 
-            for (const r of plot.renderers) {
-                if (r.glyph && r.glyph.tags && r.glyph.tags.includes("scalable_text16")) {
-                    const base = 16;  // base pt size
-                    r.glyph.text_font_size = (base * zoom).toFixed(2) + "pt";
-                }
-                if (r.glyph && r.glyph.tags && r.glyph.tags.includes("scalable_text8")) {
-                    const base = 8;  // base pt size
-                    r.glyph.text_font_size = (base * zoom).toFixed(2) + "pt";
-                }
-            }
+            for (const r of plot.renderers) {'{'}
+                if (r.glyph && r.glyph.tags && r.glyph.tags.includes("scalable_text_vertex")) {'{'}
+                    const base = {FONT_SIZE_VERTEX_PT};  // base pt size
+                    r.glyph.text_font_size = (base * zoom * 0.95).toFixed(2) + "pt";
+                {'}'}
+                if (r.glyph && r.glyph.tags && r.glyph.tags.includes("scalable_text_edge")) {'{'}
+                    const base = {FONT_SIZE_EDGE_PT};  // base pt size
+                    r.glyph.text_font_size = (base * zoom * 0.95).toFixed(2) + "pt";
+                {'}'}
+            {'}'}
             plot.request_render();
         """)
 
@@ -254,13 +262,17 @@ def _get_connection_coordinates(nodes: list[Node], node_id: str) -> list[tuple[f
     # Top
     start_possibilities.append((node.x, node.y + node.height / 2))
     # Left bottom
-    start_possibilities.append((node.x - node.width / 2, node.y - node.height / 2))
+    start_possibilities.append(
+        (node.x - node.width / 2, node.y - node.height / 2))
     # Left top
-    start_possibilities.append((node.x - node.width / 2, node.y + node.height / 2))
+    start_possibilities.append(
+        (node.x - node.width / 2, node.y + node.height / 2))
     # Right bottom
-    start_possibilities.append((node.x + node.width / 2, node.y - node.height / 2))
+    start_possibilities.append(
+        (node.x + node.width / 2, node.y - node.height / 2))
     # Right top
-    start_possibilities.append((node.x + node.width / 2, node.y + node.height / 2))
+    start_possibilities.append(
+        (node.x + node.width / 2, node.y + node.height / 2))
 
     return start_possibilities
 
@@ -285,7 +297,8 @@ def _add_edge_to_sources(nodes: list[Node], edge: Edge, edge_part_source: Column
                          edge_arrow_source: ColumnDataSource, edge_bezier_source: ColumnDataSource,
                          edge_label_source: ColumnDataSource):
     if edge.from_node == edge.to_node:
-        _add_self_loop_to_sources(nodes, edge, edge_arrow_source, edge_bezier_source, edge_label_source)
+        _add_self_loop_to_sources(
+            nodes, edge, edge_arrow_source, edge_bezier_source, edge_label_source)
         return
 
     start_x, start_y = 0, 0
@@ -308,7 +321,8 @@ def _add_edge_to_sources(nodes: list[Node], edge: Edge, edge_part_source: Column
 
         # Collect possibilities where the edge can start and end
         if i == 0:
-            from_possibilities = _get_connection_coordinates(nodes, edge.from_node)
+            from_possibilities = _get_connection_coordinates(
+                nodes, edge.from_node)
         else:
             from_possibilities = [(start_x, start_y)]
 
@@ -318,7 +332,8 @@ def _add_edge_to_sources(nodes: list[Node], edge: Edge, edge_part_source: Column
             to_possibilities = [(end_x, end_y)]
 
         # Choose connection points that minimize edge length
-        start_x, start_y, end_x, end_y = _minimize_distance(from_possibilities, to_possibilities)
+        start_x, start_y, end_x, end_y = _minimize_distance(
+            from_possibilities, to_possibilities)
 
         if i < len(edge.points) - 2:
             # Middle part of edge without arrow
@@ -405,7 +420,8 @@ def _add_node_to_sources(node: Node, final_trace: list[str], node_source: Column
         FINAL_TRACE_NODE_COLOR if node.node_id in final_trace else OTHER_NODE_COLOR)
 
     node_label_source.data['id'].append(node_id)
-    node_label_source.data['x'].append(node.x - node.width / 2 + HORIZONTAL_PADDING_WITHIN_NODES)
+    node_label_source.data['x'].append(
+        node.x - node.width / 2 + HORIZONTAL_PADDING_WITHIN_NODES)
     node_label_source.data['y'].append(-node.y)
     node_label_source.data['label'].append(node.label)
 
@@ -414,8 +430,11 @@ def _calculate_dimensions(label: str) -> tuple[float, float]:
     lines = label.splitlines()
     width = 0
     for line in lines:
-        width = max(width, len(line) * 19.25)
-    height = len(lines) * 43 - 9
+        width = max(width, len(line) * (FONT_SIZE_VERTEX_PT + 4))
+
+    # some extra margin off the top and bottom
+    height = len(lines) * (FONT_SIZE_VERTEX_PT * 2.9)
+
     return width + 2 * HORIZONTAL_PADDING_WITHIN_NODES, height + 2 * VERTICAL_PADDING_WITHIN_NODES
 
 

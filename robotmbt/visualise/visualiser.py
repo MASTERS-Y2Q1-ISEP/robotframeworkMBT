@@ -51,11 +51,9 @@ class Visualiser:
         else:
             graph: AbstractGraph = ScenarioStateGraph(self.trace_info)
         
-        # Create NetworkVisualiser instance and call its generate_html method
         vis = networkvisualiser.NetworkVisualiser(graph, self.suite_name)
         html_bokeh = vis.generate_html()
         
-        return f"<iframe srcdoc=\"{html.escape(html_bokeh)}\", \
-            width=600px\", \
-            height=600px\">\
-            </iframe>"
+        graph_size = networkvisualiser.NetworkVisualiser.GRAPH_SIZE_PX
+        
+        return f'<iframe srcdoc="{html.escape(html_bokeh)}" width="{graph_size}px" height="{graph_size}px"></iframe>'

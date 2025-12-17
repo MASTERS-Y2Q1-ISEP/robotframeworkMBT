@@ -55,7 +55,7 @@ class ReducedSDVGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, str]]], N
 
     @staticmethod
     def create_node_label(info: tuple[ScenarioInfo, set[tuple[str, str]]]) -> str:
-        return f"{info[0].name}\n{ScenarioDeltaValueGraph.assignment_rep(info[1])}"
+        return ScenarioDeltaValueGraph.create_node_label(info)
 
     @staticmethod
     def create_edge_label(info: None) -> str:

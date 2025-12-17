@@ -10,10 +10,6 @@ from networkx import DiGraph
 
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 
-# Padding between different nodes
-HORIZONTAL_PADDING_BETWEEN_NODES = 50
-VERTICAL_PADDING_BETWEEN_NODES = 50
-
 # Padding within the nodes between the borders and inner text
 HORIZONTAL_PADDING_WITHIN_NODES = 5
 VERTICAL_PADDING_WITHIN_NODES = 5
@@ -244,8 +240,7 @@ class NetworkVisualiser:
 
         # Specify the default range - these values represent the aspect ratio of the actual view in the window
         self.plot.x_range = Range1d(-INNER_WINDOW_WIDTH / 2, INNER_WINDOW_WIDTH / 2)
-        self.plot.y_range = Range1d(-INNER_WINDOW_HEIGHT + VERTICAL_PADDING_BETWEEN_NODES,
-                                    VERTICAL_PADDING_BETWEEN_NODES)
+        self.plot.y_range = Range1d(-INNER_WINDOW_HEIGHT, 0)
         self.plot.x_range.tags = [{"initial_span": INNER_WINDOW_WIDTH}]
         self.plot.y_range.tags = [{"initial_span": INNER_WINDOW_HEIGHT}]
 

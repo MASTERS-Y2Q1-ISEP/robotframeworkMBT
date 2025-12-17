@@ -343,6 +343,7 @@ def _minimize_distance(from_pos, to_pos) -> tuple[float, float, float, float]:
     # Return the permutation with the shortest distance
     return fx, fy, tx, ty
 
+
 def _calculate_dimensions(label: str) -> tuple[float, float]:
     lines = label.splitlines()
     width = 0

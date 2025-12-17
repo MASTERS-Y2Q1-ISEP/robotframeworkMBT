@@ -62,7 +62,7 @@ class NetworkVisualiser:
         self._add_nodes(nodes)
 
         # Add the edges to the graph
-        self._add_edges(edges)
+        self._add_edges(nodes, edges)
 
         # Add our features to the graph (e.g. tools)
         self._add_features(suite_name)
@@ -105,7 +105,7 @@ class NetworkVisualiser:
         node_label_glyph.tags = ["scalable_text16"]
         self.plot.add_glyph(node_label_source, node_label_glyph)
 
-    def _add_edges(self, edges: list[Edge]):
+    def _add_edges(self, nodes: list[Node], edges: list[Edge]):
         # The ColumnDataSources to store our edges in Bokeh's format
         edge_part_source: ColumnDataSource = ColumnDataSource(
             {'from': [], 'to': [], 'start_x': [], 'start_y': [], 'end_x': [], 'end_y': []})
@@ -117,37 +117,52 @@ class NetworkVisualiser:
             start_x, start_y = 0, 0
             end_x, end_y = 0, 0
             if isinstance(edge.from_node, frozenset):
-                from_node = tuple(sorted(edge.from_node))
+                from_id = tuple(sorted(edge.from_node))
             else:
-                from_node = edge.from_node
+                from_id = edge.from_node
             if isinstance(edge.to_node, frozenset):
-                to_node = tuple(sorted(edge.to_node))
+                to_id = tuple(sorted(edge.to_node))
             else:
-                to_node = edge.to_node
+                to_id = edge.to_node
             # Add edges going through the calculated points
             for i in range(len(edge.points) - 1):
                 start_x, start_y = edge.points[i]
                 end_x, end_y = edge.points[i + 1]
+
+                # Collect possibilities where the edge can start and end
+                if i == 0:
+                    from_possibilities = _get_connection_coordinates(nodes, edge.from_node)
+                else:
+                    from_possibilities = [(start_x, start_y)]
+
+                if i == len(edge.points) - 2:
+                    to_possibilities = _get_connection_coordinates(nodes, edge.to_node)
+                else:
+                    to_possibilities = [(end_x, end_y)]
+
+                # Choose connection points that minimize edge length
+                start_x, start_y, end_x, end_y = _minimize_distance(from_possibilities, to_possibilities)
+
                 if i < len(edge.points) - 2:
                     # Middle part of edge without arrow
-                    edge_part_source.data['from'].append(from_node)
-                    edge_part_source.data['to'].append(to_node)
+                    edge_part_source.data['from'].append(from_id)
+                    edge_part_source.data['to'].append(to_id)
                     edge_part_source.data['start_x'].append(start_x)
                     edge_part_source.data['start_y'].append(-start_y)
                     edge_part_source.data['end_x'].append(end_x)
                     edge_part_source.data['end_y'].append(-end_y)
                 else:
                     # End of edge with arrow
-                    edge_arrow_source.data['from'].append(from_node)
-                    edge_arrow_source.data['to'].append(to_node)
+                    edge_arrow_source.data['from'].append(from_id)
+                    edge_arrow_source.data['to'].append(to_id)
                     edge_arrow_source.data['start_x'].append(start_x)
                     edge_arrow_source.data['start_y'].append(-start_y)
                     edge_arrow_source.data['end_x'].append(end_x)
                     edge_arrow_source.data['end_y'].append(-end_y)
 
             # Add the label
-            edge_label_source.data['from'].append(from_node)
-            edge_label_source.data['to'].append(to_node)
+            edge_label_source.data['from'].append(from_id)
+            edge_label_source.data['to'].append(to_id)
             edge_label_source.data['x'].append((start_x + end_x) / 2)
             edge_label_source.data['y'].append(- (start_y + end_y) / 2)
             edge_label_source.data['label'].append(edge.label)
@@ -282,6 +297,51 @@ def _find_node(nodes: list[GVertex], node_id: str):
             return node
     return None
 
+
+def _get_connection_coordinates(nodes: list[Node], node_id: str) -> list[tuple[float, float]]:
+    start_possibilities = []
+
+    # Get node from list
+    node = None
+    for n in nodes:
+        if n.node_id == node_id:
+            node = n
+            break
+
+    # Left
+    start_possibilities.append((node.x - node.width / 2, node.y))
+    # Right
+    start_possibilities.append((node.x + node.width / 2, node.y))
+    # Bottom
+    start_possibilities.append((node.x, node.y - node.height / 2))
+    # Top
+    start_possibilities.append((node.x, node.y + node.height / 2))
+    # Left bottom
+    start_possibilities.append((node.x - node.width / 2, node.y - node.height / 2))
+    # Left top
+    start_possibilities.append((node.x - node.width / 2, node.y + node.height / 2))
+    # Right bottom
+    start_possibilities.append((node.x + node.width / 2, node.y - node.height / 2))
+    # Right top
+    start_possibilities.append((node.x + node.width / 2, node.y + node.height / 2))
+
+    return start_possibilities
+
+
+def _minimize_distance(from_pos, to_pos) -> tuple[float, float, float, float]:
+    min_dist = -1
+    fx, fy, tx, ty = 0, 0, 0, 0
+
+    # Calculate the distance between all permutations
+    for fp in from_pos:
+        for tp in to_pos:
+            distance = (fp[0] - tp[0]) ** 2 + (fp[1] - tp[1]) ** 2
+            if min_dist == -1 or distance < min_dist:
+                min_dist = distance
+                fx, fy, tx, ty = fp[0], fp[1], tp[0], tp[1]
+
+    # Return the permutation with the shortest distance
+    return fx, fy, tx, ty
 
 def _calculate_dimensions(label: str) -> tuple[float, float]:
     lines = label.splitlines()

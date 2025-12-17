@@ -6,7 +6,9 @@ from robotmbt.visualise.models import ScenarioInfo, StateInfo
 
 class ScenarioDeltaValueGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, str]]], None]):
     """
-    fsef
+    The Scenario-delta-Value graph keeps track of both the scenarios and state updates encountered.
+    Its nodes are scenarios together with the property assignments after the scenario has run.
+    Its edges represent steps in the trace.
     """
 
     @staticmethod

@@ -7,6 +7,13 @@ from robotmbt.visualise.models import ScenarioInfo, StateInfo, TraceInfo
 
 
 class ReducedSDVGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, str]]], None]):
+    """
+    The reduced Scenario-delta-Value graph keeps track of both the scenarios and state updates encountered.
+    It is produced by taking the Scenario-delta-Value graph and merging nodes that have the same Scenario associated,
+    an edge between them and the same incoming/outgoing edges except for at most one incoming or outgoing edge per node.
+    Visually: ... -> node0 -> node1 -> node2 -> ...
+    get merged (if they have the same scenario's and incoming/outgoing edges that are not visually represented)
+    """
 
     def chain_equiv(self, node1, node2) -> bool:
         context = self.networkx

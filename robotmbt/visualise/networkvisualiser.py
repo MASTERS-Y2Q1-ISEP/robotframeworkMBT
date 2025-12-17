@@ -54,6 +54,7 @@ class NetworkVisualiser:
         # Extract what we need from the graph
         self.networkx: DiGraph = graph.networkx
         self.final_trace = graph.get_final_trace()
+        self.start = graph.start_node
 
         # Set up a Bokeh figure
         self.plot = Plot()
@@ -82,7 +83,11 @@ class NetworkVisualiser:
 
         # Add all nodes to the column data sources
         for node in nodes:
-            node_source.data['id'].append(node.node_id)
+            if isinstance(node.node_id, frozenset):
+                node_id = tuple(sorted(node.node_id))
+            else:
+                node_id = node.node_id
+            node_source.data['id'].append(node_id)
             node_source.data['x'].append(node.x)
             node_source.data['y'].append(-node.y)
             node_source.data['w'].append(node.width)
@@ -90,7 +95,7 @@ class NetworkVisualiser:
             node_source.data['color'].append(
                 FINAL_TRACE_NODE_COLOR if node.node_id in self.final_trace else OTHER_NODE_COLOR)
 
-            node_label_source.data['id'].append(node.node_id)
+            node_label_source.data['id'].append(node_id)
             node_label_source.data['x'].append(node.x - node.width / 2 + HORIZONTAL_PADDING_WITHIN_NODES)
             node_label_source.data['y'].append(-node.y)
             node_label_source.data['label'].append(node.label)
@@ -115,30 +120,38 @@ class NetworkVisualiser:
         for edge in edges:
             start_x, start_y = 0, 0
             end_x, end_y = 0, 0
+            if isinstance(edge.from_node, frozenset):
+                from_node = tuple(sorted(edge.from_node))
+            else:
+                from_node = edge.from_node
+            if isinstance(edge.to_node, frozenset):
+                to_node = tuple(sorted(edge.to_node))
+            else:
+                to_node = edge.to_node
             # Add edges going through the calculated points
             for i in range(len(edge.points) - 1):
                 start_x, start_y = edge.points[i]
                 end_x, end_y = edge.points[i + 1]
                 if i < len(edge.points) - 2:
                     # Middle part of edge without arrow
-                    edge_part_source.data['from'].append(edge.from_node)
-                    edge_part_source.data['to'].append(edge.to_node)
+                    edge_part_source.data['from'].append(from_node)
+                    edge_part_source.data['to'].append(to_node)
                     edge_part_source.data['start_x'].append(start_x)
                     edge_part_source.data['start_y'].append(-start_y)
                     edge_part_source.data['end_x'].append(end_x)
                     edge_part_source.data['end_y'].append(-end_y)
                 else:
                     # End of edge with arrow
-                    edge_arrow_source.data['from'].append(edge.from_node)
-                    edge_arrow_source.data['to'].append(edge.to_node)
+                    edge_arrow_source.data['from'].append(from_node)
+                    edge_arrow_source.data['to'].append(to_node)
                     edge_arrow_source.data['start_x'].append(start_x)
                     edge_arrow_source.data['start_y'].append(-start_y)
                     edge_arrow_source.data['end_x'].append(end_x)
                     edge_arrow_source.data['end_y'].append(-end_y)
 
             # Add the label
-            edge_label_source.data['from'].append(edge.from_node)
-            edge_label_source.data['to'].append(edge.to_node)
+            edge_label_source.data['from'].append(from_node)
+            edge_label_source.data['to'].append(to_node)
             edge_label_source.data['x'].append((start_x + end_x) / 2)
             edge_label_source.data['y'].append(- (start_y + end_y) / 2)
             edge_label_source.data['label'].append(edge.label)
@@ -171,7 +184,7 @@ class NetworkVisualiser:
             w, h = _calculate_dimensions(self.networkx.nodes[node_id]['label'])
             v.view = NodeView(w, h)
             vertices.append(v)
-            if node_id == 'start':
+            if node_id == self.start:
                 start = v
 
         flip = _flip_edges([e for e in self.networkx.edges])

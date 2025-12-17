@@ -1,7 +1,7 @@
 from bokeh.core.property.vectorization import value
 from bokeh.embed import file_html
 from bokeh.models import ColumnDataSource, Rect, Text, ResetTool, SaveTool, WheelZoomTool, PanTool, Plot, Range1d, \
-    Title, FullscreenTool, CustomJS, Segment, Arrow, NormalHead
+    Title, FullscreenTool, CustomJS, Segment, Arrow, NormalHead, Bezier
 
 from grandalf.graphs import Vertex as GVertex, Edge as GEdge, Graph as GGraph
 from grandalf.layouts import SugiyamaLayout
@@ -92,10 +92,14 @@ class NetworkVisualiser:
             {'from': [], 'to': [], 'start_x': [], 'start_y': [], 'end_x': [], 'end_y': []})
         edge_arrow_source: ColumnDataSource = ColumnDataSource(
             {'from': [], 'to': [], 'start_x': [], 'start_y': [], 'end_x': [], 'end_y': []})
+        edge_bezier_source: ColumnDataSource = ColumnDataSource(
+            {'from': [], 'to': [], 'start_x': [], 'start_y': [], 'end_x': [], 'end_y': [], 'control1_x': [],
+             'control1_y': [], 'control2_x': [], 'control2_y': []})
         edge_label_source: ColumnDataSource = ColumnDataSource({'from': [], 'to': [], 'x': [], 'y': [], 'label': []})
 
         for edge in edges:
-            _add_edge_to_sources(nodes, edge, edge_part_source, edge_arrow_source, edge_label_source)
+            _add_edge_to_sources(nodes, edge, edge_part_source, edge_arrow_source, edge_bezier_source,
+                                 edge_label_source)
 
         # Add the glyphs for edges and their labels
         edge_part_glyph = Segment(x0='start_x', y0='start_y', x1='end_x', y1='end_y')
@@ -108,6 +112,10 @@ class NetworkVisualiser:
             source=edge_arrow_source
         )
         self.plot.add_layout(arrow_layout)
+
+        edge_bezier_glyph = Bezier(x0='start_x', y0='start_y', x1='end_x', y1='end_y', cx0='control1_x',
+                                   cy0='control1_y', cx1='control2_x', cy1='control2_y')
+        self.plot.add_glyph(edge_bezier_source, edge_bezier_glyph)
 
         edge_label_glyph = Text(x='x', y='y', text='label', text_align='center', text_baseline='middle',
                                 text_font_size='8pt', text_font=value("Courier New"))
@@ -274,17 +282,25 @@ def _minimize_distance(from_pos, to_pos) -> tuple[float, float, float, float]:
 
 
 def _add_edge_to_sources(nodes: list[Node], edge: Edge, edge_part_source: ColumnDataSource,
-                         edge_arrow_source: ColumnDataSource, edge_label_source: ColumnDataSource):
+                         edge_arrow_source: ColumnDataSource, edge_bezier_source: ColumnDataSource,
+                         edge_label_source: ColumnDataSource):
+    if edge.from_node == edge.to_node:
+        _add_self_loop_to_sources(nodes, edge, edge_arrow_source, edge_bezier_source, edge_label_source)
+        return
+
     start_x, start_y = 0, 0
     end_x, end_y = 0, 0
+
     if isinstance(edge.from_node, frozenset):
         from_id = tuple(sorted(edge.from_node))
     else:
         from_id = edge.from_node
+
     if isinstance(edge.to_node, frozenset):
         to_id = tuple(sorted(edge.to_node))
     else:
         to_id = edge.to_node
+
     # Add edges going through the calculated points
     for i in range(len(edge.points) - 1):
         start_x, start_y = edge.points[i]
@@ -329,12 +345,57 @@ def _add_edge_to_sources(nodes: list[Node], edge: Edge, edge_part_source: Column
     edge_label_source.data['label'].append(edge.label)
 
 
+def _add_self_loop_to_sources(nodes: list[Node], edge: Edge, edge_arrow_source: ColumnDataSource,
+                              edge_bezier_source: ColumnDataSource, edge_label_source: ColumnDataSource):
+    connection = _get_connection_coordinates(nodes, edge.from_node)
+
+    if isinstance(edge.from_node, frozenset):
+        from_id = tuple(sorted(edge.from_node))
+    else:
+        from_id = edge.from_node
+
+    if isinstance(edge.to_node, frozenset):
+        to_id = tuple(sorted(edge.to_node))
+    else:
+        to_id = edge.to_node
+
+    right_x, right_y = connection[1]
+
+    # Add the Bézier curve
+    edge_bezier_source.data['from'].append(from_id)
+    edge_bezier_source.data['to'].append(to_id)
+    edge_bezier_source.data['start_x'].append(right_x)
+    edge_bezier_source.data['start_y'].append(-right_y + 5)
+    edge_bezier_source.data['end_x'].append(right_x)
+    edge_bezier_source.data['end_y'].append(-right_y - 5)
+    edge_bezier_source.data['control1_x'].append(right_x + 25)
+    edge_bezier_source.data['control1_y'].append(-right_y + 25)
+    edge_bezier_source.data['control2_x'].append(right_x + 25)
+    edge_bezier_source.data['control2_y'].append(-right_y - 25)
+
+    # Add the arrow
+    edge_arrow_source.data['from'].append(from_id)
+    edge_arrow_source.data['to'].append(to_id)
+    edge_arrow_source.data['start_x'].append(right_x + 0.001)
+    edge_arrow_source.data['start_y'].append(-right_y - 5.001)
+    edge_arrow_source.data['end_x'].append(right_x)
+    edge_arrow_source.data['end_y'].append(-right_y - 5)
+
+    # Add the label
+    edge_label_source.data['from'].append(from_id)
+    edge_label_source.data['to'].append(to_id)
+    edge_label_source.data['x'].append(right_x + 25)
+    edge_label_source.data['y'].append(-right_y)
+    edge_label_source.data['label'].append(edge.label)
+
+
 def _add_node_to_sources(node: Node, final_trace: list[str], node_source: ColumnDataSource,
                          node_label_source: ColumnDataSource):
     if isinstance(node.node_id, frozenset):
         node_id = tuple(sorted(node.node_id))
     else:
         node_id = node.node_id
+
     node_source.data['id'].append(node_id)
     node_source.data['x'].append(node.x)
     node_source.data['y'].append(-node.y)

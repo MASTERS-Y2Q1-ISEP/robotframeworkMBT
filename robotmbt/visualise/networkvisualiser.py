@@ -155,7 +155,7 @@ class NetworkVisualiser:
         )
         self.plot.add_layout(arrow_layout)
 
-        edge_label_glyph = Text(x='x', y='y', text='label', text_align='left', text_baseline='middle',
+        edge_label_glyph = Text(x='x', y='y', text='label', text_align='center', text_baseline='middle',
                                 text_font_size='8pt', text_font=value("Courier New"))
         edge_label_glyph.tags = ["scalable_text8"]
         self.plot.add_glyph(edge_label_source, edge_label_glyph)

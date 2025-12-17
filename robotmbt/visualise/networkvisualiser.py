@@ -27,10 +27,6 @@ INNER_WINDOW_WIDTH = 846
 INNER_WINDOW_HEIGHT = 882
 
 
-def generate_html(graph: AbstractGraph, suite_name: str) -> str:
-    return NetworkVisualiser(graph, suite_name).generate_html()
-
-
 class Node:
     def __init__(self, node_id: str, label: str, x: int, y: int, width: float, height: float):
         self.node_id = node_id

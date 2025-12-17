@@ -48,31 +48,13 @@ class NetworkVisualiser:
         self.plot = Plot()
 
         # The ColumnDataSources to store our nodes and edges in Bokeh's format
-        self.node_source: ColumnDataSource = ColumnDataSource(
-            {'id': [], 'x': [], 'y': [], 'w': [], 'h': [], 'color': []})
-        self.node_label_source: ColumnDataSource = ColumnDataSource(
-            {'id': [], 'x': [], 'y': [], 'label': []})
         self.edge_source: ColumnDataSource = ColumnDataSource({'from': [], 'to': [], 'label': []})
 
-        # Temporary storage of all nodes and the total widths and heights of the different layers
-        nodes: list[Node] = []
-        self.layers: dict[int, tuple[float, float]] = {}
+        # Add the nodes to the graph
+        self._add_nodes()
 
-        # Construct all nodes and calculate layer dimensions
-        for node_id in self.networkx.nodes:
-            nodes.append(self._create_node(node_id))
-
-        # Correctly position and add all nodes to the column data sources
-        for node in nodes:
-            self._position_and_add_node(node)
-
-        # Add the glyphs for nodes and their labels
-        node_glyph = Rect(x='x', y='y', width='w', height='h', fill_color='color')
-        self.plot.add_glyph(self.node_source, node_glyph)
-
-        node_label_glyph = Text(x='x', y='y', text='label', text_align='left', text_baseline='middle',
-                                text_font_size='16pt', text_font=value("Courier New"))
-        self.plot.add_glyph(self.node_label_source, node_label_glyph)
+        # Add the edges to the graph
+        self._add_edges()
 
         # Add the different tools
         self.plot.add_tools(ResetTool(), SaveTool(),
@@ -86,7 +68,34 @@ class NetworkVisualiser:
     def generate_html(self):
         return file_html(self.plot, 'inline', "graph")
 
-    def _create_node(self, node_id: str) -> Node:
+    def _add_nodes(self):
+        # Temporary storage of all nodes and the total widths and heights of the different layers
+        layers: dict[int, tuple[float, float]] = {}
+
+        # The ColumnDataSources to store our nodes and edges in Bokeh's format
+        node_source: ColumnDataSource = ColumnDataSource(
+            {'id': [], 'x': [], 'y': [], 'w': [], 'h': [], 'color': []})
+        node_label_source: ColumnDataSource = ColumnDataSource(
+            {'id': [], 'x': [], 'y': [], 'label': []})
+        nodes: list[Node] = []
+
+        # Construct all nodes and calculate layer dimensions
+        for node_id in self.networkx.nodes:
+            nodes.append(self._create_node(node_id, layers))
+
+        # Correctly position and add all nodes to the column data sources
+        for node in nodes:
+            _position_node_and_add_to_sources(node, layers, node_source, node_label_source)
+
+        # Add the glyphs for nodes and their labels
+        node_glyph = Rect(x='x', y='y', width='w', height='h', fill_color='color')
+        self.plot.add_glyph(node_source, node_glyph)
+
+        node_label_glyph = Text(x='x', y='y', text='label', text_align='left', text_baseline='middle',
+                                text_font_size='16pt', text_font=value("Courier New"))
+        self.plot.add_glyph(node_label_source, node_label_glyph)
+
+    def _create_node(self, node_id: str, layers) -> Node:
         # Extract the label and distance of the node from start
         label = self.networkx.nodes[node_id]['label']
         layer = self.networkx.nodes[node_id]['distance']
@@ -95,50 +104,54 @@ class NetworkVisualiser:
         w, h = _calculate_dimensions(label)
 
         # Update layer info
-        if layer not in self.layers:
+        if layer not in layers:
             x = 0
-            self.layers[layer] = (w, h)
+            layers[layer] = (w, h)
         else:
-            (width, height) = self.layers[layer]
+            (width, height) = layers[layer]
             x = width + HORIZONTAL_PADDING_BETWEEN_NODES
             width += w + HORIZONTAL_PADDING_BETWEEN_NODES
-            self.layers[layer] = (width, max(height, h))
+            layers[layer] = (width, max(height, h))
 
         # Construct node from information
         return Node(node_id, label, x, layer, w, h, node_id in self.final_trace)
 
-    def _position_and_add_node(self, node: Node):
-        # Calculate the correct y position based on all layers' heights
-        y = 0
-        for i in range(node.y + 1):
-            (w, h) = self.layers[i]
-            y -= h
-            if i != node.y:
-                y -= VERTICAL_PADDING_BETWEEN_NODES
-            else:
-                # Also center on x-axis
-                node.x -= w / 2
+    def _add_edges(self):
+        pass
 
-        y += node.height / 2
-        node.y = y
 
-        self.node_source.data['id'].append(node.node_id)
-        self.node_source.data['x'].append(node.x + node.width / 2)
-        self.node_source.data['y'].append(node.y)
-        self.node_source.data['w'].append(node.width)
-        self.node_source.data['h'].append(node.height)
-        self.node_source.data['color'].append(FINAL_TRACE_NODE_COLOR if node.in_final_trace else OTHER_NODE_COLOR)
+def _position_node_and_add_to_sources(node: Node, layers, node_source: ColumnDataSource,
+                                      node_label_source: ColumnDataSource):
+    # Calculate the correct y position based on all layers' heights
+    y = 0
+    for i in range(node.y + 1):
+        (w, h) = layers[i]
+        y -= h
+        if i != node.y:
+            y -= VERTICAL_PADDING_BETWEEN_NODES
+        else:
+            # Center on x and y
+            node.x -= w / 2
+            node.y = y + h / 2
 
-        self.node_label_source.data['id'].append(node.node_id)
-        self.node_label_source.data['x'].append(node.x + HORIZONTAL_PADDING_WITHIN_NODES)
-        self.node_label_source.data['y'].append(node.y)
-        self.node_label_source.data['label'].append(node.label)
+    # Add to data source
+    node_source.data['id'].append(node.node_id)
+    node_source.data['x'].append(node.x + node.width / 2)
+    node_source.data['y'].append(node.y)
+    node_source.data['w'].append(node.width)
+    node_source.data['h'].append(node.height)
+    node_source.data['color'].append(FINAL_TRACE_NODE_COLOR if node.in_final_trace else OTHER_NODE_COLOR)
+
+    node_label_source.data['id'].append(node.node_id)
+    node_label_source.data['x'].append(node.x + HORIZONTAL_PADDING_WITHIN_NODES)
+    node_label_source.data['y'].append(node.y)
+    node_label_source.data['label'].append(node.label)
 
 
 def _calculate_dimensions(label: str) -> tuple[float, float]:
     lines = label.splitlines()
     width = 0
     for line in lines:
-        width = max(width, len(line) * 19)
+        width = max(width, len(line) * 19.25)
     height = len(lines) * 43 - 9
     return width + 2 * HORIZONTAL_PADDING_WITHIN_NODES, height + 2 * VERTICAL_PADDING_WITHIN_NODES

@@ -15,7 +15,7 @@ class ScenarioDeltaValueGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, s
     def assignment_rep(delta: set[tuple[str, str]]) -> str:
         res = ""
         for assignment in delta:
-            res += "\n"+assignment[0]+" = "+assignment[1]+","
+            res += "\n\n"+assignment[0]+":"+assignment[1]
         return res
 
     @staticmethod
@@ -32,7 +32,7 @@ class ScenarioDeltaValueGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, s
 
     @staticmethod
     def create_node_label(info: tuple[ScenarioInfo, set[tuple[str, str]]]) -> str:
-        return f"{info[0].name}\n{ScenarioDeltaValueGraph.assignment_rep(info[1])}"
+        return f"{info[0].name}{ScenarioDeltaValueGraph.assignment_rep(info[1])}"
 
     @staticmethod
     def create_edge_label(info: None) -> str:

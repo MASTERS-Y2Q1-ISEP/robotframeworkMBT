@@ -5,6 +5,8 @@ from robot.api import logger
 from robotmbt.modelspace import ModelSpace
 from robotmbt.suitedata import Scenario
 
+import jsonpickle
+
 
 class ScenarioInfo:
     """
@@ -53,9 +55,9 @@ class StateInfo:
         right: dict[str, dict | str] = new_state.properties.copy()
         for key in right.keys():
             right[key] = str(right[key])
-        temp: set[tuple[str, str]] = set(right.items()) - set(left.items())  # type inference goes doodoo here
+        # type inference goes doodoo here
+        temp: set[tuple[str, str]] = set(right.items()) - set(left.items())
         return temp
-
 
     def __init__(self, state: ModelSpace):
         self.domain = state.ref_id
@@ -125,7 +127,8 @@ class TraceInfo:
 
     def _push(self, scenario: ScenarioInfo, state: StateInfo, n: int):
         if n > 1:
-            logger.warn(f"Pushing multiple scenario/state pairs at once to trace info ({n})! Some info might be lost!")
+            logger.warn(
+                f"Pushing multiple scenario/state pairs at once to trace info ({n})! Some info might be lost!")
         for _ in range(n):
             self.current_trace.append((scenario, state))
         self.pushed = True
@@ -173,7 +176,14 @@ class TraceInfo:
             logger.warn(
                 f'TraceInfo got out of sync after {after}\nExpected scenario: {prev_scen}\nActual scenario: {scen}')
         if prev_state != state:
-            logger.warn(f'TraceInfo got out of sync after {after}\nExpected state: {prev_state}\nActual state: {state}')
+            logger.warn(
+                f'TraceInfo got out of sync after {after}\nExpected state: {prev_state}\nActual state: {state}')
+
+    def export(self, suite_name: str):
+        encoded_instance = jsonpickle.encode(self)
+        name = suite_name.lower().replace(' ', '_')
+        with open(f"json/{name}.json", "w") as f:
+            f.write(encoded_instance)
 
     @staticmethod
     def stringify_pair(pair: tuple[ScenarioInfo, StateInfo]) -> str:

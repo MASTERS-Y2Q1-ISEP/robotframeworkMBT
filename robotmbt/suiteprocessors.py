@@ -106,7 +106,7 @@ class SuiteProcessors:
 
         self.visualiser = None
         if graph != '' and VISUALISE:
-            self.visualiser = Visualiser(graph)
+            self.visualiser = Visualiser(graph, in_suite.name)  # Pass suite name
         elif graph != '' and not VISUALISE:
             logger.warn(f'Visualisation {graph} requested, but required dependencies are not installed.'
                         'Install them with `pip install .[visualization]`.')

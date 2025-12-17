@@ -1,6 +1,7 @@
 from bokeh.core.property.vectorization import value
 from bokeh.embed import file_html
-from bokeh.models import ColumnDataSource, Rect, Text, ResetTool, SaveTool, WheelZoomTool, PanTool, Plot, Range1d
+from bokeh.models import ColumnDataSource, Rect, Text, ResetTool, SaveTool, WheelZoomTool, PanTool, Plot, Range1d, \
+    Title, FullscreenTool
 
 from networkx import DiGraph
 
@@ -23,8 +24,8 @@ INNER_WINDOW_WIDTH = 846
 INNER_WINDOW_HEIGHT = 882
 
 
-def generate_html(graph: AbstractGraph) -> str:
-    return NetworkVisualiser(graph).generate_html()
+def generate_html(graph: AbstractGraph, suite_name: str) -> str:
+    return NetworkVisualiser(graph, suite_name).generate_html()
 
 
 class Node:
@@ -39,7 +40,7 @@ class Node:
 
 
 class NetworkVisualiser:
-    def __init__(self, graph: AbstractGraph):
+    def __init__(self, graph: AbstractGraph, suite_name: str):
         # Extract what we need from the graph
         self.networkx: DiGraph = graph.networkx
         self.final_trace = graph.get_final_trace()
@@ -56,9 +57,13 @@ class NetworkVisualiser:
         # Add the edges to the graph
         self._add_edges()
 
+        # add title
+        self.plot.add_layout(Title(text=suite_name, align="center"), "above")
+
         # Add the different tools
         self.plot.add_tools(ResetTool(), SaveTool(),
-                            WheelZoomTool(), PanTool())
+                            WheelZoomTool(), PanTool(),
+                            FullscreenTool())
 
         # Specify the default range - these values represent the aspect ratio of the actual view in the window
         self.plot.x_range = Range1d(-INNER_WINDOW_WIDTH / 2, INNER_WINDOW_WIDTH / 2)

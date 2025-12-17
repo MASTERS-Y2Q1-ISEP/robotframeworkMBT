@@ -30,6 +30,7 @@ class NetworkVisualiser:
     GRAPH_PADDING_PERC: int = 15  # %
     # in px, needs to be equal for height and width otherwise calculations are wrong
     GRAPH_SIZE_PX: int = 600
+    LEGEND_HEIGHT_PX: int = 200
     MAX_VERTEX_NAME_LEN: int = 20  # number of characters
 
     # Colors and styles for executed vs unexecuted elements
@@ -90,7 +91,7 @@ class NetworkVisualiser:
         Create a legend using only Bokeh components
         """
         y_padding = 10
-        legend_height = 200
+        legend_height = self.LEGEND_HEIGHT_PX
         legend_width = self.GRAPH_SIZE_PX
         
         # Create a plot for the legend with no axes or tools

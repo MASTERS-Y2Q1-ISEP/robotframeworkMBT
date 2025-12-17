@@ -55,5 +55,7 @@ class Visualiser:
         html_bokeh = vis.generate_html()
         
         graph_size = networkvisualiser.NetworkVisualiser.GRAPH_SIZE_PX
+        legend_height = networkvisualiser.NetworkVisualiser.LEGEND_HEIGHT_PX
+        total_height = graph_size + legend_height
         
-        return f'<iframe srcdoc="{html.escape(html_bokeh)}" width="{graph_size}px" height="{graph_size}px"></iframe>'
+        return f'<iframe srcdoc="{html.escape(html_bokeh)}" width="{graph_size}px" height="{total_height}px"></iframe>'

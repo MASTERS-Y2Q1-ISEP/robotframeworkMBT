@@ -53,3 +53,5 @@ if VISUALISE:
             info.update_trace(ScenarioInfo("set y"), StateInfo._create_state_with_prop("prop", [("y", "True")]), 3)
             sdvg = ScenarioDeltaValueGraph(info)
             self.assertEqual(len(sdvg.networkx.nodes), 4)
+
+    # TODO add more tests

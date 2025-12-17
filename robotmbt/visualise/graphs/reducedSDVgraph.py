@@ -5,7 +5,7 @@ from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 from robotmbt.visualise.graphs.scenariodeltavaluegraph import ScenarioDeltaValueGraph
 from robotmbt.visualise.models import ScenarioInfo, StateInfo, TraceInfo
 
-
+# TODO add tests for this graph representation
 class ReducedSDVGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, str]]], None]):
     """
     The reduced Scenario-delta-Value graph keeps track of both the scenarios and state updates encountered.

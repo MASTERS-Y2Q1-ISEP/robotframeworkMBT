@@ -1,7 +1,7 @@
 from bokeh.core.property.vectorization import value
 from bokeh.embed import file_html
 from bokeh.models import ColumnDataSource, Rect, Text, ResetTool, SaveTool, WheelZoomTool, PanTool, Plot, Range1d, \
-    Title, FullscreenTool, CustomJS
+    Title, FullscreenTool, CustomJS, Segment, Arrow, NormalHead
 
 from grandalf.graphs import Vertex as GVertex, Edge as GEdge, Graph as GGraph
 from grandalf.layouts import SugiyamaLayout
@@ -42,9 +42,10 @@ class Node:
 
 
 class Edge:
-    def __init__(self, from_node: str, to_node: str, points: list[tuple[float, float]]):
+    def __init__(self, from_node: str, to_node: str, label: str, points: list[tuple[float, float]]):
         self.from_node = from_node
         self.to_node = to_node
+        self.label = label
         self.points = points
 
 
@@ -64,7 +65,7 @@ class NetworkVisualiser:
         self._add_nodes(nodes)
 
         # Add the edges to the graph
-        self._add_edges()
+        self._add_edges(edges)
 
         # Add our features to the graph (e.g. tools)
         self._add_features(suite_name)
@@ -86,7 +87,8 @@ class NetworkVisualiser:
             node_source.data['y'].append(-node.y)
             node_source.data['w'].append(node.width)
             node_source.data['h'].append(node.height)
-            node_source.data['color'].append(FINAL_TRACE_NODE_COLOR if node.node_id in self.final_trace else OTHER_NODE_COLOR)
+            node_source.data['color'].append(
+                FINAL_TRACE_NODE_COLOR if node.node_id in self.final_trace else OTHER_NODE_COLOR)
 
             node_label_source.data['id'].append(node.node_id)
             node_label_source.data['x'].append(node.x - node.width / 2 + HORIZONTAL_PADDING_WITHIN_NODES)
@@ -99,13 +101,64 @@ class NetworkVisualiser:
 
         node_label_glyph = Text(x='x', y='y', text='label', text_align='left', text_baseline='middle',
                                 text_font_size='16pt', text_font=value("Courier New"))
-        node_label_glyph.tags = ["scalable_text"]
+        node_label_glyph.tags = ["scalable_text16"]
         self.plot.add_glyph(node_label_source, node_label_glyph)
 
-    def _add_edges(self):
+    def _add_edges(self, edges: list[Edge]):
         # The ColumnDataSources to store our edges in Bokeh's format
-        edge_source: ColumnDataSource = ColumnDataSource({'from': [], 'to': [], 'label': []})
-        # TODO
+        edge_part_source: ColumnDataSource = ColumnDataSource(
+            {'from': [], 'to': [], 'start_x': [], 'start_y': [], 'end_x': [], 'end_y': []})
+        edge_arrow_source: ColumnDataSource = ColumnDataSource(
+            {'from': [], 'to': [], 'start_x': [], 'start_y': [], 'end_x': [], 'end_y': []})
+        edge_label_source: ColumnDataSource = ColumnDataSource({'from': [], 'to': [], 'x': [], 'y': [], 'label': []})
+
+        for edge in edges:
+            start_x, start_y = 0, 0
+            end_x, end_y = 0, 0
+            # Add edges going through the calculated points
+            for i in range(len(edge.points) - 1):
+                start_x, start_y = edge.points[i]
+                end_x, end_y = edge.points[i + 1]
+                if i < len(edge.points) - 2:
+                    # Middle part of edge without arrow
+                    edge_part_source.data['from'].append(edge.from_node)
+                    edge_part_source.data['to'].append(edge.to_node)
+                    edge_part_source.data['start_x'].append(start_x)
+                    edge_part_source.data['start_y'].append(-start_y)
+                    edge_part_source.data['end_x'].append(end_x)
+                    edge_part_source.data['end_y'].append(-end_y)
+                else:
+                    # End of edge with arrow
+                    edge_arrow_source.data['from'].append(edge.from_node)
+                    edge_arrow_source.data['to'].append(edge.to_node)
+                    edge_arrow_source.data['start_x'].append(start_x)
+                    edge_arrow_source.data['start_y'].append(-start_y)
+                    edge_arrow_source.data['end_x'].append(end_x)
+                    edge_arrow_source.data['end_y'].append(-end_y)
+
+            # Add the label
+            edge_label_source.data['from'].append(edge.from_node)
+            edge_label_source.data['to'].append(edge.to_node)
+            edge_label_source.data['x'].append((start_x + end_x) / 2)
+            edge_label_source.data['y'].append(- (start_y + end_y) / 2)
+            edge_label_source.data['label'].append(edge.label)
+
+        # Add the glyphs for edges and their labels
+        edge_part_glyph = Segment(x0='start_x', y0='start_y', x1='end_x', y1='end_y')
+        self.plot.add_glyph(edge_part_source, edge_part_glyph)
+
+        arrow_layout = Arrow(
+            end=NormalHead(size=10),
+            x_start='start_x', y_start='start_y',
+            x_end='end_x', y_end='end_y',
+            source=edge_arrow_source
+        )
+        self.plot.add_layout(arrow_layout)
+
+        edge_label_glyph = Text(x='x', y='y', text='label', text_align='left', text_baseline='middle',
+                                text_font_size='8pt', text_font=value("Courier New"))
+        edge_label_glyph.tags = ["scalable_text8"]
+        self.plot.add_glyph(edge_label_source, edge_label_glyph)
 
     def _create_layout(self) -> tuple[list[Node], list[Edge]]:
         vertices = []
@@ -148,10 +201,11 @@ class NetworkVisualiser:
 
         es = []
         for e in g.C[0].sE:
-            from_id = e.v[0]
-            to_id = e.v[1]
+            from_id = e.v[0].data
+            to_id = e.v[1].data
+            label = self.networkx.edges[(from_id, to_id)]['label']
             points = e.view.points
-            es.append(Edge(from_id, to_id, points))
+            es.append(Edge(from_id, to_id, label, points))
 
         return ns, es
 
@@ -181,8 +235,12 @@ class NetworkVisualiser:
             const zoom = Math.min(xspan0 / xspan, yspan0 / yspan);
 
             for (const r of plot.renderers) {
-                if (r.glyph && r.glyph.tags && r.glyph.tags.includes("scalable_text")) {
+                if (r.glyph && r.glyph.tags && r.glyph.tags.includes("scalable_text16")) {
                     const base = 16;  // base pt size
+                    r.glyph.text_font_size = (base * zoom).toFixed(2) + "pt";
+                }
+                if (r.glyph && r.glyph.tags && r.glyph.tags.includes("scalable_text8")) {
+                    const base = 8;  // base pt size
                     r.glyph.text_font_size = (base * zoom).toFixed(2) + "pt";
                 }
             }

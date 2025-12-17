@@ -1,13 +1,12 @@
 from bokeh.core.property.vectorization import value
 from bokeh.embed import file_html
 from bokeh.models import ColumnDataSource, Rect, Text, ResetTool, SaveTool, WheelZoomTool, PanTool, Plot, Range1d, \
-    Title, FullscreenTool
+    Title, FullscreenTool, CustomJS
 
 from grandalf.graphs import Vertex as GVertex, Edge as GEdge, Graph as GGraph
 from grandalf.layouts import SugiyamaLayout
 
 from networkx import DiGraph
-from robot.api import logger
 
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 
@@ -33,14 +32,13 @@ def generate_html(graph: AbstractGraph, suite_name: str) -> str:
 
 
 class Node:
-    def __init__(self, node_id: str, label: str, x: int, y: int, width: float, height: float, in_final_trace: bool):
+    def __init__(self, node_id: str, label: str, x: int, y: int, width: float, height: float):
         self.node_id = node_id
         self.label = label
         self.x = x
         self.y = y
         self.width = width
         self.height = height
-        self.in_final_trace = in_final_trace
 
 
 class Edge:
@@ -59,7 +57,7 @@ class NetworkVisualiser:
         # Set up a Bokeh figure
         self.plot = Plot()
 
-        # Sugiyama
+        # Create Sugiyama layout
         nodes, edges = self._create_layout()
 
         # Add the nodes to the graph
@@ -68,18 +66,8 @@ class NetworkVisualiser:
         # Add the edges to the graph
         self._add_edges()
 
-        # add title
-        self.plot.add_layout(Title(text=suite_name, align="center"), "above")
-
-        # Add the different tools
-        self.plot.add_tools(ResetTool(), SaveTool(),
-                            WheelZoomTool(), PanTool(),
-                            FullscreenTool())
-
-        # Specify the default range - these values represent the aspect ratio of the actual view in the window
-        self.plot.x_range = Range1d(-INNER_WINDOW_WIDTH / 2, INNER_WINDOW_WIDTH / 2)
-        self.plot.y_range = Range1d(-INNER_WINDOW_HEIGHT + VERTICAL_PADDING_BETWEEN_NODES,
-                                    VERTICAL_PADDING_BETWEEN_NODES)
+        # Add our features to the graph (e.g. tools)
+        self._add_features(suite_name)
 
     def generate_html(self):
         return file_html(self.plot, 'inline', "graph")
@@ -93,7 +81,17 @@ class NetworkVisualiser:
 
         # Add all nodes to the column data sources
         for node in nodes:
-            _add_node_to_sources(node, node_source, node_label_source)
+            node_source.data['id'].append(node.node_id)
+            node_source.data['x'].append(node.x)
+            node_source.data['y'].append(-node.y)
+            node_source.data['w'].append(node.width)
+            node_source.data['h'].append(node.height)
+            node_source.data['color'].append(FINAL_TRACE_NODE_COLOR if node.node_id in self.final_trace else OTHER_NODE_COLOR)
+
+            node_label_source.data['id'].append(node.node_id)
+            node_label_source.data['x'].append(node.x - node.width / 2 + HORIZONTAL_PADDING_WITHIN_NODES)
+            node_label_source.data['y'].append(-node.y)
+            node_label_source.data['label'].append(node.label)
 
         # Add the glyphs for nodes and their labels
         node_glyph = Rect(x='x', y='y', width='w', height='h', fill_color='color')
@@ -101,6 +99,7 @@ class NetworkVisualiser:
 
         node_label_glyph = Text(x='x', y='y', text='label', text_align='left', text_baseline='middle',
                                 text_font_size='16pt', text_font=value("Courier New"))
+        node_label_glyph.tags = ["scalable_text"]
         self.plot.add_glyph(node_label_source, node_label_glyph)
 
     def _add_edges(self):
@@ -145,7 +144,7 @@ class NetworkVisualiser:
             label = self.networkx.nodes[node_id]['label']
             (x, y) = v.view.xy
             (w, h) = _calculate_dimensions(label)
-            ns.append(Node(node_id, label, x, y, w, h, False))
+            ns.append(Node(node_id, label, x, y, w, h))
 
         es = []
         for e in g.C[0].sE:
@@ -155,6 +154,45 @@ class NetworkVisualiser:
             es.append(Edge(from_id, to_id, points))
 
         return ns, es
+
+    def _add_features(self, suite_name: str):
+        # add title
+        self.plot.add_layout(Title(text=suite_name, align="center"), "above")
+
+        # Add the different tools
+        self.plot.add_tools(ResetTool(), SaveTool(),
+                            WheelZoomTool(), PanTool(),
+                            FullscreenTool())
+
+        # Specify the default range - these values represent the aspect ratio of the actual view in the window
+        self.plot.x_range = Range1d(-INNER_WINDOW_WIDTH / 2, INNER_WINDOW_WIDTH / 2)
+        self.plot.y_range = Range1d(-INNER_WINDOW_HEIGHT + VERTICAL_PADDING_BETWEEN_NODES,
+                                    VERTICAL_PADDING_BETWEEN_NODES)
+        self.plot.x_range.tags = [{"initial_span": INNER_WINDOW_WIDTH}]
+        self.plot.y_range.tags = [{"initial_span": INNER_WINDOW_HEIGHT}]
+
+        zoom_cb = CustomJS(args=dict(xr=self.plot.x_range, yr=self.plot.y_range, plot=self.plot), code="""
+            const xspan0 = xr.tags[0].initial_span;
+            const yspan0 = yr.tags[0].initial_span;
+
+            const xspan = xr.end - xr.start;
+            const yspan = yr.end - yr.start;
+
+            const zoom = Math.min(xspan0 / xspan, yspan0 / yspan);
+
+            for (const r of plot.renderers) {
+                if (r.glyph && r.glyph.tags && r.glyph.tags.includes("scalable_text")) {
+                    const base = 16;  // base pt size
+                    r.glyph.text_font_size = (base * zoom).toFixed(2) + "pt";
+                }
+            }
+            plot.request_render();
+        """)
+
+        self.plot.x_range.js_on_change("start", zoom_cb)
+        self.plot.x_range.js_on_change("end", zoom_cb)
+        self.plot.y_range.js_on_change("start", zoom_cb)
+        self.plot.y_range.js_on_change("end", zoom_cb)
 
 
 class NodeView:
@@ -176,21 +214,6 @@ def _find_node(nodes: list[GVertex], node_id: str):
         if node.data == node_id:
             return node
     return None
-
-
-def _add_node_to_sources(node: Node, node_source: ColumnDataSource, node_label_source: ColumnDataSource):
-    # Add to data source
-    node_source.data['id'].append(node.node_id)
-    node_source.data['x'].append(node.x)
-    node_source.data['y'].append(-node.y)
-    node_source.data['w'].append(node.width)
-    node_source.data['h'].append(node.height)
-    node_source.data['color'].append(FINAL_TRACE_NODE_COLOR if node.in_final_trace else OTHER_NODE_COLOR)
-
-    node_label_source.data['id'].append(node.node_id)
-    node_label_source.data['x'].append(node.x - node.width / 2 + HORIZONTAL_PADDING_WITHIN_NODES)
-    node_label_source.data['y'].append(-node.y)
-    node_label_source.data['label'].append(node.label)
 
 
 def _calculate_dimensions(label: str) -> tuple[float, float]:

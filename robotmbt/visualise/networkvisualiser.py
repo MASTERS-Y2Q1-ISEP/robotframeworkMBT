@@ -241,59 +241,45 @@ class NetworkVisualiser:
         self.plot.x_range.tags = [{"initial_span": INNER_WINDOW_WIDTH}]
         self.plot.y_range.tags = [{"initial_span": INNER_WINDOW_HEIGHT}]
 
-        # A JS callback to scale text and arrows according to the amount zoomed in/out.
-        zoom_cb = CustomJS(args=dict(xr=self.plot.x_range, yr=self.plot.y_range, plot=self.plot, arrows=self.arrows),
+        # A JS callback to scale text and arrows, and change aspect ratio.
+        resize_cb = CustomJS(args=dict(xr=self.plot.x_range, yr=self.plot.y_range, plot=self.plot, arrows=self.arrows),
                            code=f"""
-    // Initialize initial size tags
+    // Initialize initial scale tag
     if (!plot.tags || plot.tags.length === 0) {{
         plot.tags = [{{
-            xspan0: xr.end - xr.start,
-            yspan0: yr.end - yr.start,
-            iw0: plot.inner_width,
-            ih0: plot.inner_height
+            initial_scale: plot.inner_height / (yr.end - yr.start)
         }}]
     }}
 
-    // Modify xrange to match aspect ratio
-    const current_inner_aspect = plot.inner_width / plot.inner_height;
-    const current_xspan = xr.end - xr.start;
-    const current_yspan = yr.end - yr.start;
-    const current_span_aspect = current_xspan / current_yspan;
+    // Calculate current x and y span
+    const xspan = xr.end - xr.start;
+    const yspan = yr.end - yr.start;
 
-    if (Math.abs(current_inner_aspect - current_span_aspect) > 0.05) {{
-        const xmid = xr.start + current_xspan / 2;
-        const new_xspan = current_yspan * current_inner_aspect;
+    // Calculate inner aspect ratio and span aspect ratio
+    const inner_aspect = plot.inner_width / plot.inner_height;
+    const span_aspect = xspan / yspan;
+
+    // Let span aspect ratio match inner aspect ratio if needed
+    if (Math.abs(inner_aspect - span_aspect) > 0.05) {{
+        const xmid = xr.start + xspan / 2;
+        const new_xspan = yspan * inner_aspect;
         xr.start = xmid - new_xspan / 2;
         xr.end = xmid + new_xspan / 2;
     }}
 
-    const t = plot.tags[0]
-
-    // New span
-    const xspan = xr.end - xr.start
-    const yspan = yr.end - yr.start
-
-    // Initial window size / span
-    const px0_x = t.iw0 / t.xspan0
-    const px0_y = t.ih0 / t.yspan0
-
-    // Current window size / span
-    const px_x = plot.inner_width  / xspan
-    const px_y = plot.inner_height / yspan
-
-    // Difference between the two = how much to zoom
-    const zoom = Math.min(px_x / px0_x, px_y / px0_y)
+    // Calculate scale factor
+    const scale = (plot.inner_height / yspan) / plot.tags[0].initial_scale
 
     // Scale text
     for (const r of plot.renderers) {{
         if (!r.glyph || !r.glyph.tags) continue
 
         if (r.glyph.tags.includes("scalable_text{MAJOR_FONT_SIZE}")) {{
-            r.glyph.text_font_size = Math.floor({MAJOR_FONT_SIZE} * zoom) + "pt"
+            r.glyph.text_font_size = Math.floor({MAJOR_FONT_SIZE} * scale) + "pt"
         }}
 
         if (r.glyph.tags.includes("scalable_text{MINOR_FONT_SIZE}")) {{
-            r.glyph.text_font_size = Math.floor({MINOR_FONT_SIZE} * zoom) + "pt"
+            r.glyph.text_font_size = Math.floor({MINOR_FONT_SIZE} * scale) + "pt"
         }}
     }}
 
@@ -308,17 +294,17 @@ class NetworkVisualiser:
         if (!a.properties.end._value.properties.size._value.value) continue;
         if (a._base_end_size == null)
             a._base_end_size = a.properties.end._value.properties.size._value.value;
-        a.properties.end._value.properties.size._value.value = a._base_end_size * zoom;
+        a.properties.end._value.properties.size._value.value = a._base_end_size * scale;
         a.change.emit();
     }}""")
 
         # Add the callback to the values that change when zooming/resizing.
-        self.plot.x_range.js_on_change("start", zoom_cb)
-        self.plot.x_range.js_on_change("end", zoom_cb)
-        self.plot.y_range.js_on_change("start", zoom_cb)
-        self.plot.y_range.js_on_change("end", zoom_cb)
-        self.plot.js_on_change("inner_width", zoom_cb)
-        self.plot.js_on_change("inner_height", zoom_cb)
+        self.plot.x_range.js_on_change("start", resize_cb)
+        self.plot.x_range.js_on_change("end", resize_cb)
+        self.plot.y_range.js_on_change("start", resize_cb)
+        self.plot.y_range.js_on_change("end", resize_cb)
+        self.plot.js_on_change("inner_width", resize_cb)
+        self.plot.js_on_change("inner_height", resize_cb)
 
     def _add_legend(self, graph: AbstractGraph):
         """

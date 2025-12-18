@@ -289,11 +289,11 @@ class NetworkVisualiser:
         if (!r.glyph || !r.glyph.tags) continue
 
         if (r.glyph.tags.includes("scalable_text{MAJOR_FONT_SIZE}")) {{
-            r.glyph.text_font_size = ( {MAJOR_FONT_SIZE} * zoom ).toFixed(2) + "pt"
+            r.glyph.text_font_size = Math.floor({MAJOR_FONT_SIZE} * zoom) + "pt"
         }}
 
         if (r.glyph.tags.includes("scalable_text{MINOR_FONT_SIZE}")) {{
-            r.glyph.text_font_size = ( {MINOR_FONT_SIZE} * zoom ).toFixed(2) + "pt"
+            r.glyph.text_font_size = Math.floor({MINOR_FONT_SIZE} * zoom) + "pt"
         }}
     }}
 

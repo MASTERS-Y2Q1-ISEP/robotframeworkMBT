@@ -193,30 +193,52 @@ class NetworkVisualiser:
         self.plot.y_range.tags = [{"initial_span": INNER_WINDOW_HEIGHT}]
 
         zoom_cb = CustomJS(args=dict(xr=self.plot.x_range, yr=self.plot.y_range, plot=self.plot), code=f"""
-            const xspan0 = xr.tags[0].initial_span;
-            const yspan0 = yr.tags[0].initial_span;
+    // Initialize initial size tags
+    if (!plot.tags || plot.tags.length === 0) {{
+        plot.tags = [{{
+            xspan0: xr.end - xr.start,
+            yspan0: yr.end - yr.start,
+            iw0: plot.inner_width,
+            ih0: plot.inner_height
+        }}]
+    }}
 
-            const xspan = xr.end - xr.start;
-            const yspan = yr.end - yr.start;
+    const t = plot.tags[0]
 
-            const zoom = Math.min(xspan0 / xspan, yspan0 / yspan);
+    // New span
+    const xspan = xr.end - xr.start
+    const yspan = yr.end - yr.start
 
-            for (const r of plot.renderers) {{
-                if (r.glyph && r.glyph.tags && r.glyph.tags.includes("scalable_text{MAJOR_FONT_SIZE}")) {{
-                    const base = {MAJOR_FONT_SIZE};  // base pt size
-                    r.glyph.text_font_size = (base * zoom).toFixed(2) + "pt";
-                }}
-                if (r.glyph && r.glyph.tags && r.glyph.tags.includes("scalable_text{MINOR_FONT_SIZE}")) {{
-                    const base = {MINOR_FONT_SIZE};  // base pt size
-                    r.glyph.text_font_size = (base * zoom).toFixed(2) + "pt";
-                }}
-            }}
-        """)
+    // Initial window size / span
+    const px0_x = t.iw0 / t.xspan0
+    const px0_y = t.ih0 / t.yspan0
+
+    // Current window size / span
+    const px_x = plot.inner_width  / xspan
+    const px_y = plot.inner_height / yspan
+
+    // Difference between the two = how much to zoom
+    const zoom = Math.min(px_x / px0_x, px_y / px0_y)
+
+    // Scale text
+    for (const r of plot.renderers) {{
+        if (!r.glyph || !r.glyph.tags) continue
+
+        if (r.glyph.tags.includes("scalable_text{MAJOR_FONT_SIZE}")) {{
+            r.glyph.text_font_size = ( {MAJOR_FONT_SIZE} * zoom ).toFixed(2) + "pt"
+        }}
+
+        if (r.glyph.tags.includes("scalable_text{MINOR_FONT_SIZE}")) {{
+            r.glyph.text_font_size = ( {MINOR_FONT_SIZE} * zoom ).toFixed(2) + "pt"
+        }}
+    }}""")
 
         self.plot.x_range.js_on_change("start", zoom_cb)
         self.plot.x_range.js_on_change("end", zoom_cb)
         self.plot.y_range.js_on_change("start", zoom_cb)
         self.plot.y_range.js_on_change("end", zoom_cb)
+        self.plot.js_on_change("inner_width", zoom_cb)
+        self.plot.js_on_change("inner_height", zoom_cb)
 
 
 class NodeView:

@@ -1,7 +1,8 @@
+from bokeh.core.enums import PlaceType, LegendLocationType
 from bokeh.core.property.vectorization import value
 from bokeh.embed import file_html
 from bokeh.models import ColumnDataSource, Rect, Text, ResetTool, SaveTool, WheelZoomTool, PanTool, Plot, Range1d, \
-    Title, FullscreenTool, CustomJS, Segment, Arrow, NormalHead, Bezier
+    Title, FullscreenTool, CustomJS, Segment, Arrow, NormalHead, Bezier, Legend
 
 from grandalf.graphs import Vertex as GVertex, Edge as GEdge, Graph as GGraph
 from grandalf.layouts import SugiyamaLayout
@@ -11,30 +12,37 @@ from networkx import DiGraph
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 
 # Padding within the nodes between the borders and inner text
-HORIZONTAL_PADDING_WITHIN_NODES = 5
-VERTICAL_PADDING_WITHIN_NODES = 5
+HORIZONTAL_PADDING_WITHIN_NODES: int = 5
+VERTICAL_PADDING_WITHIN_NODES: int = 5
 
 # Colors for different parts of the graph
-FINAL_TRACE_NODE_COLOR = '#CCCC00'
-OTHER_NODE_COLOR = '#999989'
-FINAL_TRACE_EDGE_COLOR = '#444422'
-OTHER_EDGE_COLOR = '#DDDDCF'
+FINAL_TRACE_NODE_COLOR: str = '#CCCC00'
+OTHER_NODE_COLOR: str = '#999989'
+FINAL_TRACE_EDGE_COLOR: str = '#444422'
+OTHER_EDGE_COLOR: str = '#BBBBAA'
+
+# Legend placement
+# Alignment within graph ('center' is in the middle, 'top_right' is the top right, etc.)
+LEGEND_LOCATION: LegendLocationType | tuple[float, float] = 'top_right'
+# Where it appears relative to graph ('center' is within, 'below' is below, etc.)
+LEGEND_PLACE: PlaceType = 'center'
 
 # Dimensions of the plot in the window
-INNER_WINDOW_WIDTH = 720
-INNER_WINDOW_HEIGHT = 480
-OUTER_WINDOW_WIDTH = INNER_WINDOW_WIDTH + 30
-OUTER_WINDOW_HEIGHT = INNER_WINDOW_HEIGHT + 30
+INNER_WINDOW_WIDTH: int = 720
+INNER_WINDOW_HEIGHT: int = 480
+OUTER_WINDOW_WIDTH: int = INNER_WINDOW_WIDTH + (280 if LEGEND_PLACE == 'left' or LEGEND_PLACE == 'right' else 30)
+OUTER_WINDOW_HEIGHT: int = INNER_WINDOW_HEIGHT + (150 if LEGEND_PLACE == 'below' or LEGEND_PLACE == 'center' else 30)
 
 # Font sizes
-MAJOR_FONT_SIZE = 16
-MINOR_FONT_SIZE = 8
+MAJOR_FONT_SIZE: int = 16
+MINOR_FONT_SIZE: int = 8
 
 
 class Node:
     """
     Contains the information we need to add a node to the graph.
     """
+
     def __init__(self, node_id: str, label: str, x: int, y: int, width: float, height: float):
         self.node_id = node_id
         self.label = label
@@ -48,6 +56,7 @@ class Edge:
     """
     Contains the information we need to add an edge to the graph.
     """
+
     def __init__(self, from_node: str, to_node: str, label: str, points: list[tuple[float, float]]):
         self.from_node = from_node
         self.to_node = to_node
@@ -59,6 +68,7 @@ class NetworkVisualiser:
     """
     A container for a Bokeh graph, which can be created from any abstract graph.
     """
+
     def __init__(self, graph: AbstractGraph, suite_name: str):
         # Extract what we need from the graph
         self.networkx: DiGraph = graph.networkx
@@ -78,6 +88,9 @@ class NetworkVisualiser:
 
         # Add the edges to the graph
         self._add_edges(nodes, edges)
+
+        # Add a legend to the graph
+        self._add_legend(graph)
 
         # Add our features to the graph (e.g. tools)
         self._add_features(suite_name)
@@ -228,7 +241,8 @@ class NetworkVisualiser:
         self.plot.y_range.tags = [{"initial_span": INNER_WINDOW_HEIGHT}]
 
         # A JS callback to scale text and arrows according to the amount zoomed in/out.
-        zoom_cb = CustomJS(args=dict(xr=self.plot.x_range, yr=self.plot.y_range, plot=self.plot, arrows=self.arrows), code=f"""
+        zoom_cb = CustomJS(args=dict(xr=self.plot.x_range, yr=self.plot.y_range, plot=self.plot, arrows=self.arrows),
+                           code=f"""
     // Initialize initial size tags
     if (!plot.tags || plot.tags.length === 0) {{
         plot.tags = [{{
@@ -292,11 +306,43 @@ class NetworkVisualiser:
         self.plot.js_on_change("inner_width", zoom_cb)
         self.plot.js_on_change("inner_height", zoom_cb)
 
+    def _add_legend(self, graph: AbstractGraph):
+        """
+        Adds a legend to the graph with the node/edge information from the given graph.
+        """
+        empty_source = ColumnDataSource({'_': [0]})
+
+        final_trace_node_glyph = Rect(x='_', y='_', width='_', height='_', fill_color=FINAL_TRACE_NODE_COLOR)
+        final_trace_node = self.plot.add_glyph(empty_source, final_trace_node_glyph)
+
+        other_node_glyph = Rect(x='_', y='_', width='_', height='_', fill_color=OTHER_NODE_COLOR)
+        other_node = self.plot.add_glyph(empty_source, other_node_glyph)
+
+        final_trace_edge_glyph = Segment(
+            x0='_', x1='_',
+            y0='_', y1='_', line_color=FINAL_TRACE_EDGE_COLOR
+        )
+        final_trace_edge = self.plot.add_glyph(empty_source, final_trace_edge_glyph)
+
+        other_edge_glyph = Segment(
+            x0='_', x1='_',
+            y0='_', y1='_', line_color=OTHER_EDGE_COLOR
+        )
+        other_edge = self.plot.add_glyph(empty_source, other_edge_glyph)
+
+        legend = Legend(items=[(graph.get_legend_info_final_trace_node(), [final_trace_node]),
+                               (graph.get_legend_info_other_node(), [other_node]),
+                               (graph.get_legend_info_final_trace_edge(), [final_trace_edge]),
+                               (graph.get_legend_info_other_edge(), [other_edge])],
+                        location=LEGEND_LOCATION, orientation="vertical")
+        self.plot.add_layout(legend, LEGEND_PLACE)
+
 
 class NodeView:
     """
     A view of a node in the format that grandalf expects.
     """
+
     def __init__(self, width: float, height: float):
         self.w, self.h = width, height
         self.xy = (0, 0)
@@ -306,6 +352,7 @@ class EdgeView:
     """
     A view of an edge in the format that grandalf expects.
     """
+
     def __init__(self):
         self.points = []
 
@@ -357,7 +404,8 @@ def _get_connection_coordinates(nodes: list[Node], node_id: str) -> list[tuple[f
     return start_possibilities
 
 
-def _minimize_distance(from_pos: list[tuple[float, float]], to_pos: list[tuple[float, float]]) -> tuple[float, float, float, float]:
+def _minimize_distance(from_pos: list[tuple[float, float]], to_pos: list[tuple[float, float]]) -> tuple[
+    float, float, float, float]:
     """
     Find a pair of positions that minimizes their distance.
     """
@@ -534,7 +582,7 @@ def _calculate_dimensions(label: str) -> tuple[float, float]:
     width = 0
     for line in lines:
         width = max(width, len(line) * (MAJOR_FONT_SIZE / 2 + 5))
-    height = len(lines) * (MAJOR_FONT_SIZE / 2 + 9) * 1.75 - 9
+    height = len(lines) * (MAJOR_FONT_SIZE / 2 + 9) * 1.35 - 9
     return width + 2 * HORIZONTAL_PADDING_WITHIN_NODES, height + 2 * VERTICAL_PADDING_WITHIN_NODES
 
 

@@ -17,7 +17,6 @@ from bokeh.resources import CDN
 from math import sqrt
 import networkx as nx
 
-
 class NetworkVisualiser:
     """
     Generate plot with Bokeh
@@ -292,7 +291,7 @@ class NetworkVisualiser:
             node_color = self.EXECUTED_NODE_COLOR if is_executed else self.UNEXECUTED_NODE_COLOR
             text_color = self.EXECUTED_TEXT_COLOR if is_executed else self.UNEXECUTED_TEXT_COLOR
 
-            if node == 'start':
+            if node == self.graph.start_node:
                 # For start node (circle), calculate radius based on text width
                 text_width, text_height = self._calculate_text_dimensions(
                     label)
@@ -585,7 +584,7 @@ class NetworkVisualiser:
     def _calculate_graph_layout(self):
         try:
             self.graph_layout = nx.bfs_layout(
-                self.graph.networkx, 'start', align='horizontal')
+                self.graph.networkx, self.graph.start_node, align='horizontal')
             # horizontal mirror
             for node in self.graph_layout:
                 self.graph_layout[node] = (self.graph_layout[node][0],

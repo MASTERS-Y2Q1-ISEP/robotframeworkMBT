@@ -19,8 +19,14 @@ FINAL_TRACE_NODE_COLOR = '#CCCC00'
 OTHER_NODE_COLOR = '#999989'
 
 # Dimensions of the plot in the window
-INNER_WINDOW_WIDTH = 846
-INNER_WINDOW_HEIGHT = 882
+INNER_WINDOW_WIDTH = 720
+INNER_WINDOW_HEIGHT = 480
+OUTER_WINDOW_WIDTH = INNER_WINDOW_WIDTH + 30
+OUTER_WINDOW_HEIGHT = INNER_WINDOW_HEIGHT + 30
+
+# Font sizes
+MAJOR_FONT_SIZE = 16
+MINOR_FONT_SIZE = 8
 
 
 class Node:
@@ -49,7 +55,7 @@ class NetworkVisualiser:
         self.start = graph.start_node
 
         # Set up a Bokeh figure
-        self.plot = Plot()
+        self.plot = Plot(width=OUTER_WINDOW_WIDTH, height=OUTER_WINDOW_HEIGHT)
 
         # Create Sugiyama layout
         nodes, edges = self._create_layout()
@@ -82,8 +88,8 @@ class NetworkVisualiser:
         self.plot.add_glyph(node_source, node_glyph)
 
         node_label_glyph = Text(x='x', y='y', text='label', text_align='left', text_baseline='middle',
-                                text_font_size='16pt', text_font=value("Courier New"))
-        node_label_glyph.tags = ["scalable_text16"]
+                                text_font_size=f'{MAJOR_FONT_SIZE}pt', text_font=value("Courier New"))
+        node_label_glyph.tags = [f"scalable_text{MAJOR_FONT_SIZE}"]
         self.plot.add_glyph(node_label_source, node_label_glyph)
 
     def _add_edges(self, nodes: list[Node], edges: list[Edge]):
@@ -118,8 +124,8 @@ class NetworkVisualiser:
         self.plot.add_glyph(edge_bezier_source, edge_bezier_glyph)
 
         edge_label_glyph = Text(x='x', y='y', text='label', text_align='center', text_baseline='middle',
-                                text_font_size='8pt', text_font=value("Courier New"))
-        edge_label_glyph.tags = ["scalable_text8"]
+                                text_font_size=f'{MINOR_FONT_SIZE}pt', text_font=value("Courier New"))
+        edge_label_glyph.tags = [f"scalable_text{MINOR_FONT_SIZE}"]
         self.plot.add_glyph(edge_label_source, edge_label_glyph)
 
     def _create_layout(self) -> tuple[list[Node], list[Edge]]:
@@ -186,7 +192,7 @@ class NetworkVisualiser:
         self.plot.x_range.tags = [{"initial_span": INNER_WINDOW_WIDTH}]
         self.plot.y_range.tags = [{"initial_span": INNER_WINDOW_HEIGHT}]
 
-        zoom_cb = CustomJS(args=dict(xr=self.plot.x_range, yr=self.plot.y_range, plot=self.plot), code="""
+        zoom_cb = CustomJS(args=dict(xr=self.plot.x_range, yr=self.plot.y_range, plot=self.plot), code=f"""
             const xspan0 = xr.tags[0].initial_span;
             const yspan0 = yr.tags[0].initial_span;
 
@@ -195,17 +201,16 @@ class NetworkVisualiser:
 
             const zoom = Math.min(xspan0 / xspan, yspan0 / yspan);
 
-            for (const r of plot.renderers) {
-                if (r.glyph && r.glyph.tags && r.glyph.tags.includes("scalable_text16")) {
-                    const base = 16;  // base pt size
+            for (const r of plot.renderers) {{
+                if (r.glyph && r.glyph.tags && r.glyph.tags.includes("scalable_text{MAJOR_FONT_SIZE}")) {{
+                    const base = {MAJOR_FONT_SIZE};  // base pt size
                     r.glyph.text_font_size = (base * zoom).toFixed(2) + "pt";
-                }
-                if (r.glyph && r.glyph.tags && r.glyph.tags.includes("scalable_text8")) {
-                    const base = 8;  // base pt size
+                }}
+                if (r.glyph && r.glyph.tags && r.glyph.tags.includes("scalable_text{MINOR_FONT_SIZE}")) {{
+                    const base = {MINOR_FONT_SIZE};  // base pt size
                     r.glyph.text_font_size = (base * zoom).toFixed(2) + "pt";
-                }
-            }
-            plot.request_render();
+                }}
+            }}
         """)
 
         self.plot.x_range.js_on_change("start", zoom_cb)
@@ -414,8 +419,8 @@ def _calculate_dimensions(label: str) -> tuple[float, float]:
     lines = label.splitlines()
     width = 0
     for line in lines:
-        width = max(width, len(line) * 19.25)
-    height = len(lines) * 43 - 9
+        width = max(width, len(line) * (MAJOR_FONT_SIZE / 2 + 5))
+    height = len(lines) * (MAJOR_FONT_SIZE / 2 + 9) * 1.75 - 9
     return width + 2 * HORIZONTAL_PADDING_WITHIN_NODES, height + 2 * VERTICAL_PADDING_WITHIN_NODES
 
 

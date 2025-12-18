@@ -17,6 +17,8 @@ VERTICAL_PADDING_WITHIN_NODES = 5
 # Colors for different parts of the graph
 FINAL_TRACE_NODE_COLOR = '#CCCC00'
 OTHER_NODE_COLOR = '#999989'
+FINAL_TRACE_EDGE_COLOR = '#444422'
+OTHER_EDGE_COLOR = '#DDDDCF'
 
 # Dimensions of the plot in the window
 INNER_WINDOW_WIDTH = 720
@@ -97,33 +99,33 @@ class NetworkVisualiser:
     def _add_edges(self, nodes: list[Node], edges: list[Edge]):
         # The ColumnDataSources to store our edges in Bokeh's format
         edge_part_source: ColumnDataSource = ColumnDataSource(
-            {'from': [], 'to': [], 'start_x': [], 'start_y': [], 'end_x': [], 'end_y': []})
+            {'from': [], 'to': [], 'start_x': [], 'start_y': [], 'end_x': [], 'end_y': [], 'color': []})
         edge_arrow_source: ColumnDataSource = ColumnDataSource(
-            {'from': [], 'to': [], 'start_x': [], 'start_y': [], 'end_x': [], 'end_y': []})
+            {'from': [], 'to': [], 'start_x': [], 'start_y': [], 'end_x': [], 'end_y': [], 'color': []})
         edge_bezier_source: ColumnDataSource = ColumnDataSource(
             {'from': [], 'to': [], 'start_x': [], 'start_y': [], 'end_x': [], 'end_y': [], 'control1_x': [],
-             'control1_y': [], 'control2_x': [], 'control2_y': []})
+             'control1_y': [], 'control2_x': [], 'control2_y': [], 'color': []})
         edge_label_source: ColumnDataSource = ColumnDataSource({'from': [], 'to': [], 'x': [], 'y': [], 'label': []})
 
         for edge in edges:
-            _add_edge_to_sources(nodes, edge, edge_part_source, edge_arrow_source, edge_bezier_source,
+            _add_edge_to_sources(nodes, edge, self.final_trace, edge_part_source, edge_arrow_source, edge_bezier_source,
                                  edge_label_source)
 
         # Add the glyphs for edges and their labels
-        edge_part_glyph = Segment(x0='start_x', y0='start_y', x1='end_x', y1='end_y')
+        edge_part_glyph = Segment(x0='start_x', y0='start_y', x1='end_x', y1='end_y', line_color='color')
         self.plot.add_glyph(edge_part_source, edge_part_glyph)
 
         arrow_layout = Arrow(
-            end=NormalHead(size=10),
+            end=NormalHead(size=10, fill_color='color', line_color='color'),
             x_start='start_x', y_start='start_y',
-            x_end='end_x', y_end='end_y',
+            x_end='end_x', y_end='end_y', line_color='color',
             source=edge_arrow_source
         )
         self.plot.add_layout(arrow_layout)
         self.arrows.append(arrow_layout)
 
         edge_bezier_glyph = Bezier(x0='start_x', y0='start_y', x1='end_x', y1='end_y', cx0='control1_x',
-                                   cy0='control1_y', cx1='control2_x', cy1='control2_y')
+                                   cy0='control1_y', cx1='control2_x', cy1='control2_y', line_color='color')
         self.plot.add_glyph(edge_bezier_source, edge_bezier_glyph)
 
         edge_label_glyph = Text(x='x', y='y', text='label', text_align='center', text_baseline='middle',
@@ -324,11 +326,17 @@ def _minimize_distance(from_pos, to_pos) -> tuple[float, float, float, float]:
     return fx, fy, tx, ty
 
 
-def _add_edge_to_sources(nodes: list[Node], edge: Edge, edge_part_source: ColumnDataSource,
+def _add_edge_to_sources(nodes: list[Node], edge: Edge, final_trace: list[str], edge_part_source: ColumnDataSource,
                          edge_arrow_source: ColumnDataSource, edge_bezier_source: ColumnDataSource,
                          edge_label_source: ColumnDataSource):
+    in_final_trace = False
+    for i in range(len(final_trace) - 1):
+        if edge.from_node == final_trace[i] and edge.to_node == final_trace[i + 1]:
+            in_final_trace = True
+            break
+
     if edge.from_node == edge.to_node:
-        _add_self_loop_to_sources(nodes, edge, edge_arrow_source, edge_bezier_source, edge_label_source)
+        _add_self_loop_to_sources(nodes, edge, in_final_trace, edge_arrow_source, edge_bezier_source, edge_label_source)
         return
 
     start_x, start_y = 0, 0
@@ -371,6 +379,7 @@ def _add_edge_to_sources(nodes: list[Node], edge: Edge, edge_part_source: Column
             edge_part_source.data['start_y'].append(-start_y)
             edge_part_source.data['end_x'].append(end_x)
             edge_part_source.data['end_y'].append(-end_y)
+            edge_part_source.data['color'].append(FINAL_TRACE_EDGE_COLOR if in_final_trace else OTHER_EDGE_COLOR)
         else:
             # End of edge with arrow
             edge_arrow_source.data['from'].append(from_id)
@@ -379,6 +388,7 @@ def _add_edge_to_sources(nodes: list[Node], edge: Edge, edge_part_source: Column
             edge_arrow_source.data['start_y'].append(-start_y)
             edge_arrow_source.data['end_x'].append(end_x)
             edge_arrow_source.data['end_y'].append(-end_y)
+            edge_arrow_source.data['color'].append(FINAL_TRACE_EDGE_COLOR if in_final_trace else OTHER_EDGE_COLOR)
 
     # Add the label
     edge_label_source.data['from'].append(from_id)
@@ -388,7 +398,7 @@ def _add_edge_to_sources(nodes: list[Node], edge: Edge, edge_part_source: Column
     edge_label_source.data['label'].append(edge.label)
 
 
-def _add_self_loop_to_sources(nodes: list[Node], edge: Edge, edge_arrow_source: ColumnDataSource,
+def _add_self_loop_to_sources(nodes: list[Node], edge: Edge, in_final_trace: bool, edge_arrow_source: ColumnDataSource,
                               edge_bezier_source: ColumnDataSource, edge_label_source: ColumnDataSource):
     connection = _get_connection_coordinates(nodes, edge.from_node)
 
@@ -415,6 +425,7 @@ def _add_self_loop_to_sources(nodes: list[Node], edge: Edge, edge_arrow_source: 
     edge_bezier_source.data['control1_y'].append(-right_y + 25)
     edge_bezier_source.data['control2_x'].append(right_x + 25)
     edge_bezier_source.data['control2_y'].append(-right_y - 25)
+    edge_bezier_source.data['color'].append(FINAL_TRACE_EDGE_COLOR if in_final_trace else OTHER_EDGE_COLOR)
 
     # Add the arrow
     edge_arrow_source.data['from'].append(from_id)
@@ -423,6 +434,7 @@ def _add_self_loop_to_sources(nodes: list[Node], edge: Edge, edge_arrow_source: 
     edge_arrow_source.data['start_y'].append(-right_y - 5.001)
     edge_arrow_source.data['end_x'].append(right_x)
     edge_arrow_source.data['end_y'].append(-right_y - 5)
+    edge_arrow_source.data['color'].append(FINAL_TRACE_EDGE_COLOR if in_final_trace else OTHER_EDGE_COLOR)
 
     # Add the label
     edge_label_source.data['from'].append(from_id)

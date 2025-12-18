@@ -9,8 +9,6 @@ from robotmbt.visualise.graphs.stategraph import StateGraph
 from robotmbt.visualise.graphs.scenariostategraph import ScenarioStateGraph
 from robotmbt.visualise.models import TraceInfo, StateInfo, ScenarioInfo
 import html
-import sys
-import jsonpickle
 
 
 class Visualiser:
@@ -67,20 +65,3 @@ class Visualiser:
         graph_size = networkvisualiser.NetworkVisualiser.GRAPH_SIZE_PX
 
         return f'<iframe srcdoc="{html.escape(html_bokeh)}" width="{graph_size}px" height="{graph_size}px"></iframe>'
-
-
-def generate_from_json(graph_type: str, filename: str):
-    with open(f"json/{filename}.json", "r") as f:
-        string = f.read()
-        decoded_instance = jsonpickle.decode(string)
-    v = Visualiser(graph_type=graph_type, suite_name=filename,
-                   trace_info=decoded_instance)
-    html = v.generate_visualisation()
-    with open(f"results/{filename}.html", "w") as f:
-        f.write(html)
-
-
-if __name__ == '__main__':
-    graph_type = sys.argv[1]
-    filename = sys.argv[2]
-    generate_from_json(graph_type, filename)

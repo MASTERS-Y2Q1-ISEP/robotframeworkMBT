@@ -254,6 +254,19 @@ class NetworkVisualiser:
         }}]
     }}
 
+    // Modify xrange to match aspect ratio
+    const current_inner_aspect = plot.inner_width / plot.inner_height;
+    const current_xspan = xr.end - xr.start;
+    const current_yspan = yr.end - yr.start;
+    const current_span_aspect = current_xspan / current_yspan;
+
+    if (Math.abs(current_inner_aspect - current_span_aspect) > 0.05) {{
+        const xmid = xr.start + current_xspan / 2;
+        const new_xspan = current_yspan * current_inner_aspect;
+        xr.start = xmid - new_xspan / 2;
+        xr.end = xmid + new_xspan / 2;
+    }}
+
     const t = plot.tags[0]
 
     // New span
@@ -582,8 +595,8 @@ def _calculate_dimensions(label: str) -> tuple[float, float]:
     lines = label.splitlines()
     width = 0
     for line in lines:
-        width = max(width, len(line) * (MAJOR_FONT_SIZE / 2 + 5))
-    height = len(lines) * (MAJOR_FONT_SIZE / 2 + 9) * 1.35 - 9
+        width = max(width, len(line) * (MAJOR_FONT_SIZE / 3 + 5))
+    height = len(lines) * (MAJOR_FONT_SIZE / 2 + 9) * 1.37 - 9
     return width + 2 * HORIZONTAL_PADDING_WITHIN_NODES, height + 2 * VERTICAL_PADDING_WITHIN_NODES
 
 

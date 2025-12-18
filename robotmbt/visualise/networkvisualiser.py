@@ -81,6 +81,7 @@ class NetworkVisualiser:
         # Create Sugiyama layout
         nodes, edges = self._create_layout()
 
+        # Keep track of arrows in the graph for scaling
         self.arrows = []
 
         # Add the nodes to the graph

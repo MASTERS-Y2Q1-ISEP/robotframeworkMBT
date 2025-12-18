@@ -60,6 +60,8 @@ class NetworkVisualiser:
         # Create Sugiyama layout
         nodes, edges = self._create_layout()
 
+        self.arrows = []
+
         # Add the nodes to the graph
         self._add_nodes(nodes)
 
@@ -118,6 +120,7 @@ class NetworkVisualiser:
             source=edge_arrow_source
         )
         self.plot.add_layout(arrow_layout)
+        self.arrows.append(arrow_layout)
 
         edge_bezier_glyph = Bezier(x0='start_x', y0='start_y', x1='end_x', y1='end_y', cx0='control1_x',
                                    cy0='control1_y', cx1='control2_x', cy1='control2_y')
@@ -192,7 +195,7 @@ class NetworkVisualiser:
         self.plot.x_range.tags = [{"initial_span": INNER_WINDOW_WIDTH}]
         self.plot.y_range.tags = [{"initial_span": INNER_WINDOW_HEIGHT}]
 
-        zoom_cb = CustomJS(args=dict(xr=self.plot.x_range, yr=self.plot.y_range, plot=self.plot), code=f"""
+        zoom_cb = CustomJS(args=dict(xr=self.plot.x_range, yr=self.plot.y_range, plot=self.plot, arrows=self.arrows), code=f"""
     // Initialize initial size tags
     if (!plot.tags || plot.tags.length === 0) {{
         plot.tags = [{{
@@ -231,6 +234,19 @@ class NetworkVisualiser:
         if (r.glyph.tags.includes("scalable_text{MINOR_FONT_SIZE}")) {{
             r.glyph.text_font_size = ( {MINOR_FONT_SIZE} * zoom ).toFixed(2) + "pt"
         }}
+    }}
+    for (const a of arrows) {{
+        if (!a.properties) continue;
+        if (!a.properties.end) continue;
+        if (!a.properties.end._value) continue;
+        if (!a.properties.end._value.properties) continue;
+        if (!a.properties.end._value.properties.size) continue;
+        if (!a.properties.end._value.properties.size._value) continue;
+        if (!a.properties.end._value.properties.size._value.value) continue;
+        if (a._base_end_size == null)
+            a._base_end_size = a.properties.end._value.properties.size._value.value;
+        a.properties.end._value.properties.size._value.value = a._base_end_size * zoom;
+        a.change.emit();
     }}""")
 
         self.plot.x_range.js_on_change("start", zoom_cb)

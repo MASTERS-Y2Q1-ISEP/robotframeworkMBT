@@ -32,6 +32,9 @@ MINOR_FONT_SIZE = 8
 
 
 class Node:
+    """
+    Contains the information we need to add a node to the graph.
+    """
     def __init__(self, node_id: str, label: str, x: int, y: int, width: float, height: float):
         self.node_id = node_id
         self.label = label
@@ -42,6 +45,9 @@ class Node:
 
 
 class Edge:
+    """
+    Contains the information we need to add an edge to the graph.
+    """
     def __init__(self, from_node: str, to_node: str, label: str, points: list[tuple[float, float]]):
         self.from_node = from_node
         self.to_node = to_node
@@ -50,6 +56,9 @@ class Edge:
 
 
 class NetworkVisualiser:
+    """
+    A container for a Bokeh graph, which can be created from any abstract graph.
+    """
     def __init__(self, graph: AbstractGraph, suite_name: str):
         # Extract what we need from the graph
         self.networkx: DiGraph = graph.networkx
@@ -74,9 +83,15 @@ class NetworkVisualiser:
         self._add_features(suite_name)
 
     def generate_html(self):
+        """
+        Generate HTML for the Bokeh graph.
+        """
         return file_html(self.plot, 'inline', "graph")
 
     def _add_nodes(self, nodes: list[Node]):
+        """
+        Add the nodes to the graph in the form of Rect and Text glyphs.
+        """
         # The ColumnDataSources to store our nodes and edges in Bokeh's format
         node_source: ColumnDataSource = ColumnDataSource(
             {'id': [], 'x': [], 'y': [], 'w': [], 'h': [], 'color': []})
@@ -97,6 +112,9 @@ class NetworkVisualiser:
         self.plot.add_glyph(node_label_source, node_label_glyph)
 
     def _add_edges(self, nodes: list[Node], edges: list[Edge]):
+        """
+        Add the edges to the graph in the form of Arrow layouts and Segment, Bezier, and Text glyphs.
+        """
         # The ColumnDataSources to store our edges in Bokeh's format
         edge_part_source: ColumnDataSource = ColumnDataSource(
             {'from': [], 'to': [], 'start_x': [], 'start_y': [], 'end_x': [], 'end_y': [], 'color': []})
@@ -134,10 +152,15 @@ class NetworkVisualiser:
         self.plot.add_glyph(edge_label_source, edge_label_glyph)
 
     def _create_layout(self) -> tuple[list[Node], list[Edge]]:
+        """
+        Create the Sugiyama layout using grandalf.
+        """
+        # Containers to convert networkx nodes/edges to the proper format.
         vertices = []
         edges = []
         flips = []
 
+        # Extract nodes from networkx and put them in the proper format to be used by grandalf.
         start = None
         for node_id in self.networkx.nodes:
             v = GVertex(node_id)
@@ -147,8 +170,10 @@ class NetworkVisualiser:
             if node_id == self.start:
                 start = v
 
+        # Calculate which edges need to be flipped to make the graph acyclic.
         flip = _flip_edges([e for e in self.networkx.edges])
 
+        # Extract edges from networkx and put them in the proper format to be used by grandalf.
         for (from_id, to_id) in self.networkx.edges:
             from_node = _find_node(vertices, from_id)
             to_node = _find_node(vertices, to_id)
@@ -158,12 +183,14 @@ class NetworkVisualiser:
             if (from_id, to_id) in flip:
                 flips.append(e)
 
+        # Feed the info to grandalf and get the layout.
         g = GGraph(vertices, edges)
 
         sugiyama = SugiyamaLayout(g.C[0])
         sugiyama.init_all(roots=[start], inverted_edges=flips)
         sugiyama.draw()
 
+        # Extract the information we need from the nodes and edges and return them in our format.
         ns = []
         for v in g.C[0].sV:
             node_id = v.data
@@ -183,6 +210,9 @@ class NetworkVisualiser:
         return ns, es
 
     def _add_features(self, suite_name: str):
+        """
+        Add our features to the graph such as tools, titles, and JavaScript callbacks.
+        """
         # add title
         self.plot.add_layout(Title(text=suite_name, align="center"), "above")
 
@@ -197,6 +227,7 @@ class NetworkVisualiser:
         self.plot.x_range.tags = [{"initial_span": INNER_WINDOW_WIDTH}]
         self.plot.y_range.tags = [{"initial_span": INNER_WINDOW_HEIGHT}]
 
+        # A JS callback to scale text and arrows according to the amount zoomed in/out.
         zoom_cb = CustomJS(args=dict(xr=self.plot.x_range, yr=self.plot.y_range, plot=self.plot, arrows=self.arrows), code=f"""
     // Initialize initial size tags
     if (!plot.tags || plot.tags.length === 0) {{
@@ -237,6 +268,8 @@ class NetworkVisualiser:
             r.glyph.text_font_size = ( {MINOR_FONT_SIZE} * zoom ).toFixed(2) + "pt"
         }}
     }}
+
+    // Scale arrows
     for (const a of arrows) {{
         if (!a.properties) continue;
         if (!a.properties.end) continue;
@@ -251,6 +284,7 @@ class NetworkVisualiser:
         a.change.emit();
     }}""")
 
+        # Add the callback to the values that change when zooming/resizing.
         self.plot.x_range.js_on_change("start", zoom_cb)
         self.plot.x_range.js_on_change("end", zoom_cb)
         self.plot.y_range.js_on_change("start", zoom_cb)
@@ -260,12 +294,18 @@ class NetworkVisualiser:
 
 
 class NodeView:
+    """
+    A view of a node in the format that grandalf expects.
+    """
     def __init__(self, width: float, height: float):
         self.w, self.h = width, height
         self.xy = (0, 0)
 
 
 class EdgeView:
+    """
+    A view of an edge in the format that grandalf expects.
+    """
     def __init__(self):
         self.points = []
 
@@ -274,6 +314,9 @@ class EdgeView:
 
 
 def _find_node(nodes: list[GVertex], node_id: str):
+    """
+    Find a node given its id in a list of grandalf nodes.
+    """
     for node in nodes:
         if node.data == node_id:
             return node
@@ -281,6 +324,10 @@ def _find_node(nodes: list[GVertex], node_id: str):
 
 
 def _get_connection_coordinates(nodes: list[Node], node_id: str) -> list[tuple[float, float]]:
+    """
+    Get the coordinates where edges can connect to a node given its id.
+    These places are the middle of the left, right, top, and bottom edge, as well as the corners of the node.
+    """
     start_possibilities = []
 
     # Get node from list
@@ -310,7 +357,10 @@ def _get_connection_coordinates(nodes: list[Node], node_id: str) -> list[tuple[f
     return start_possibilities
 
 
-def _minimize_distance(from_pos, to_pos) -> tuple[float, float, float, float]:
+def _minimize_distance(from_pos: list[tuple[float, float]], to_pos: list[tuple[float, float]]) -> tuple[float, float, float, float]:
+    """
+    Find a pair of positions that minimizes their distance.
+    """
     min_dist = -1
     fx, fy, tx, ty = 0, 0, 0, 0
 
@@ -329,6 +379,10 @@ def _minimize_distance(from_pos, to_pos) -> tuple[float, float, float, float]:
 def _add_edge_to_sources(nodes: list[Node], edge: Edge, final_trace: list[str], edge_part_source: ColumnDataSource,
                          edge_arrow_source: ColumnDataSource, edge_bezier_source: ColumnDataSource,
                          edge_label_source: ColumnDataSource):
+    """
+    Add an edge between two nodes to the ColumnDataSources.
+    Contains all logic to set their color, find their attachment points, and do self-loops properly.
+    """
     in_final_trace = False
     for i in range(len(final_trace) - 1):
         if edge.from_node == final_trace[i] and edge.to_node == final_trace[i + 1]:
@@ -400,6 +454,9 @@ def _add_edge_to_sources(nodes: list[Node], edge: Edge, final_trace: list[str], 
 
 def _add_self_loop_to_sources(nodes: list[Node], edge: Edge, in_final_trace: bool, edge_arrow_source: ColumnDataSource,
                               edge_bezier_source: ColumnDataSource, edge_label_source: ColumnDataSource):
+    """
+    Add a self-loop edge for a node to the ColumnDataSources, consisting of a Beziér curve and an arrow.
+    """
     connection = _get_connection_coordinates(nodes, edge.from_node)
 
     if isinstance(edge.from_node, frozenset):
@@ -446,6 +503,9 @@ def _add_self_loop_to_sources(nodes: list[Node], edge: Edge, in_final_trace: boo
 
 def _add_node_to_sources(node: Node, final_trace: list[str], node_source: ColumnDataSource,
                          node_label_source: ColumnDataSource):
+    """
+    Add a node to the ColumnDataSources.
+    """
     if isinstance(node.node_id, frozenset):
         node_id = tuple(sorted(node.node_id))
     else:
@@ -466,6 +526,10 @@ def _add_node_to_sources(node: Node, final_trace: list[str], node_source: Column
 
 
 def _calculate_dimensions(label: str) -> tuple[float, float]:
+    """
+    Calculate a node's dimensions based on its label and the given font size constant.
+    Assumes the font is Courier New.
+    """
     lines = label.splitlines()
     width = 0
     for line in lines:
@@ -475,6 +539,9 @@ def _calculate_dimensions(label: str) -> tuple[float, float]:
 
 
 def _flip_edges(edges: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    """
+    Calculate which edges need to be flipped to make a graph acyclic.
+    """
     # Step 1: Build adjacency list from edges
     adj = {}
     for u, v in edges:

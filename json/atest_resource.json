@@ -1,0 +1,65 @@
+{
+    "py/object": "robotmbt.visualise.models.TraceInfo",
+    "current_trace": [
+        {
+            "py/tuple": [
+                {
+                    "py/object": "robotmbt.visualise.models.ScenarioInfo",
+                    "name": "1",
+                    "src_id": 1
+                },
+                {
+                    "py/object": "robotmbt.visualise.models.StateInfo",
+                    "domain": "None",
+                    "properties": {
+                        "p": {
+                            "v": 1
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "py/tuple": [
+                {
+                    "py/object": "robotmbt.visualise.models.ScenarioInfo",
+                    "name": "b",
+                    "src_id": 2
+                },
+                {
+                    "py/object": "robotmbt.visualise.models.StateInfo",
+                    "domain": "None",
+                    "properties": {
+                        "p": {
+                            "v": 2
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "all_traces": [
+        [
+            {
+                "py/tuple": [
+                    {
+                        "py/object": "robotmbt.visualise.models.ScenarioInfo",
+                        "name": "a",
+                        "src_id": 1
+                    },
+                    {
+                        "py/object": "robotmbt.visualise.models.StateInfo",
+                        "domain": "None",
+                        "properties": {
+                            "p": {
+                                "v": 2
+                            }
+                        }
+                    }
+                ]
+            }
+        ]
+    ],
+    "previous_length": 2,
+    "pushed": true
+}

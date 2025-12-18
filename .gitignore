@@ -162,4 +162,5 @@ cython_debug/
 .idea/
 
 # json documents for graphs
-json/
+json/*
+!json/atest_resource.json

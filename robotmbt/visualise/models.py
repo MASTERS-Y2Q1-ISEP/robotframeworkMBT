@@ -6,6 +6,8 @@ from robotmbt.modelspace import ModelSpace
 from robotmbt.suitedata import Scenario
 
 import jsonpickle
+import tempfile
+import os
 
 
 class ScenarioInfo:
@@ -179,11 +181,18 @@ class TraceInfo:
             logger.warn(
                 f'TraceInfo got out of sync after {after}\nExpected state: {prev_state}\nActual state: {state}')
 
-    def export(self, suite_name: str):
+    def export(self, suite_name: str, atest: bool = False) -> str | None:
         encoded_instance = jsonpickle.encode(self)
         name = suite_name.lower().replace(' ', '_')
+        if atest:
+            fd, path = tempfile.mkstemp()
+            with os.fdopen(fd, "w") as f:
+                f.write(encoded_instance)
+            return path
+        
         with open(f"json/{name}.json", "w") as f:
             f.write(encoded_instance)
+        return None
 
     @staticmethod
     def stringify_pair(pair: tuple[ScenarioInfo, StateInfo]) -> str:

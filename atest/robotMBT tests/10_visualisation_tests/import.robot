@@ -1,4 +1,7 @@
 *** Settings ***
+Documentation     Export and import a test suite from and to JSON
+...               and check that the imported suite equals the 
+...               exported suite.
 Resource          ../../resources/visualisation.resource
 Library           robotmbt    processor=echo
 
@@ -13,5 +16,17 @@ Create test suite
     and all traces a has list l
     and list l has a tuple 'scenario i, state p: v=2'
 
+Export test suite to json file
+    Given test suite s contains trace info t
+    When test suite s is exported to json
+    Then the file s.json exists
+
 Load json file into robotmbt 
-    Given test suite s with flag from_json=atest_resource
+    Given the file s.json exists
+    When s.json is imported
+    Then trace info from s.json is the same as trace info t
+
+Cleanup
+    Given the file s.json exists
+    When s.json is deleted
+    Then s.json does not exist

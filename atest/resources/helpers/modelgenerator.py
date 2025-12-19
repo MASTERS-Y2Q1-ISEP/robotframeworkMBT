@@ -2,6 +2,7 @@ import jsonpickle
 from robot.api.deco import keyword  # type:ignore
 from robotmbt.visualise.models import TraceInfo, ScenarioInfo, StateInfo
 from robotmbt.visualise.visualiser import Visualiser
+import os
 
 
 class ModelGenerator:
@@ -25,7 +26,7 @@ class ModelGenerator:
     
     @keyword(name='All Traces Contains List') # type:ignore
     def all_traces_contains_list(self, trace_info: TraceInfo) -> TraceInfo:
-        trace_info.all_traces.append([[]])
+        trace_info.all_traces.append([])
         return trace_info
     
     @keyword(name='All Traces Contains') # type:ignore
@@ -42,12 +43,30 @@ class ModelGenerator:
         trace_info.all_traces[0].append((scenario, state))
 
         return trace_info
-
-    @keyword(name="Test Suite From JSON")  # type:ignore
-    def test_suite_from_json(self, filename: str) -> TraceInfo:
-        with open(f'json/{filename}.json', 'r') as f:
+    
+    @keyword(name='Export to JSON') # type:ignore
+    def export_to_json(self, suite:str, trace_info: TraceInfo) -> str:
+        return trace_info.export(suite, True)
+    
+    @keyword(name='Import JSON File') # type:ignore
+    def import_json_file(self, filepath: str) -> TraceInfo:
+        with open(filepath, 'r') as f:
             string = f.read()
             decoded_instance = jsonpickle.decode(string)
-        visualiser = Visualiser(
-            'state', trace_info=decoded_instance)
+        visualiser = Visualiser('state', trace_info=decoded_instance)
         return visualiser.trace_info
+
+    @keyword(name='Check File Exists') # type:ignore
+    def check_file_exists(self, filepath: str) -> str:
+        return 'file exists' if os.path.exists(filepath) else 'file does not exist'
+    
+    @keyword(name='Compare Trace Info') # type:ignore
+    def compare_trace_info(self, t1: TraceInfo, t2: TraceInfo) -> str:
+        succes = 'imported model equals exported model'
+        fail = 'imported models differs from exported model'
+        return  succes if repr(t1) == repr(t2) else fail
+    
+    @keyword(name='Delete JSON File') # type:ignore
+    def delete_json_file(self, filepath: str):
+        os.remove(filepath)
+

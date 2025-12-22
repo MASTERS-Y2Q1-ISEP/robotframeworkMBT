@@ -6,70 +6,70 @@ Library           Collections
 
 *** Keywords ***
 test suite ${suite}
-    [Documentation]     Makes a new test suite
+    [Documentation]     *model info*
     ...     :IN: None
     ...     :OUT: new suite
     Set Suite Variable  ${suite}
 
 test suite ${suite} has trace info ${trace}
-    [Documentation]     Adds trace info to test suite
-    ...     :In: suite
-    ...     :Out: new trace_info
+    [Documentation]     *model info*
+    ...     :IN: suite
+    ...     :OUT: new trace_info
     Variable Should Exist    ${suite}
 
     ${trace_info} =         Generate Trace Information
     Set Suite Variable  ${trace_info}
     
 trace info ${trace} has current trace ${current}
-    [Documentation]     Step for readability
-    ...     :In: trace_info
-    ...     :Out: None
+    [Documentation]     *model info*
+    ...     :IN: trace_info
+    ...     :OUT: trace_info
     Variable Should Exist    ${trace_info}
 
 current trace ${current_trace} has a tuple 'scenario ${scenario}, state ${state}'
-    [Documentation]    Add (scenario, state) to current trace
-    ...     :In: trace_info
-    ...     :Out: trace_info
+    [Documentation]    *model info*
+    ...     :IN: trace_info
+    ...     :OUT: trace_info
     Variable Should Exist   ${trace_info}
 
     ${trace_info} =         Current Trace Contains  ${trace_info}   ${scenario}     ${state}
     Set Suite Variable  ${trace_info}
 
 trace info ${trace} has all traces ${all}
-    [Documentation]     Step for readability
-    ...     :In: trace_info
-    ...     :Out: None
+    [Documentation]     *model info*
+    ...     :IN: trace_info
+    ...     :OUT: trace_info
     Variable Should Exist    ${trace_info}
 
 all traces ${all} has list ${list}
-    [Documentation]    Add empty list to all traces
-    ...     :In: trace_info
-    ...     :Out: trace_info
+    [Documentation]    *model info*
+    ...     :IN: trace_info
+    ...     :OUT: trace_info
     Variable Should Exist   ${trace_info}
 
     ${trace_info} =         All Traces Contains List  ${trace_info}
     Set Suite Variable  ${trace_info}
 
 list ${list} has a tuple 'scenario ${scenario}, state ${state}'
-    [Documentation]    Add (scenario, state) to the first trace of all traces
-    ...     :In: trace_info
-    ...     :Out: trace_info
+    [Documentation]    *model info*
+    ...     :IN: trace_info
+    ...     :OUT: trace_info
     Variable Should Exist   ${trace_info}
 
     ${trace_info} =         All Traces Contains  ${trace_info}   ${scenario}     ${state}
     Set Suite Variable  ${trace_info}
 
 test suite ${suite} contains trace info ${ti}
-    [Documentation]     Check that test suite and trace_info exist
+    [Documentation]     *model info*
     ...     :IN: suite, trace_info
-    ...     :OUT: None
+    ...     :OUT: suite, trace_info
     Variable Should Exist   ${suite}
     Variable Should Exist   ${trace_info}
 
 test suite ${suite} is exported to json
-    [Documentation]     Check that test suite and trace_info exist
+    [Documentation]     *model info*
     ...     :IN: suite, trace_info
-    ...     :OUT: json file 
+    ...     :OUT: new filepath
     Variable Should Exist   ${suite}
     Variable Should Exist   ${trace_info}
     
@@ -77,27 +77,27 @@ test suite ${suite} is exported to json
     Set Suite Variable  ${filepath}
 
 the file ${filename} exists
-    [Documentation]     Check that a file with ${filename} exists
-    ...     :IN: filepath
-    ...     :OUT: None 
+    [Documentation]     *model info*
+    ...     :IN: suite, filepath
+    ...     :OUT: suite, filepath 
     Variable Should Exist   ${filepath}
 
     ${result} =     Check File Exists   ${filepath}
     Should Be Equal     ${result}   file exists
 
 ${filename} is imported
-    [Documentation]     import trace info from json file
-    ...     :IN: filepath
-    ...     :OUT: new_trace_info
+    [Documentation]     *model info*
+    ...     :IN: suite, filepath
+    ...     :OUT: new new_trace_info
     Variable Should Exist   ${filepath}
     
     ${new_trace_info} =     Import JSON File    ${filepath}
     Set Suite Variable      ${new_trace_info}
 
 trace info from ${filename} is the same as trace info ${trace}
-    [Documentation]     Check that trace_info and new_trace_info contain the same information
+    [Documentation]     *model info*
     ...     :IN: new_trace_info, trace_info
-    ...     :OUT: flag_cleanup
+    ...     :OUT: new flag_cleanup
     Variable Should Exist   ${trace_info}
     Variable Should Exist   ${new_trace_info}
 
@@ -106,18 +106,18 @@ trace info from ${filename} is the same as trace info ${trace}
     Set Suite Variable      ${flag_cleanup}     True
 
 ${filename} is deleted
-    [Documentation]     delete file with ${filename}
+    [Documentation]     *model info*
     ...     :IN: filepath, flag_cleanup
-    ...     :OUT: json file does not exist
+    ...     :OUT: filepath, flag_cleanup
     Variable Should Exist   ${filepath}
     Variable Should Exist   ${flag_cleanup}
     
     Delete JSON File    ${filepath}
 
 ${filename} does not exist
-    [Documentation]     check that file is deleted
+    [Documentation]     *model info*
     ...     :IN: filepath
-    ...     :OUT: None
+    ...     :OUT: filepath
     Variable Should Exist   ${filepath}
 
     ${result} =     Check File Exists   ${filepath}

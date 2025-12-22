@@ -2,8 +2,9 @@
 Documentation     Export and import a test suite from and to JSON
 ...               and check that the imported suite equals the 
 ...               exported suite.
+Suite Setup       Treat this test suite Model-based     graph=scenario
 Resource          ../../resources/visualisation.resource
-Library           robotmbt    processor=echo
+Library           robotmbt
 
 *** Test Cases ***
 Create test suite

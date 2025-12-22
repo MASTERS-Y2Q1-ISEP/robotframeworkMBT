@@ -23,13 +23,13 @@ test suite ${suite} has trace info ${trace}
 trace info ${trace} has current trace ${current}
     [Documentation]     *model info*
     ...     :IN: trace_info
-    ...     :OUT: trace_info
+    ...     :OUT: trace_info.current_trace=[]
     Variable Should Exist    ${trace_info}
 
 current trace ${current_trace} has a tuple 'scenario ${scenario}, state ${state}'
     [Documentation]    *model info*
-    ...     :IN: trace_info
-    ...     :OUT: trace_info
+    ...     :IN: trace_info.current_trace
+    ...     :OUT: trace_info.current_trace.append((${scenario}, ${state}))
     Variable Should Exist   ${trace_info}
 
     ${trace_info} =         Current Trace Contains  ${trace_info}   ${scenario}     ${state}
@@ -38,13 +38,13 @@ current trace ${current_trace} has a tuple 'scenario ${scenario}, state ${state}
 trace info ${trace} has all traces ${all}
     [Documentation]     *model info*
     ...     :IN: trace_info
-    ...     :OUT: trace_info
+    ...     :OUT: trace_info.all_traces=[]
     Variable Should Exist    ${trace_info}
 
 all traces ${all} has list ${list}
     [Documentation]    *model info*
     ...     :IN: trace_info
-    ...     :OUT: trace_info
+    ...     :OUT: trace_info.all_traces.append([])
     Variable Should Exist   ${trace_info}
 
     ${trace_info} =         All Traces Contains List  ${trace_info}
@@ -52,8 +52,8 @@ all traces ${all} has list ${list}
 
 list ${list} has a tuple 'scenario ${scenario}, state ${state}'
     [Documentation]    *model info*
-    ...     :IN: trace_info
-    ...     :OUT: trace_info
+    ...     :IN: trace_info.all_traces
+    ...     :OUT: trace_info.all_traces.append((${scenario}, ${state}))
     Variable Should Exist   ${trace_info}
 
     ${trace_info} =         All Traces Contains  ${trace_info}   ${scenario}     ${state}
@@ -103,14 +103,12 @@ trace info from ${filename} is the same as trace info ${trace}
 
     ${result} =     Compare Trace Info   ${trace_info}      ${new_trace_info}
     Should Be Equal     ${result}   imported model equals exported model
-    Set Suite Variable      ${flag_cleanup}     True
 
 ${filename} is deleted
     [Documentation]     *model info*
-    ...     :IN: filepath, flag_cleanup
-    ...     :OUT: filepath, flag_cleanup
+    ...     :IN: filepath
+    ...     :OUT: filepath
     Variable Should Exist   ${filepath}
-    Variable Should Exist   ${flag_cleanup}
     
     Delete JSON File    ${filepath}
 
@@ -123,3 +121,14 @@ ${filename} does not exist
     ${result} =     Check File Exists   ${filepath}
     Should Be Equal     ${result}   file does not exist
 
+flag cleanup is set
+    [Documentation]     *model info*
+    ...     :IN: suite
+    ...     :OUT: suite
+    Set Suite Variable      ${flag_cleanup}     True
+
+flag cleanup has been set
+    [Documentation]     *model info*
+    ...     :IN: flag_cleanup
+    ...     :OUT: flag_cleanup
+    Variable Should Exist   ${flag_cleanup}

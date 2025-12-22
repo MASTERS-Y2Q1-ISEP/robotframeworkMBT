@@ -26,8 +26,10 @@ Load json file into robotmbt
     Given the file s.json exists
     When s.json is imported
     Then trace info from s.json is the same as trace info t
+    and flag cleanup is set
 
 Cleanup
     Given the file s.json exists
+    and flag cleanup has been set
     When s.json is deleted
     Then s.json does not exist

@@ -10,6 +10,9 @@ __pycache__/
 *.vpp.bak_*
 *.vpp.lck
 
+# Visual Studio Code settings
+.vscode
+
 # Distribution / packaging
 .Python
 build/

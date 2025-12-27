@@ -87,18 +87,36 @@ class SuiteProcessors:
         out_suite.suites = []
         return out_suite
 
-    def process_test_suite(self, in_suite: Suite, *, seed: any = 'new', graph: str = '') -> Suite:
+    def process_test_suite(self, in_suite: Suite, *, seed: any = 'new', graph: str = '',
+                           to_json: bool = False, from_json: str = 'false') -> Suite:
         self.out_suite = Suite(in_suite.name)
         self.out_suite.filename = in_suite.filename
         self.out_suite.parent = in_suite.parent
         self._fail_on_step_errors(in_suite)
         self.flat_suite = self.flatten(in_suite)
 
+        if from_json != 'false':
+            self._load_graph(graph, in_suite.name, from_json)
+
+        else:
+            self._run_test_suite(seed, graph, in_suite.name, to_json)
+
+        self.__write_visualisation()
+
+        return self.out_suite
+    
+    def _load_graph(self, graph:str, suite_name: str, from_json: str):
+        traceinfo = TraceInfo()
+        traceinfo = traceinfo.import_graph(from_json)
+        self.visualiser = Visualiser(
+            graph, suite_name, trace_info=traceinfo)
+        
+    def _run_test_suite(self, seed: any, graph: str, suite_name: str, to_json: bool):
         for id, scenario in enumerate(self.flat_suite.scenarios, start=1):
             scenario.src_id = id
         self.scenarios = self.flat_suite.scenarios[:]
         logger.debug("Use these numbers to reference scenarios from traces\n\t" +
-                     "\n\t".join([f"{s.src_id}: {s.name}" for s in self.scenarios]))
+                        "\n\t".join([f"{s.src_id}: {s.name}" for s in self.scenarios]))
 
         self._init_randomiser(seed)
         self.shuffled = [s.src_id for s in self.scenarios]
@@ -106,7 +124,7 @@ class SuiteProcessors:
 
         self.visualiser = None
         if graph != '' and VISUALISE:
-            self.visualiser = Visualiser(graph, in_suite.name)  # Pass suite name
+            self.visualiser = Visualiser(graph, suite_name, to_json)  # Pass suite name
         elif graph != '' and not VISUALISE:
             logger.warn(f'Visualisation {graph} requested, but required dependencies are not installed.'
                         'Install them with `pip install .[visualization]`.')

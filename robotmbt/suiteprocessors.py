@@ -544,8 +544,7 @@ class SuiteProcessors:
             user_trace += f"{snapshot.scenario.src_id}{part}, "
 
         user_trace = user_trace[:-2] + "]" if ',' in user_trace else "[]"
-        reject_trace = [
-            self.scenarios[i].src_id for i in self.tracestate.tried]
+        reject_trace = [self.scenarios[i].src_id for i in self.tracestate.tried]
         logger.debug(f"Trace: {user_trace} Reject: {reject_trace}")
 
     def _report_tracestate_wrapup(self):

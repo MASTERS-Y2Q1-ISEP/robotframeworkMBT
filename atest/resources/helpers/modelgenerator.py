@@ -66,7 +66,7 @@ class ModelGenerator:
         fail = 'imported models differs from exported model'
         return  succes if repr(t1) == repr(t2) else fail
     
-    @keyword(name='Delete JSON File') # type:ignore
+    @keyword(name='Delete File') # type:ignore
     def delete_json_file(self, filepath: str):
         os.remove(filepath)
 

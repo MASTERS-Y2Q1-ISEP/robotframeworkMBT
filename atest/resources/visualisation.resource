@@ -110,7 +110,7 @@ ${filename} is deleted
     ...     :OUT: filepath
     Variable Should Exist   ${filepath}
     
-    Delete JSON File    ${filepath}
+    Delete File    ${filepath}
 
 ${filename} does not exist
     [Documentation]     *model info*

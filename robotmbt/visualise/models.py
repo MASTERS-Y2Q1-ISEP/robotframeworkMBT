@@ -186,6 +186,12 @@ class TraceInfo:
         encoded_instance = jsonpickle.encode(self)
         name = suite_name.lower().replace(' ', '_')
         if atest:
+            '''
+            temporary file to not accidentaly overwrite an existing file
+            mkstemp() is not ideal but given Python's limitations this is the easiest solution
+            as temporary file, a different method, is problamatic on Windows 
+            https://stackoverflow.com/a/57015383
+            '''
             fd, path = tempfile.mkstemp()
             with os.fdopen(fd, "w") as f:
                 f.write(encoded_instance)

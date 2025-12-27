@@ -24,7 +24,7 @@ class Visualiser:
         # just calls __init__, but without having underscores etc.
         return cls(graph_type)
 
-    def __init__(self, graph_type: str, suite_name: str = "", export: str = "", trace_info: TraceInfo = None):
+    def __init__(self, graph_type: str, suite_name: str = "", export: bool = False, trace_info: TraceInfo = None):
         if graph_type != 'scenario' and graph_type != 'state' and graph_type != 'scenario-state' \
                 and graph_type != 'scenario-delta-value' and graph_type != 'reduced-sdv':
             raise ValueError(f"Unknown graph type: {graph_type}!")
@@ -35,7 +35,7 @@ class Visualiser:
         else:
             self.trace_info = trace_info
         self.suite_name = suite_name
-        self.export: bool = export.lower() == 'true'
+        self.export = export
 
     def update_trace(self, trace: TraceState, state: ModelSpace):
         if len(trace.get_trace()) > 0:
@@ -46,7 +46,7 @@ class Visualiser:
 
     def generate_visualisation(self) -> str:
         if self.export:
-            self.trace_info.export(self.suite_name)
+            self.trace_info.export_graph(self.suite_name)
 
         if self.graph_type == 'scenario':
             graph: AbstractGraph = ScenarioGraph(self.trace_info)

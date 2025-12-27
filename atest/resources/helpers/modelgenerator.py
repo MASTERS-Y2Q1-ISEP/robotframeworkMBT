@@ -46,7 +46,7 @@ class ModelGenerator:
     
     @keyword(name='Export to JSON') # type:ignore
     def export_to_json(self, suite:str, trace_info: TraceInfo) -> str:
-        return trace_info.export(suite, True)
+        return trace_info.export_graph(suite, True)
     
     @keyword(name='Import JSON File') # type:ignore
     def import_json_file(self, filepath: str) -> TraceInfo:

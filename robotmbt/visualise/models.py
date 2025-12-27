@@ -108,6 +108,7 @@ class TraceInfo:
         self.all_traces: list[list[tuple[ScenarioInfo, StateInfo]]] = []
         self.previous_length: int = 0
         self.pushed: bool = False
+        self.path = "json/"
 
     def update_trace(self, scenario: ScenarioInfo | None, state: StateInfo, length: int):
         if length > self.previous_length:
@@ -181,7 +182,7 @@ class TraceInfo:
             logger.warn(
                 f'TraceInfo got out of sync after {after}\nExpected state: {prev_state}\nActual state: {state}')
 
-    def export(self, suite_name: str, atest: bool = False) -> str | None:
+    def export_graph(self, suite_name: str, atest: bool = False) -> str | None:
         encoded_instance = jsonpickle.encode(self)
         name = suite_name.lower().replace(' ', '_')
         if atest:
@@ -190,9 +191,15 @@ class TraceInfo:
                 f.write(encoded_instance)
             return path
         
-        with open(f"json/{name}.json", "w") as f:
+        with open(f"{self.path}{name}.json", "w") as f:
             f.write(encoded_instance)
         return None
+    
+    def import_graph(self, file_name: str):
+        with open(f"{self.path}{file_name}.json", "r") as f:
+            string = f.read()
+            self = jsonpickle.decode(string)
+            
 
     @staticmethod
     def stringify_pair(pair: tuple[ScenarioInfo, StateInfo]) -> str:

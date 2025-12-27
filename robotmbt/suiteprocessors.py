@@ -32,7 +32,6 @@
 
 import copy
 import random
-import jsonpickle
 
 from robot.api import logger
 from robot.utils import is_list_like
@@ -45,6 +44,7 @@ from .steparguments import StepArgument, StepArguments
 
 try:
     from .visualise.visualiser import Visualiser
+    from .visualise.models import TraceInfo
 
     VISUALISE = True
 except ImportError:
@@ -89,7 +89,7 @@ class SuiteProcessors:
         return out_suite
 
     def process_test_suite(self, in_suite: Suite, *, seed: any = 'new', graph: str = '',
-                           to_json: str = 'false', from_json: str = 'false') -> Suite:
+                           to_json: bool = False, from_json: str = 'false') -> Suite:
         self.out_suite = Suite(in_suite.name)
         self.out_suite.filename = in_suite.filename
         self.out_suite.parent = in_suite.parent
@@ -97,48 +97,50 @@ class SuiteProcessors:
         self.flat_suite = self.flatten(in_suite)
 
         if from_json != 'false':
-            with open(f"json/{from_json}.json", "r") as f:
-                string = f.read()
-                decoded_instance = jsonpickle.decode(string)
-            self.visualiser = Visualiser(
-                graph, in_suite.name, trace_info=decoded_instance)
+            self._load_graph(graph, in_suite.name, from_json)
 
         else:
-            for id, scenario in enumerate(self.flat_suite.scenarios, start=1):
-                scenario.src_id = id
-            self.scenarios = self.flat_suite.scenarios[:]
-            logger.debug("Use these numbers to reference scenarios from traces\n\t" +
-                         "\n\t".join([f"{s.src_id}: {s.name}" for s in self.scenarios]))
-
-            self._init_randomiser(seed)
-            random.shuffle(self.scenarios)
-
-            self.visualiser = None
-            if graph != '' and VISUALISE:
-                self.visualiser = Visualiser(
-                    graph, in_suite.name, to_json)  # Pass suite name
-            elif graph != '' and not VISUALISE:
-                logger.warn(f'Visualisation {graph} requested, but required dependencies are not installed.'
-                            'Install them with `pip install .[visualization]`.')
-
-            # a short trace without the need for repeating scenarios is preferred
-            self._try_to_reach_full_coverage(allow_duplicate_scenarios=False)
-
-            if not self.tracestate.coverage_reached():
-                logger.debug(
-                    "Direct trace not available. Allowing repetition of scenarios")
-                self._try_to_reach_full_coverage(
-                    allow_duplicate_scenarios=True)
-                if not self.tracestate.coverage_reached():
-                    self.__write_visualisation()
-                    raise Exception("Unable to compose a consistent suite")
-
-            self.out_suite.scenarios = self.tracestate.get_trace()
-            self._report_tracestate_wrapup()
+            self._run_test_suite(seed, graph, in_suite.name, to_json)
 
         self.__write_visualisation()
 
         return self.out_suite
+    
+    def _load_graph(self, graph:str, suite_name: str, from_json: str):
+        traceinfo = TraceInfo()
+        traceinfo = traceinfo.import_graph(from_json)
+        self.visualiser = Visualiser(
+            graph, suite_name, trace_info=traceinfo)
+        
+    def _run_test_suite(self, seed: any, graph: str, suite_name: str, to_json: bool):
+        for id, scenario in enumerate(self.flat_suite.scenarios, start=1):
+            scenario.src_id = id
+        self.scenarios = self.flat_suite.scenarios[:]
+        logger.debug("Use these numbers to reference scenarios from traces\n\t" +
+                        "\n\t".join([f"{s.src_id}: {s.name}" for s in self.scenarios]))
+
+        self._init_randomiser(seed)
+        random.shuffle(self.scenarios)
+
+        self.visualiser = None
+        if graph != '' and VISUALISE:
+            self.visualiser = Visualiser(graph, suite_name, to_json)  # Pass suite name
+        elif graph != '' and not VISUALISE:
+            logger.warn(f'Visualisation {graph} requested, but required dependencies are not installed.'
+                        'Install them with `pip install .[visualization]`.')
+
+        # a short trace without the need for repeating scenarios is preferred
+        self._try_to_reach_full_coverage(allow_duplicate_scenarios=False)
+
+        if not self.tracestate.coverage_reached():
+            logger.debug("Direct trace not available. Allowing repetition of scenarios")
+            self._try_to_reach_full_coverage(allow_duplicate_scenarios=True)
+            if not self.tracestate.coverage_reached():
+                self.__write_visualisation()
+                raise Exception("Unable to compose a consistent suite")
+
+        self.out_suite.scenarios = self.tracestate.get_trace()
+        self._report_tracestate_wrapup()
 
     def _try_to_reach_full_coverage(self, allow_duplicate_scenarios: bool):
         self.tracestate = TraceState(len(self.scenarios))

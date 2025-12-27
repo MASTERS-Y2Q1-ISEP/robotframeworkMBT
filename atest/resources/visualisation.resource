@@ -73,7 +73,7 @@ test suite ${suite} is exported to json
     Variable Should Exist   ${suite}
     Variable Should Exist   ${trace_info}
     
-    ${filepath} =   Export to JSON      ${suite}    ${trace_info}
+    ${filepath} =   Export Graph      ${suite}    ${trace_info}
     Set Suite Variable  ${filepath}
 
 the file ${filename} exists

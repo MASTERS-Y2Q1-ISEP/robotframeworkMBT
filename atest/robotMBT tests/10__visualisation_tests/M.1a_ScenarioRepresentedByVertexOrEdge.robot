@@ -8,10 +8,11 @@ Library           robotmbt
 
 *** Test Cases ***
 Scenario graph
-    Given test suite s contains trace info t
+    Given test suite s has trace info t
     When the algorithm inserts a
     and the algorithm inserts b
     and the algorithm inserts c
     and the algorithm inserts d
     and the algorithm inserts e
     and the graph of type scenario is generated
+    Then the scenario graph contains vertices start, a, b, c, d, e

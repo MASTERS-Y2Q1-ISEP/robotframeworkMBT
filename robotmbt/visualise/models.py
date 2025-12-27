@@ -189,7 +189,7 @@ class TraceInfo:
             with os.fdopen(fd, "w") as f:
                 f.write(encoded_instance)
             return path
-        
+
         with open(f"json/{name}.json", "w") as f:
             f.write(encoded_instance)
         return None

@@ -2,6 +2,7 @@ import jsonpickle
 from robot.api.deco import keyword  # type:ignore
 from robotmbt.visualise.models import TraceInfo, ScenarioInfo, StateInfo
 from robotmbt.visualise.visualiser import Visualiser
+from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 import os
 
 
@@ -67,6 +68,24 @@ class ModelGenerator:
     @keyword(name='Delete JSON File')  # type:ignore
     def delete_json_file(self, filepath: str):
         os.remove(filepath)
+
+    @keyword(name='Get Graph')  # type:ignore
+    def get_graph(self, trace_info: TraceInfo, graph_type: str) -> AbstractGraph:
+        return Visualiser(graph_type=graph_type, trace_info=trace_info)._get_graph()
+
+    @keyword(name='Scenario Graph Contains Vertices')
+    def scen_graph_contains_vertices(self, graph: AbstractGraph, vertices_str: str) -> str | None:
+        """
+        Returns error msg if not satisfied, else None
+        """
+
+        vertices = [v.strip() for v in vertices_str.split(",")]
+
+        for vertex_name in vertices:
+            if vertex_name not in graph.networkx.nodes:
+                return f"Vertex {vertex_name} is not in the graph nodes: {graph.networkx.nodes}"
+
+        return None
 
     # ============= #
     # == HELPERS == #

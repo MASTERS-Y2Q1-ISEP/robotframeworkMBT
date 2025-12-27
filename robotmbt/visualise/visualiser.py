@@ -2,8 +2,8 @@ from robotmbt.modelspace import ModelSpace
 from robotmbt.tracestate import TraceState
 from robotmbt.visualise.graphs.reducedSDVgraph import ReducedSDVGraph
 from robotmbt.visualise.graphs.scenariodeltavaluegraph import ScenarioDeltaValueGraph
-from robotmbt.visualise import networkvisualiser
-from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
+from robotmbt.visualise.networkvisualiser import NetworkVisualiser
+from robotmbt.visualise.graphs.abstractgraph import AbstractGraph, NodeInfo, EdgeInfo
 from robotmbt.visualise.graphs.scenariograph import ScenarioGraph
 from robotmbt.visualise.graphs.stategraph import StateGraph
 from robotmbt.visualise.graphs.scenariostategraph import ScenarioStateGraph
@@ -48,6 +48,15 @@ class Visualiser:
         if self.export:
             self.trace_info.export(self.suite_name)
 
+        graph: AbstractGraph[object, object] = self._get_graph()
+        vis: NetworkVisualiser = NetworkVisualiser(graph, self.suite_name)
+        html_bokeh = vis.generate_html()
+
+        graph_size = NetworkVisualiser.GRAPH_SIZE_PX
+
+        return f'<iframe srcdoc="{html.escape(html_bokeh)}" width="{graph_size}px" height="{graph_size}px"></iframe>'
+
+    def _get_graph(self) -> AbstractGraph[object, object]:
         if self.graph_type == 'scenario':
             graph: AbstractGraph = ScenarioGraph(self.trace_info)
         elif self.graph_type == 'state':
@@ -59,9 +68,4 @@ class Visualiser:
         else:
             graph: AbstractGraph = ScenarioStateGraph(self.trace_info)
 
-        vis = networkvisualiser.NetworkVisualiser(graph, self.suite_name)
-        html_bokeh = vis.generate_html()
-
-        graph_size = networkvisualiser.NetworkVisualiser.GRAPH_SIZE_PX
-
-        return f'<iframe srcdoc="{html.escape(html_bokeh)}" width="{graph_size}px" height="{graph_size}px"></iframe>'
+        return graph

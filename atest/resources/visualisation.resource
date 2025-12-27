@@ -7,31 +7,31 @@ Library           Collections
 *** Keywords ***
 test suite ${suite}
     [Documentation]     *model info*
-    ...     :IN: suite
-    ...     :OUT: suite
+    ...     :IN: None
+    ...     :OUT: new suite
     Set Suite Variable  ${suite}
 
 test suite ${suite} has trace info ${trace}
     [Documentation]     *model info*
-    ...     :IN: suite
-    ...     :OUT: trace_info
-    Variable Should Exist    ${suite}
+    ...     :IN: None
+    ...     :OUT: new suite, new trace_info
+    Set Suite Variable  ${suite}
 
     ${trace_info} =         Generate Trace Information
     Set Suite Variable  ${trace_info}
 
 the algorithm inserts ${scenario} with state ${state}
     [Documentation]     *model info*
-    ...     :IN:  None
-    ...     :OUT: None
+    ...     :IN:  trace_info
+    ...     :OUT: trace_info
     Variable Should Exist    ${trace_info}
     ${trace_info} =    Current Trace Contains    ${trace_info}    ${scenario}    ${state}
 
 
 the algorithm inserts ${scenario}
     [Documentation]     *model info*
-    ...     :IN:  None
-    ...     :OUT: None
+    ...     :IN:  trace_info
+    ...     :OUT: trace_info
     Variable Should Exist    ${trace_info}
     ${trace_info} =    Current Trace Contains    ${trace_info}    ${scenario}
 
@@ -75,13 +75,6 @@ list ${list} has a tuple 'scenario ${scenario}, state ${state}'
     ${trace_info} =         All Traces Contains  ${trace_info}   ${scenario}     ${state}
     Set Suite Variable  ${trace_info}
 
-test suite ${suite} contains trace info ${ti}
-    [Documentation]     *model info*
-    ...     :IN: suite, trace_info
-    ...     :OUT: suite, trace_info
-    Variable Should Exist   ${suite}
-    Variable Should Exist   ${trace_info}
-
 test suite ${suite} is exported to json
     [Documentation]     *model info*
     ...     :IN: suite, trace_info
@@ -94,11 +87,20 @@ test suite ${suite} is exported to json
 
 the graph of type ${type} is generated
     [Documentation]     *model info*
-    ...     :IN: None
-    ...     :OUT: None
+    ...     :IN: trace_info
+    ...     :OUT: new graph
     Variable Should Exist    ${trace_info}
 
     ${graph} =     Get Graph    ${trace_info}    ${type}
+
+the scenario graph contains vertices ${vertices_str}
+    [Documentation]     *model info*
+    ...     :IN: graph
+    ...     :OUT: None
+    Variable Should Exist    ${graph}
+    
+    ${error_msg} =    Scenario Graph Contains Vertices    ${graph}    ${vertices_str}
+    Should Be Equal    ${error_msg}    ${None}    ${error_msg}
 
 the file ${filename} exists
     [Documentation]     *model info*

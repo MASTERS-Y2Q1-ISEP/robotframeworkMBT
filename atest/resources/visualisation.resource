@@ -7,19 +7,35 @@ Library           Collections
 *** Keywords ***
 test suite ${suite}
     [Documentation]     *model info*
-    ...     :IN: None
-    ...     :OUT: new suite
+    ...     :IN: suite
+    ...     :OUT: suite
     Set Suite Variable  ${suite}
 
 test suite ${suite} has trace info ${trace}
     [Documentation]     *model info*
     ...     :IN: suite
-    ...     :OUT: new trace_info
+    ...     :OUT: trace_info
     Variable Should Exist    ${suite}
 
     ${trace_info} =         Generate Trace Information
     Set Suite Variable  ${trace_info}
-    
+
+the algorithm inserts ${scenario} with state ${state}
+    [Documentation]     *model info*
+    ...     :IN:  None
+    ...     :OUT: None
+    Variable Should Exist    ${trace_info}
+    ${trace_info} =    Current Trace Contains    ${trace_info}    ${scenario}    ${state}
+
+
+the algorithm inserts ${scenario}
+    [Documentation]     *model info*
+    ...     :IN:  None
+    ...     :OUT: None
+    Variable Should Exist    ${trace_info}
+    ${trace_info} =    Current Trace Contains    ${trace_info}    ${scenario}
+
+
 trace info ${trace} has current trace ${current}
     [Documentation]     *model info*
     ...     :IN: trace_info
@@ -75,6 +91,14 @@ test suite ${suite} is exported to json
     
     ${filepath} =   Export to JSON      ${suite}    ${trace_info}
     Set Suite Variable  ${filepath}
+
+the graph of type ${type} is generated
+    [Documentation]     *model info*
+    ...     :IN: None
+    ...     :OUT: None
+    Variable Should Exist    ${trace_info}
+
+    ${graph} =     Get Graph    ${trace_info}    ${type}
 
 the file ${filename} exists
     [Documentation]     *model info*

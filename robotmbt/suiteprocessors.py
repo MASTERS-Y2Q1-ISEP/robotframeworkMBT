@@ -172,13 +172,10 @@ class SuiteProcessors:
                         logger.debug(f"last state:\n{tracestate.model.get_status_text()}")
         return tracestate
     
+
     def __update_visualisation(self):
         if self.visualiser is not None:
             self.visualiser.update_trace(self.tracestate, self.active_model)
-
-    def __write_visualisation(self):
-        if self.visualiser is not None:
-            logger.info(self.visualiser.generate_visualisation(), html=True)
 
     def __write_visualisation(self):
         if self.visualiser is not None:

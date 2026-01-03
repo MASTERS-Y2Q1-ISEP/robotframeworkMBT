@@ -88,7 +88,7 @@ class SuiteProcessors:
         out_suite.suites = []
         return out_suite
 
-    def process_test_suite(self, in_suite: Suite, *, seed: any = 'new', graph: str = 'delta-value',
+    def process_test_suite(self, in_suite: Suite, *, seed: any = 'new', graph: str = '',
                            to_json: bool = False, from_json: str = 'false') -> Suite:
         self.out_suite = Suite(in_suite.name)
         self.out_suite.filename = in_suite.filename

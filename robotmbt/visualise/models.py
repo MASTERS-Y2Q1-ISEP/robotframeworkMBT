@@ -50,13 +50,13 @@ class StateInfo:
         left: dict[str, dict | str] = self.properties.copy()
         for key in left.keys():
             res = ""
-            for k, v in left[key].items():
+            for k, v in sorted(left[key].items()):
                 res += f"\n\t{k}={v}"
             left[key] = res
         right: dict[str, dict | str] = new_state.properties.copy()
         for key in right.keys():
             res = ""
-            for k, v in right[key].items():
+            for k, v in sorted(right[key].items()):
                 res += f"\n\t{k}={v}"
             right[key] = res
         temp: set[tuple[str, str]] = set(right.items()) - set(left.items())  # type inference goes doodoo here

@@ -158,6 +158,7 @@ class SuiteProcessors:
                 previous_len = len(tracestate)
                 modeller.try_to_fit_in_scenario(candidate, tracestate)
                 self._report_tracestate_to_user(tracestate)
+                self.__update_visualisation(tracestate)
                 if len(tracestate) > previous_len:
                     logger.debug(f"last state:\n{tracestate.model.get_status_text()}")
                     self.DROUGHT_LIMIT = 50
@@ -170,12 +171,13 @@ class SuiteProcessors:
                         modeller.rewind(tracestate, drought_recovery=True)
                         self._report_tracestate_to_user(tracestate)
                         logger.debug(f"last state:\n{tracestate.model.get_status_text()}")
+            self.__update_visualisation(tracestate)
         return tracestate
     
 
-    def __update_visualisation(self):
+    def __update_visualisation(self, tracestate: TraceState):
         if self.visualiser is not None:
-            self.visualiser.update_trace(self.tracestate, self.active_model)
+            self.visualiser.update_trace(tracestate, tracestate.model)
 
     def __write_visualisation(self):
         if self.visualiser is not None:

@@ -119,7 +119,8 @@ class SuiteProcessors:
                         "\n\t".join([f"{s.src_id}: {s.name}" for s in self.scenarios]))
 
         init_seed = self._init_randomiser(seed)
-        random.shuffle(self.scenarios)
+        self.shuffled = [s.src_id for s in self.scenarios]
+        random.shuffle(self.shuffled)  # Keep a single shuffle for all TraceStates (non-essential)
 
         self.visualiser = None
         if graph != '' and VISUALISE:
@@ -135,20 +136,9 @@ class SuiteProcessors:
             logger.debug("Direct trace not available. Allowing repetition of scenarios")
             tracestate = self._try_to_reach_full_coverage(allow_duplicate_scenarios=True)
             if not tracestate.coverage_reached():
-                logger.write(self.visualiser.generate_html(), html=True)
-        if not self.tracestate.coverage_reached():
-            logger.debug("Direct trace not available. Allowing repetition of scenarios")
-            self._try_to_reach_full_coverage(allow_duplicate_scenarios=True)
-            if not self.tracestate.coverage_reached():
-                self.__write_visualisation()
                 raise Exception("Unable to compose a consistent suite")
 
         self.out_suite.scenarios = tracestate.get_trace()
-        self._report_tracestate_wrapup(tracestate)
-
-        self.__write_visualisation()
-
-        return self.out_suite
 
     def _try_to_reach_full_coverage(self, allow_duplicate_scenarios: bool) -> TraceState:
         tracestate = TraceState(self.shuffled)
@@ -180,8 +170,6 @@ class SuiteProcessors:
                         modeller.rewind(tracestate, drought_recovery=True)
                         self._report_tracestate_to_user(tracestate)
                         logger.debug(f"last state:\n{tracestate.model.get_status_text()}")
-            if self.visualiser is not None:
-                self.visualiser.update_visualisation(TraceInfo(self.tracestate, self.active_model))
         return tracestate
     
     def __update_visualisation(self):

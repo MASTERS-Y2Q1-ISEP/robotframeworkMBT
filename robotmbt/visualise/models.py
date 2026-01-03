@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 
 from robot.api import logger
@@ -68,7 +69,9 @@ class StateInfo:
             if key not in old_state:
                 res[key] = new_state[key]
             elif isinstance(old_state[key], dict):
-                res[key] = StateInfo._dict_deep_diff(old_state[key], new_state[key])
+                diff = StateInfo._dict_deep_diff(old_state[key], new_state[key])
+                if len(diff) != 0:
+                    res[key] = diff
             elif old_state[key] != new_state[key]:
                 res[key] = new_state[key]
         return res

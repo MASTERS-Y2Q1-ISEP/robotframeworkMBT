@@ -19,7 +19,42 @@ test suite ${suite} has trace info ${trace}
 
     ${trace_info} =         Generate Trace Information
     Set Suite Variable  ${trace_info}
-    
+
+the algorithm inserts ${scenario_name}
+    [Documentation]    *model_info*
+    ...    :IN: trace_info
+    ...    :OUT: trace_info
+    Variable Should Exist    ${trace_info}
+    ${trace_info} =    The Algorithm Inserts    ${trace_info}    ${scenario_name}
+
+the algorithm inserts ${scenario_name} with state ${state_str}
+    [Documentation]    *model_info*
+    ...    :IN: trace_info
+    ...    :OUT: trace_info
+    Variable Should Exist    ${trace_info}
+    ${trace_info} =    The Algorithm Inserts    ${trace_info}    ${scenario_name}    ${state_str}
+
+
+the graph of type ${type} is generated
+    [Documentation]    *model_info*
+    ...    :IN: None
+    ...    :OUT: None
+    Variable Should Exist    ${trace_info}
+    ${graph} =    Generate Graph    ${trace_info}    ${type}
+    Set Suite Variable    ${graph}
+    Set Suite Variable    ${graph_type}
+
+the scenario graph contains vertices start, a, b, c, d, e
+    [Documentation]    *model_info*
+    ...    :IN: None
+    ...    :OUT: None
+    Variable Should Exist    ${graph}
+    Variable Should Exist    ${graph_type}
+
+    Should Be Equal    ${graph_type}    scenario
+    Log    TODO!
+        
+
 trace info ${trace} has current trace ${current}
     [Documentation]     *model info*
     ...     :IN: trace_info
@@ -32,7 +67,7 @@ current trace ${current_trace} has a tuple 'scenario ${scenario}, state ${state}
     ...     :OUT: trace_info.current_trace.append((${scenario}, ${state}))
     Variable Should Exist   ${trace_info}
 
-    ${trace_info} =         Current Trace Contains  ${trace_info}   ${scenario}     ${state}
+    ${trace_info} =         The Algorithm Inserts  ${trace_info}   ${scenario}     ${state}
     Set Suite Variable  ${trace_info}
 
 trace info ${trace} has all traces ${all}

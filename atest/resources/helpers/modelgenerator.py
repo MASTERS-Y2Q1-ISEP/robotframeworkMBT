@@ -11,11 +11,11 @@ class ModelGenerator:
     def generate_trace_information(self) -> TraceInfo:
         return TraceInfo()
 
-    @keyword(name='Current Trace Contains')  # type:ignore
-    def current_trace_contains(self, trace_info: TraceInfo, scenario_name: str, state_str: str | None = None) -> TraceInfo:
+    @keyword(name='The Algorithm Inserts')  # type:ignore
+    def insert_trace_info(self, trace_info: TraceInfo, scenario_name: str, state_str: str | None = None) -> TraceInfo:
         '''
         State should be of format
-        "name: key=value"
+        "name: key=value key2=value2 ..."
         '''
 
         (scen_info, state_info) = self.__convert_to_state_info(scenario_name, state_str)
@@ -40,6 +40,10 @@ class ModelGenerator:
             trace.append((scen_info, state_info))
 
         return trace_info
+
+    @keyword(name='Generate Graph')
+    def generate_graph(self, trace_info: TraceInfo, graph_type: str) -> AbstractGraph:
+        return Visualiser(graph_type=graph_type, trace_info=trace_info)._get_graph()
 
     @keyword(name='Export Graph')  # type:ignore
     def export_graph(self, suite: str, trace_info: TraceInfo) -> str:

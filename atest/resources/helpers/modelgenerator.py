@@ -2,6 +2,7 @@ import jsonpickle
 from robot.api.deco import keyword  # type:ignore
 from robotmbt.visualise.models import TraceInfo, ScenarioInfo, StateInfo
 from robotmbt.visualise.visualiser import Visualiser
+from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 import os
 
 
@@ -64,8 +65,8 @@ class ModelGenerator:
         fail = 'imported models differs from exported model'
         return succes if repr(t1) == repr(t2) else fail
 
-    @keyword(name='Delete JSON File')  # type:ignore
-    def delete_json_file(self, filepath: str):
+    @keyword(name='Delete File')  # type:ignore
+    def delete_file(self, filepath: str):
         os.remove(filepath)
 
     @keyword(name='Get Graph')  # type:ignore

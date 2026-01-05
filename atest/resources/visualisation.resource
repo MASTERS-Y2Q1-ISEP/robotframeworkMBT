@@ -13,6 +13,7 @@ test suite ${suite}
 
 test suite ${suite} has trace info ${trace}
     [Documentation]     *model info*
+<<<<<<< HEAD
     ...     :IN: None
     ...     :OUT: new suite, new trace_info
     Set Suite Variable  ${suite}
@@ -36,6 +37,15 @@ the algorithm inserts ${scenario}
     ${trace_info} =    Current Trace Contains    ${trace_info}    ${scenario}
 
 
+=======
+    ...     :IN: suite
+    ...     :OUT: new trace_info
+    Variable Should Exist    ${suite}
+
+    ${trace_info} =         Generate Trace Information
+    Set Suite Variable  ${trace_info}
+    
+>>>>>>> origin/main
 trace info ${trace} has current trace ${current}
     [Documentation]     *model info*
     ...     :IN: trace_info
@@ -75,6 +85,16 @@ list ${list} has a tuple 'scenario ${scenario}, state ${state}'
     ${trace_info} =         All Traces Contains  ${trace_info}   ${scenario}     ${state}
     Set Suite Variable  ${trace_info}
 
+<<<<<<< HEAD
+=======
+test suite ${suite} contains trace info ${ti}
+    [Documentation]     *model info*
+    ...     :IN: suite, trace_info
+    ...     :OUT: suite, trace_info
+    Variable Should Exist   ${suite}
+    Variable Should Exist   ${trace_info}
+
+>>>>>>> origin/main
 test suite ${suite} is exported to json
     [Documentation]     *model info*
     ...     :IN: suite, trace_info
@@ -82,6 +102,7 @@ test suite ${suite} is exported to json
     Variable Should Exist   ${suite}
     Variable Should Exist   ${trace_info}
     
+<<<<<<< HEAD
     ${filepath} =   Export to JSON      ${suite}    ${trace_info}
     Set Suite Variable  ${filepath}
 
@@ -102,6 +123,11 @@ the scenario graph contains vertices ${vertices_str}
     ${error_msg} =    Scenario Graph Contains Vertices    ${graph}    ${vertices_str}
     Should Be Equal    ${error_msg}    ${None}    ${error_msg}
 
+=======
+    ${filepath} =   Export Graph      ${suite}    ${trace_info}
+    Set Suite Variable  ${filepath}
+
+>>>>>>> origin/main
 the file ${filename} exists
     [Documentation]     *model info*
     ...     :IN: suite, filepath
@@ -136,7 +162,11 @@ ${filename} is deleted
     ...     :OUT: filepath
     Variable Should Exist   ${filepath}
     
+<<<<<<< HEAD
     Delete JSON File    ${filepath}
+=======
+    Delete File    ${filepath}
+>>>>>>> origin/main
 
 ${filename} does not exist
     [Documentation]     *model info*

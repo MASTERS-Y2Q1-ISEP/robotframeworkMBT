@@ -89,7 +89,7 @@ class SuiteProcessors:
         return out_suite
 
     def process_test_suite(self, in_suite: Suite, *, seed: any = 'new', graph: str = '',
-                           to_json: str = 'false', from_json: str = 'false') -> Suite:
+                           to_json: bool = False, from_json: str = 'false') -> Suite:
         self.out_suite = Suite(in_suite.name)
         self.out_suite.filename = in_suite.filename
         self.out_suite.parent = in_suite.parent
@@ -97,21 +97,37 @@ class SuiteProcessors:
         self.flat_suite = self.flatten(in_suite)
 
         if from_json != 'false':
-            with open(f"json/{from_json}.json", "r") as f:
-                string = f.read()
-                decoded_instance = jsonpickle.decode(string)
-            self.visualiser = Visualiser(
-                graph, in_suite.name, trace_info=decoded_instance)
+            self._load_graph(graph, in_suite.name, from_json)
 
         else:
-            for id, scenario in enumerate(self.flat_suite.scenarios, start=1):
-                scenario.src_id = id
-            self.scenarios = self.flat_suite.scenarios[:]
-            logger.debug("Use these numbers to reference scenarios from traces\n\t" +
-                         "\n\t".join([f"{s.src_id}: {s.name}" for s in self.scenarios]))
+            self._run_test_suite(seed, graph, in_suite.name, to_json)
 
-            self._init_randomiser(seed)
-            random.shuffle(self.scenarios)
+        self.__write_visualisation()
+
+        return self.out_suite
+
+    def _load_graph(self, graph: str, suite_name: str, from_json: str):
+        traceinfo = TraceInfo()
+        traceinfo = traceinfo.import_graph(from_json)
+        self.visualiser = Visualiser(
+            graph, suite_name, trace_info=traceinfo)
+
+    def _run_test_suite(self, seed: any, graph: str, suite_name: str, to_json: bool):
+        for id, scenario in enumerate(self.flat_suite.scenarios, start=1):
+            scenario.src_id = id
+        self.scenarios = self.flat_suite.scenarios[:]
+        logger.debug("Use these numbers to reference scenarios from traces\n\t" +
+                     "\n\t".join([f"{s.src_id}: {s.name}" for s in self.scenarios]))
+
+        init_seed = self._init_randomiser(seed)
+        random.shuffle(self.scenarios)
+
+        self.visualiser = None
+        if graph != '' and VISUALISE:
+            self.visualiser = Visualiser(graph, suite_name, init_seed, to_json)  # Pass suite name
+        elif graph != '' and not VISUALISE:
+            logger.warn(f'Visualisation {graph} requested, but required dependencies are not installed.'
+                        'Install them with `pip install .[visualization]`.')
 
             self.visualiser = None
             if graph != '' and VISUALISE:
@@ -135,10 +151,6 @@ class SuiteProcessors:
 
             self.out_suite.scenarios = self.tracestate.get_trace()
             self._report_tracestate_wrapup()
-
-        self.__write_visualisation()
-
-        return self.out_suite
 
     def _try_to_reach_full_coverage(self, allow_duplicate_scenarios: bool):
         self.tracestate = TraceState(len(self.scenarios))
@@ -555,20 +567,23 @@ class SuiteProcessors:
             logger.debug(f"model\n{step.model.get_status_text()}\n")
 
     @staticmethod
-    def _init_randomiser(seed: any):
+    def _init_randomiser(seed: any) -> str:
         if isinstance(seed, str):
             seed = seed.strip()
 
         if str(seed).lower() == 'none':
             logger.info(
                 f"Using system's random seed for trace generation. This trace cannot be rerun. Use `seed=new` to generate a reusable seed.")
+            return ""
         elif str(seed).lower() == 'new':
             new_seed = SuiteProcessors._generate_seed()
             logger.info(f"seed={new_seed} (use seed to rerun this trace)")
             random.seed(new_seed)
+            return new_seed
         else:
             logger.info(f"seed={seed} (as provided)")
             random.seed(seed)
+            return seed
 
     @staticmethod
     def _generate_seed() -> str:

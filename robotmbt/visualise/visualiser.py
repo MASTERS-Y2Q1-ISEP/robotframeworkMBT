@@ -1,9 +1,10 @@
 from robotmbt.modelspace import ModelSpace
 from robotmbt.tracestate import TraceState
+from robotmbt.visualise import networkvisualiser
+from robotmbt.visualise.graphs.deltavaluegraph import DeltaValueGraph
 from robotmbt.visualise.graphs.reducedSDVgraph import ReducedSDVGraph
 from robotmbt.visualise.graphs.scenariodeltavaluegraph import ScenarioDeltaValueGraph
-from robotmbt.visualise.networkvisualiser import NetworkVisualiser
-from robotmbt.visualise.graphs.abstractgraph import AbstractGraph, NodeInfo, EdgeInfo
+from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 from robotmbt.visualise.graphs.scenariograph import ScenarioGraph
 from robotmbt.visualise.graphs.stategraph import StateGraph
 from robotmbt.visualise.graphs.scenariostategraph import ScenarioStateGraph
@@ -24,9 +25,10 @@ class Visualiser:
         # just calls __init__, but without having underscores etc.
         return cls(graph_type)
 
-    def __init__(self, graph_type: str, suite_name: str = "", export: str = "", trace_info: TraceInfo = None):
+    def __init__(self, graph_type: str, suite_name: str = "", seed: str = "", export: bool = False, trace_info: TraceInfo = None):
         if graph_type != 'scenario' and graph_type != 'state' and graph_type != 'scenario-state' \
-                and graph_type != 'scenario-delta-value' and graph_type != 'reduced-sdv':
+                and graph_type != 'scenario-delta-value' and graph_type != 'reduced-sdv' \
+                and graph_type != 'delta-value':
             raise ValueError(f"Unknown graph type: {graph_type}!")
 
         self.graph_type: str = graph_type
@@ -35,7 +37,8 @@ class Visualiser:
         else:
             self.trace_info = trace_info
         self.suite_name = suite_name
-        self.export: bool = export.lower() == 'true'
+        self.export = export
+        self.seed = seed
 
     def update_trace(self, trace: TraceState, state: ModelSpace):
         if len(trace.get_trace()) > 0:
@@ -46,17 +49,8 @@ class Visualiser:
 
     def generate_visualisation(self) -> str:
         if self.export:
-            self.trace_info.export(self.suite_name)
+            self.trace_info.export_graph(self.suite_name)
 
-        graph: AbstractGraph[object, object] = self._get_graph()
-        vis: NetworkVisualiser = NetworkVisualiser(graph, self.suite_name)
-        html_bokeh = vis.generate_html()
-
-        graph_size = NetworkVisualiser.GRAPH_SIZE_PX
-
-        return f'<iframe srcdoc="{html.escape(html_bokeh)}" width="{graph_size}px" height="{graph_size}px"></iframe>'
-
-    def _get_graph(self) -> AbstractGraph[object, object]:
         if self.graph_type == 'scenario':
             graph: AbstractGraph = ScenarioGraph(self.trace_info)
         elif self.graph_type == 'state':
@@ -65,7 +59,11 @@ class Visualiser:
             graph: AbstractGraph = ScenarioDeltaValueGraph(self.trace_info)
         elif self.graph_type == 'reduced-sdv':
             graph: AbstractGraph = ReducedSDVGraph(self.trace_info)
+        elif self.graph_type == 'delta-value':
+            graph: AbstractGraph = DeltaValueGraph(self.trace_info)
         else:
             graph: AbstractGraph = ScenarioStateGraph(self.trace_info)
 
-        return graph
+        html_bokeh = networkvisualiser.NetworkVisualiser(graph, self.suite_name, self.seed).generate_html()
+
+        return f'<iframe srcdoc="{html.escape(html_bokeh)}" width="{networkvisualiser.OUTER_WINDOW_WIDTH}px" height="{networkvisualiser.OUTER_WINDOW_HEIGHT}px"></iframe>'

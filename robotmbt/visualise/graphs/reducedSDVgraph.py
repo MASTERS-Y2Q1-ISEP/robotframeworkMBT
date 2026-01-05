@@ -1,9 +1,10 @@
 import networkx
-from robotmbt.modelspace import ModelSpace
 
+from robotmbt.modelspace import ModelSpace
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 from robotmbt.visualise.graphs.scenariodeltavaluegraph import ScenarioDeltaValueGraph
 from robotmbt.visualise.models import ScenarioInfo, StateInfo, TraceInfo
+
 
 # TODO add tests for this graph representation
 class ReducedSDVGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, str]]], None]):
@@ -38,6 +39,7 @@ class ReducedSDVGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, str]]], N
             for new_node in nodes:
                 if current_node in new_node:
                     self.final_trace[i] = new_node
+        self.start_node = frozenset(['start'])
 
     @staticmethod
     def select_node_info(pairs: list[tuple[ScenarioInfo, StateInfo]], index: int) \
@@ -53,8 +55,24 @@ class ReducedSDVGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, str]]], N
 
     @staticmethod
     def create_node_label(info: tuple[ScenarioInfo, set[tuple[str, str]]]) -> str:
-        return f"{info[0].name}\n{ScenarioDeltaValueGraph.assignment_rep(info[1])}"
+        return ScenarioDeltaValueGraph.create_node_label(info)
 
     @staticmethod
     def create_edge_label(info: None) -> str:
         return ''
+
+    @staticmethod
+    def get_legend_info_final_trace_node() -> str:
+        return "Executed Scenario w/ Changes in Execution State (in final trace)"
+
+    @staticmethod
+    def get_legend_info_other_node() -> str:
+        return "Executed Scenario w/ Changes in Execution State (backtracked)"
+
+    @staticmethod
+    def get_legend_info_final_trace_edge() -> str:
+        return "Execution Flow (final trace)"
+
+    @staticmethod
+    def get_legend_info_other_edge() -> str:
+        return "Execution Flow (backtracked)"

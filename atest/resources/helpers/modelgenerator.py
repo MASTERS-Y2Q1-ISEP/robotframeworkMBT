@@ -2,7 +2,6 @@ import jsonpickle
 from robot.api.deco import keyword  # type:ignore
 from robotmbt.visualise.models import TraceInfo, ScenarioInfo, StateInfo
 from robotmbt.visualise.visualiser import Visualiser
-from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 import os
 
 

@@ -91,7 +91,7 @@ ${filename} is imported
     ...     :OUT: new new_trace_info
     Variable Should Exist   ${filepath}
     
-    ${new_trace_info} =     Import JSON File    ${filepath}
+    ${new_trace_info} =     Import Graph   ${filepath}
     Set Suite Variable      ${new_trace_info}
 
 trace info from ${filename} is the same as trace info ${trace}

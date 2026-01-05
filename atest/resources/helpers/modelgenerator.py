@@ -9,6 +9,7 @@ import networkx as nx
 
 class ModelGenerator:
     @keyword(name='Generate Trace Information')  # type:ignore
+    @keyword(name='Generate Trace Information')  # type:ignore
     def generate_trace_information(self) -> TraceInfo:
         return TraceInfo()
 

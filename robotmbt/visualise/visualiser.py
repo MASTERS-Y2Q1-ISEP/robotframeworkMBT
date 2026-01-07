@@ -28,7 +28,8 @@ class Visualiser:
     def __init__(self, graph_type: str, suite_name: str = "", seed: str = "", export: bool = False,
                  trace_info: TraceInfo = None):
         if graph_type != 'scenario' and graph_type != 'state' and graph_type != 'scenario-state' \
-                and graph_type != 'scenario-delta-value' and graph_type != 'reduced-sdv':
+                and graph_type != 'scenario-delta-value' and graph_type != 'reduced-sdv' \
+                and graph_type != 'delta-value':
             raise ValueError(f"Unknown graph type: {graph_type}!")
 
         self.graph_type: str = graph_type

@@ -1,6 +1,7 @@
 from robotmbt.modelspace import ModelSpace
 from robotmbt.tracestate import TraceState
 from robotmbt.visualise import networkvisualiser
+from robotmbt.visualise.graphs.deltavaluegraph import DeltaValueGraph
 from robotmbt.visualise.graphs.reducedSDVgraph import ReducedSDVGraph
 from robotmbt.visualise.graphs.scenariodeltavaluegraph import ScenarioDeltaValueGraph
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
@@ -72,6 +73,8 @@ class Visualiser:
             graph: AbstractGraph = ScenarioDeltaValueGraph(self.trace_info)
         elif self.graph_type == 'reduced-sdv':
             graph: AbstractGraph = ReducedSDVGraph(self.trace_info)
+        elif self.graph_type == 'delta-value':
+            graph: AbstractGraph = DeltaValueGraph(self.trace_info)
         else:
             graph: AbstractGraph = ScenarioStateGraph(self.trace_info)
 

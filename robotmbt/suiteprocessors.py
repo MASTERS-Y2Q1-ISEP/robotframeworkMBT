@@ -108,8 +108,7 @@ class SuiteProcessors:
     def _load_graph(self, graph:str, suite_name: str, from_json: str):
         traceinfo = TraceInfo()
         traceinfo = traceinfo.import_graph(from_json)
-        self.visualiser = Visualiser(
-            graph, suite_name, trace_info=traceinfo)
+        self.visualiser = Visualiser(graph, suite_name, trace_info=traceinfo)
 
     def _run_test_suite(self, seed: any, graph: str, suite_name: str, to_json: bool):
         for id, scenario in enumerate(self.flat_suite.scenarios, start=1):
@@ -144,19 +143,23 @@ class SuiteProcessors:
         tracestate = TraceState(self.shuffled)
         while not tracestate.coverage_reached():
             candidate_id = tracestate.next_candidate(retry=allow_duplicate_scenarios)
+            self.__update_visualisation(tracestate)
             if candidate_id is None:  # No more candidates remaining for this level
                 if not tracestate.can_rewind():
                     break
                 tail = modeller.rewind(tracestate)
                 logger.debug(f"Having to roll back up to {tail.scenario.name if tail else 'the beginning'}")
                 self._report_tracestate_to_user(tracestate)
+                self.__update_visualisation(tracestate)
             else:
                 candidate = self._select_scenario_variant(candidate_id, tracestate)
                 if not candidate:  # No valid variant available in the current state
                     tracestate.reject_scenario(candidate_id)
+                    self.__update_visualisation(tracestate)
                     continue
                 previous_len = len(tracestate)
                 modeller.try_to_fit_in_scenario(candidate, tracestate)
+                self.__update_visualisation(tracestate)
                 self._report_tracestate_to_user(tracestate)
                 if len(tracestate) > previous_len:
                     logger.debug(f"last state:\n{tracestate.model.get_status_text()}")
@@ -164,18 +167,20 @@ class SuiteProcessors:
                     if self.__last_candidate_changed_nothing(tracestate):
                         logger.debug("Repeated scenario did not change the model's state. Stop trying.")
                         modeller.rewind(tracestate)
+                        self.__update_visualisation(tracestate)
                     elif tracestate.coverage_drought > self.DROUGHT_LIMIT:
                         logger.debug(f"Went too long without new coverage (>{self.DROUGHT_LIMIT}x). "
                                      "Roll back to last coverage increase and try something else.")
                         modeller.rewind(tracestate, drought_recovery=True)
+                        self.__update_visualisation(tracestate)
                         self._report_tracestate_to_user(tracestate)
                         logger.debug(f"last state:\n{tracestate.model.get_status_text()}")
         return tracestate
-    
 
-    def __update_visualisation(self):
+
+    def __update_visualisation(self, tracestate: TraceState):
         if self.visualiser is not None:
-            self.visualiser.update_trace(self.tracestate, self.active_model)
+            self.visualiser.update_trace(tracestate)
 
     def __write_visualisation(self):
         if self.visualiser is not None:

@@ -24,7 +24,8 @@ class Visualiser:
         # just calls __init__, but without having underscores etc.
         return cls(graph_type)
 
-    def __init__(self, graph_type: str, suite_name: str = "", seed: str = "", export: bool = False, trace_info: TraceInfo = None):
+    def __init__(self, graph_type: str, suite_name: str = "", seed: str = "", export: bool = False,
+                 trace_info: TraceInfo = None):
         if graph_type != 'scenario' and graph_type != 'state' and graph_type != 'scenario-state' \
                 and graph_type != 'scenario-delta-value' and graph_type != 'reduced-sdv':
             raise ValueError(f"Unknown graph type: {graph_type}!")
@@ -38,12 +39,26 @@ class Visualiser:
         self.export = export
         self.seed = seed
 
-    def update_trace(self, trace: TraceState, state: ModelSpace):
-        if len(trace.get_trace()) > 0:
-            self.trace_info.update_trace(ScenarioInfo(
-                trace.get_trace()[-1]), StateInfo(state), len(trace.get_trace()))
+    def update_trace(self, trace: TraceState):
+        trace_len = len(trace._snapshots)
+        if trace_len > 0:
+            if trace_len > self.trace_info.previous_length:
+                prev = self.trace_info.previous_length
+                r = trace_len - prev
+                for i in range(r):
+                    snap = trace._snapshots[prev + i]
+                    scenario = snap.scenario
+                    model = snap.model
+                    if model is None:
+                        model = ModelSpace
+                    self.trace_info.update_trace(ScenarioInfo(scenario), StateInfo(model), prev + i + 1)
+            else:
+                snap = trace._snapshots[-1]
+                scenario = snap.scenario
+                model = snap.model
+                self.trace_info.update_trace(ScenarioInfo(scenario), StateInfo(model), trace_len)
         else:
-            self.trace_info.update_trace(None, StateInfo(state), 0)
+            self.trace_info.update_trace(None, StateInfo(ModelSpace()), 0)
 
     def generate_visualisation(self) -> str:
         if self.export:

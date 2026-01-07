@@ -194,12 +194,12 @@ class SuiteProcessors:
             return False
         return tracestate[-1].model == tracestate[-2].model
 
-    def _select_scenario_variant(self, candidate_id: int, tracestate: TraceState):
+    def _select_scenario_variant(self, candidate_id: int, tracestate: TraceState) -> Scenario:
         candidate = self._scenario_with_repeat_counter(candidate_id, tracestate)
         candidate = modeller.generate_scenario_variant(candidate, tracestate.model or ModelSpace())
         return candidate
 
-    def _scenario_with_repeat_counter(self, index: int, tracestate: TraceState):
+    def _scenario_with_repeat_counter(self, index: int, tracestate: TraceState) -> Scenario:
         """
         Fetches the scenario by index and, if this scenario is already
         used in the trace, adds a repetition counter to its name.

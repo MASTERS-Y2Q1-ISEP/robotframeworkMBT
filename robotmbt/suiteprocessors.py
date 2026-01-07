@@ -123,7 +123,12 @@ class SuiteProcessors:
 
         self.visualiser = None
         if graph != '' and VISUALISE:
-            self.visualiser = Visualiser(graph, suite_name, init_seed, to_json)  # Pass suite name
+            try:
+                self.visualiser = Visualiser(graph, suite_name, init_seed, to_json)
+            except Exception as e:
+                self.visualiser = None
+                logger.warn('Could not initialise visualiser due to error!\n{}'.format(e))
+
         elif graph != '' and not VISUALISE:
             logger.warn(f'Visualisation {graph} requested, but required dependencies are not installed.'
                         'Install them with `pip install .[visualization]`.')
@@ -180,11 +185,17 @@ class SuiteProcessors:
 
     def __update_visualisation(self, tracestate: TraceState):
         if self.visualiser is not None:
-            self.visualiser.update_trace(tracestate)
+            try:
+                self.visualiser.update_trace(tracestate)
+            except Exception as e:
+                logger.warn('Could not update visualiser due to error!\n{}'.format(e))
 
     def __write_visualisation(self):
         if self.visualiser is not None:
-            logger.info(self.visualiser.generate_visualisation(), html=True)
+            try:
+                logger.info(self.visualiser.generate_visualisation(), html=True)
+            except Exception as e:
+                logger.warn('Could not write visualisation due to error!\n{}'.format(e))
 
     @staticmethod
     def __last_candidate_changed_nothing(tracestate: TraceState) -> bool:

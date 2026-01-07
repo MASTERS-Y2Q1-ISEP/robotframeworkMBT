@@ -34,11 +34,16 @@ from robotmbt.suitedata import Scenario
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class TraceSnapShot:
-    def __init__(self, id: str, inserted_scenario: str | Scenario, model_state: ModelSpace, drought: int = 0):
+    def __init__(self, id: str, inserted_scenario: Scenario | str, model_state: ModelSpace, remainder: Scenario | None = None, drought: int = 0):
         self.id: str = id
         self.scenario: str | Scenario = inserted_scenario
-        self.model: ModelSpace = model_state.copy()
+        self.remainder: Scenario | None = remainder
+        self._model: ModelSpace = model_state.copy()
         self.coverage_drought: int = drought
+
+    @property
+    def model(self):
+        return self._model.copy()
 
 
 class TraceState:
@@ -138,7 +143,7 @@ class TraceState:
         """Trying a scenario excludes it from further cadidacy on this level"""
         self._tried[-1].append(i_scenario)
 
-    def confirm_full_scenario(self, index: int, scenario: str, model: ModelSpace):
+    def confirm_full_scenario(self, index: int, scenario: Scenario | str, model: ModelSpace):
         c_drought = 0 if self.c_pool[index] == 0 else self.coverage_drought+1
         self.c_pool[index] += 1
         if self.is_refinement_active(index):
@@ -150,7 +155,7 @@ class TraceState:
             self._tried.append([])
         self._snapshots.append(TraceSnapShot(id, scenario, model, drought=c_drought))
 
-    def push_partial_scenario(self, index: int, scenario: str, model: ModelSpace, remainder=None):
+    def push_partial_scenario(self, index: int, scenario: Scenario | str, model: ModelSpace, remainder=None):
         if self.is_refinement_active(index):
             id = f"{index}.{self.highest_part(index) + 1}"
 
@@ -190,16 +195,3 @@ class TraceState:
 
     def __len__(self):
         return len(self._snapshots)
-
-
-class TraceSnapShot:
-    def __init__(self, id, inserted_scenario, model_state, remainder=None, drought=0):
-        self.id = id
-        self.scenario = inserted_scenario
-        self.remainder = remainder
-        self._model = model_state.copy()
-        self.coverage_drought = drought
-
-    @property
-    def model(self):
-        return self._model.copy()

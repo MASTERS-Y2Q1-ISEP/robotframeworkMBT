@@ -32,14 +32,14 @@
 
 import copy
 import random
+from typing import Any
 
 from robot.api import logger
 
 from . import modeller
 from .modelspace import ModelSpace
-from .suitedata import Suite, Scenario, Step
-from .tracestate import TraceState, TraceSnapShot
-from .steparguments import StepArgument, StepArguments
+from .suitedata import Suite, Scenario
+from .tracestate import TraceState
 
 try:
     from .visualise.visualiser import Visualiser
@@ -87,7 +87,7 @@ class SuiteProcessors:
         out_suite.suites = []
         return out_suite
 
-    def process_test_suite(self, in_suite: Suite, *, seed: any = 'new', graph: str = '',
+    def process_test_suite(self, in_suite: Suite, *, seed: Any = 'new', graph: str = '',
                            to_json: bool = False, from_json: str = 'false') -> Suite:
         self.out_suite = Suite(in_suite.name)
         self.out_suite.filename = in_suite.filename
@@ -110,7 +110,7 @@ class SuiteProcessors:
         traceinfo = traceinfo.import_graph(from_json)
         self.visualiser = Visualiser(graph, suite_name, trace_info=traceinfo)
 
-    def _run_test_suite(self, seed: any, graph: str, suite_name: str, to_json: bool):
+    def _run_test_suite(self, seed: Any, graph: str, suite_name: str, to_json: bool):
         for id, scenario in enumerate(self.flat_suite.scenarios, start=1):
             scenario.src_id = id
         self.scenarios = self.flat_suite.scenarios[:]
@@ -127,11 +127,11 @@ class SuiteProcessors:
                 self.visualiser = Visualiser(graph, suite_name, init_seed, to_json)
             except Exception as e:
                 self.visualiser = None
-                logger.warn('Could not initialise visualiser due to error!\n{}'.format(e))
+                logger.warn(f'Could not initialise visualiser due to error!\n{e}')
 
         elif graph != '' and not VISUALISE:
             logger.warn(f'Visualisation {graph} requested, but required dependencies are not installed.'
-                        'Install them with `pip install .[visualization]`.')
+                        'Refer to the README on how to install these dependencies.')
 
         # a short trace without the need for repeating scenarios is preferred
         tracestate = self._try_to_reach_full_coverage(allow_duplicate_scenarios=False)
@@ -188,14 +188,14 @@ class SuiteProcessors:
             try:
                 self.visualiser.update_trace(tracestate)
             except Exception as e:
-                logger.warn('Could not update visualiser due to error!\n{}'.format(e))
+                logger.warn(f'Could not update visualisation due to error!\n{e}')
 
     def __write_visualisation(self):
         if self.visualiser is not None:
             try:
                 logger.info(self.visualiser.generate_visualisation(), html=True)
             except Exception as e:
-                logger.warn('Could not write visualisation due to error!\n{}'.format(e))
+                logger.warn(f'Could not generate visualisation due to error!\n{e}')
 
     @staticmethod
     def __last_candidate_changed_nothing(tracestate: TraceState) -> bool:
@@ -245,7 +245,7 @@ class SuiteProcessors:
             logger.debug(f"model\n{progression.model.get_status_text()}\n")
 
     @staticmethod
-    def _init_randomiser(seed: any) -> str:
+    def _init_randomiser(seed: Any) -> str:
         if isinstance(seed, str):
             seed = seed.strip()
 

@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-from robotmbt.modelspace import ModelSpace
-from robotmbt.suitedata import Scenario
-
 
 # BSD 3-Clause License
 #
@@ -32,6 +29,9 @@ from robotmbt.suitedata import Scenario
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+from robotmbt.modelspace import ModelSpace
+from robotmbt.suitedata import Scenario
 
 class TraceSnapShot:
     def __init__(self, id: str, inserted_scenario: Scenario | str, model_state: ModelSpace, remainder: Scenario | None = None, drought: int = 0):

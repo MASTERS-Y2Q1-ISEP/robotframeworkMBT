@@ -31,6 +31,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import copy
+from typing import Any
 
 from robot.running.arguments.argumentvalidator import ArgumentValidator
 import robot.utils.notset
@@ -40,7 +41,7 @@ from .substitutionmap import SubstitutionMap
 
 
 class Suite:
-    def __init__(self, name: str, parent=None):
+    def __init__(self, name: str, parent: Suite = None):
         self.name: str = name
         self.filename: str = ''
         self.parent: Suite | None = parent
@@ -68,13 +69,13 @@ class Suite:
 
 
 class Scenario:
-    def __init__(self, name, parent=None):
+    def __init__(self, name: str, parent: Suite | None = None):
         self.name: str = name
         # Parent scenario is kept for easy searching, processing and referencing
         # after steps and scenarios have been potentially moved around
         self.parent: Suite | None = parent
-        self.setup: Step | None = None     # Can be a single step or None
-        self.teardown: Step | None = None  # Can be a single step or None
+        self.setup: Step | None = None
+        self.teardown: Step | None = None
         self.steps: list[Step] = []
         self.src_id: int | None = None
         self.data_choices: dict | SubstitutionMap = {} # may be Dummy type in a test
@@ -189,11 +190,11 @@ class Step:
         return self.args.fill_in_args(s)
 
     @property
-    def posnom_args_str(self) -> tuple[any]:
+    def posnom_args_str(self) -> tuple[Any]:
         """A tuple with all arguments in Robot accepted text format ('posA' , 'posB', 'named1=namedA')"""
         if self.detached or not self.args.modified:
             return self.org_pn_args
-        result: list[any] = []
+        result: list[Any] = []
         for arg in self.args:
             if arg.is_default:
                 continue
@@ -241,7 +242,7 @@ class Step:
 
             self.args += self.__handle_non_embedded_arguments(robot_kw.args)
             self.signature = robot_kw.name
-            self.model_info = self.__parse_model_info(robot_kw._doc)
+            self.model_info: dict[str, list[str] | str] = self.__parse_model_info(robot_kw._doc)
         except Exception as ex:
             self.model_info['error'] = str(ex)
 

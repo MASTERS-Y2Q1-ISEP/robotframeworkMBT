@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-from .suitedata import Suite, Scenario, Step
-from .suiteprocessors import SuiteProcessors
-import robot.running.model as rmodel
-from robot.api import logger
-from robot.api.deco import keyword
 
 # BSD 3-Clause License
 #
@@ -35,12 +30,17 @@ from robot.api.deco import keyword
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from typing import Any
+
+import robot.model
+
 from .suitedata import Suite, Scenario, Step
 from .suiteprocessors import SuiteProcessors
 import robot.running.model as rmodel
 from robot.api import logger
 from robot.api.deco import keyword
 from robot.libraries.BuiltIn import BuiltIn
+
 Robot = BuiltIn()
 
 
@@ -50,13 +50,13 @@ class SuiteReplacer:
 
     def __init__(self, processor: str = 'process_test_suite', processor_lib: str | None = None):
         self.ROBOT_LIBRARY_LISTENER = self  # : Self
-        self.current_suite: Suite | None = None
-        self.robot_suite: Suite | None = None
+        self.current_suite: robot.model.TestSuite | None = None
+        self.robot_suite: robot.model.TestSuite | None = None
         self.processor_lib_name: str | None = processor_lib
         self.processor_name: str = processor
         self._processor_lib: SuiteProcessors | None = None
-        self._processor_method = None
-        self.processor_options = {}
+        self._processor_method: Any = None
+        self.processor_options: dict[str, Any] = {}
 
     @property
     def processor_lib(self) -> SuiteProcessors:
@@ -115,7 +115,7 @@ class SuiteReplacer:
         """
         self.processor_options.update(kwargs)
 
-    def __process_robot_suite(self, in_suite: Suite, parent: Suite | None) -> Suite:
+    def __process_robot_suite(self, in_suite: robot.model.TestSuite, parent: Suite | None) -> Suite:
         out_suite = Suite(in_suite.name, parent)
         out_suite.filename = in_suite.source
 
@@ -177,11 +177,11 @@ class SuiteReplacer:
 
         return out_suite
 
-    def __clearTestSuite(self, suite: Suite):
+    def __clearTestSuite(self, suite: robot.model.TestSuite):
         suite.tests.clear()
         suite.suites.clear()
 
-    def __generateRobotSuite(self, suite_model: Suite, target_suite):
+    def __generateRobotSuite(self, suite_model: Suite, target_suite: robot.model.TestSuite):
         for subsuite in suite_model.suites:
             new_suite = target_suite.suites.create(name=subsuite.name)
             new_suite.resource = target_suite.resource

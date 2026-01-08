@@ -42,25 +42,34 @@ class Visualiser:
         self.seed = seed
 
     def update_trace(self, trace: TraceState):
+        """
+        Uses the new snapshots from trace to update the trace info.
+        Multiple new snapshots can be pushed or popped at once.
+        """
         trace_len = len(trace._snapshots)
-        if trace_len > 0:
-            if trace_len > self.trace_info.previous_length:
-                prev = self.trace_info.previous_length
-                r = trace_len - prev
-                for i in range(r):
-                    snap = trace._snapshots[prev + i]
-                    scenario = snap.scenario
-                    model = snap.model
-                    if model is None:
-                        model = ModelSpace
-                    self.trace_info.update_trace(ScenarioInfo(scenario), StateInfo(model), prev + i + 1)
-            else:
-                snap = trace._snapshots[-1]
+        # We don't have any information
+        if trace_len == 0:
+            self.trace_info.update_trace(None, StateInfo(ModelSpace()), 0)
+
+        # New snapshots have been pushed
+        elif trace_len > self.trace_info.previous_length:
+            prev = self.trace_info.previous_length
+            r = trace_len - prev
+            # Extract all snapshots that have been pushed and update our trace info with their scenario/model info
+            for i in range(r):
+                snap = trace._snapshots[prev + i]
                 scenario = snap.scenario
                 model = snap.model
-                self.trace_info.update_trace(ScenarioInfo(scenario), StateInfo(model), trace_len)
+                if model is None:
+                    model = ModelSpace
+                self.trace_info.update_trace(ScenarioInfo(scenario), StateInfo(model), prev + i + 1)
+
+        # Snapshots have been removed
         else:
-            self.trace_info.update_trace(None, StateInfo(ModelSpace()), 0)
+            snap = trace._snapshots[-1]
+            scenario = snap.scenario
+            model = snap.model
+            self.trace_info.update_trace(ScenarioInfo(scenario), StateInfo(model), trace_len)
 
     def generate_visualisation(self) -> str:
         if self.export:

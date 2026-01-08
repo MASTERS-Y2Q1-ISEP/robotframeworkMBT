@@ -37,14 +37,14 @@ the algorithm inserts ${scenario_name} with state ${state_str}
 
 the graph of type ${type} is generated
     [Documentation]    *model_info*
-    ...    :IN: None
-    ...    :OUT: None
+    ...    :IN: trace_info
+    ...    :OUT: trace_info
     Variable Should Exist    ${trace_info}
     ${graph} =    Generate Graph    ${trace_info}    ${type}
     Set Suite Variable    ${graph}
     Set Suite Variable    ${graph_type}
 
-the scenario graph contains vertices start, a, b, c, d, e
+the scenario graph contains vertices ${vertices}
     [Documentation]    *model_info*
     ...    :IN: None
     ...    :OUT: None

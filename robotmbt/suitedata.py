@@ -41,7 +41,7 @@ from .substitutionmap import SubstitutionMap
 
 
 class Suite:
-    def __init__(self, name: str, parent: Suite = None):
+    def __init__(self, name: str, parent: Any = None):
         self.name: str = name
         self.filename: str = ''
         self.parent: Suite | None = parent

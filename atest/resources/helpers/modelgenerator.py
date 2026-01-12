@@ -97,7 +97,7 @@ class ModelGenerator:
     def graph_contains_with_text(self, graph: AbstractGraph, scenario: str, text: str) -> str:  
         attr = nx.get_node_attributes(graph.networkx, 'label')
         (_, state_info) = self.__convert_to_state_info(scenario, text)
-        parts = state_info.properties['attr']
+        parts = state_info.properties[text.split(":")[0]]
         for _, label in attr.items():          
             if scenario in label:
                 count = 0
@@ -135,9 +135,13 @@ class ModelGenerator:
         """
         scenario_name = scenario_name.strip()
         if keyvaluestr is None:
-            return (ScenarioInfo(scenario_name), StateInfo._create_state_with_prop("attr", []))
+            return (ScenarioInfo(scenario_name), StateInfo._create_state_with_prop("", []))
 
         keyvaluestr = keyvaluestr.strip()
+
+        split_domain: list[str] = keyvaluestr.split(':')
+        domain = split_domain[0]
+        keyvaluestr = ":".join(split_domain[1:]) if len(split_domain) > 2 else split_domain[1]
 
         # contains ["key1", "value1 key2", "value2"]-like structure
         split_eq: list[str] = keyvaluestr.split("=")
@@ -158,7 +162,7 @@ class ModelGenerator:
             keyvalues.append((prev_key, prev_value))
             prev_key = new_key
 
-        return (ScenarioInfo(scenario_name), StateInfo._create_state_with_prop("attr", keyvalues))
+        return (ScenarioInfo(scenario_name), StateInfo._create_state_with_prop(domain, keyvalues))
 
     @staticmethod
     def __split_top_level(text):

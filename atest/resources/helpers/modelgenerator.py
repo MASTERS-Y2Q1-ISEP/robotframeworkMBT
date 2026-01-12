@@ -105,9 +105,9 @@ class ModelGenerator:
                     if f"{s}={parts[s]}" in label:
                         count += 1
                 if count == len(parts):
-                    return f"Graph contains {scenario} with {text}"
+                    return "True"
     
-        return f"Graph does not contain {scenario} with {text}"
+        return "False"
 
     @keyword(name='Scenario Graph Contains Vertices')
     def scen_graph_contains_vertices(self, graph: AbstractGraph, vertices_str: str) -> str | None:

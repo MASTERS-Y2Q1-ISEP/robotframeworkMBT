@@ -8,8 +8,89 @@ Library           Collections
 test suite ${suite}
     [Documentation]     *model info*
     ...     :IN: None
-    ...     :OUT: new suite
-    Set Suite Variable  ${suite}
+    ...     :OUT: trace_info.length=0
+    ${trace_info} =     Generate Trace Information
+    Set Suite Variable  ${trace_info}
+
+the algorithm inserts '${scenario_name}' with state "${state_str}"
+    [Documentation]    *model_info*
+    ...    :IN: trace_info.length=0
+    ...    :OUT: trace_info.length=2
+    Variable Should Exist    ${trace_info}
+    ${trace_info} =    The Algorithm Inserts    ${trace_info}    ${scenario_name}    ${state_str}
+
+test suite ${suite} has a trace with ${n} steps
+    [Documentation]    *model_info*
+    ...    :IN: trace_info.length=${n}
+    ...    :OUT: trace_info.length=${n}
+    No operation
+
+${graph_type} graph ${name} is generated
+    [Documentation]    *model_info*
+    ...    :IN: None
+    ...    :OUT: graph.name=${name}, graph.type=${graph_type}
+    Variable Should Exist    ${trace_info}
+
+    ${graph} =  Get Graph   ${trace_info}   ${graph_type}
+    Set Suite Variable  ${graph}
+
+graph ${name} contains vertex '${scenario}'
+    [Documentation]    *model_info*
+    ...    :IN: graph.name={name}
+    ...    :OUT: graph.name={name}
+    Variable Should Exist    ${graph}
+
+    ${result} =     Graph Contains No Text        ${graph}      ${scenario}
+    Should be Equal     ${result}       Graph contains ${scenario}
+
+graph ${name} contains vertex '${scenario}' with text "${text}"
+    [Documentation]    *model_info*
+    ...    :IN: graph.name={name}
+    ...    :OUT: graph.name={name}
+    Variable Should Exist    ${graph}
+
+    ${result} =     Graph Contains With Text        ${graph}      ${scenario}       ${text}
+    Should be Equal     ${result}       Graph contains ${scenario} with ${text}
+
+graph ${name} does not contain vertex '${scenario}' with text "${text}"
+    [Documentation]    *model_info*
+    ...    :IN: graph.name={name}
+    ...    :OUT: graph.name={name}
+    Variable Should Exist    ${graph}
+
+    ${result} =     Graph Contains With Text        ${graph}      ${scenario}       ${text}
+    Should be Equal     ${result}       Graph does not contain ${scenario} with ${text}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 test suite ${suite} has trace info ${trace}
     [Documentation]     *model info*
@@ -27,12 +108,6 @@ the algorithm inserts ${scenario_name}
     Variable Should Exist    ${trace_info}
     ${trace_info} =    The Algorithm Inserts    ${trace_info}    ${scenario_name}
 
-the algorithm inserts ${scenario_name} with state ${state_str}
-    [Documentation]    *model_info*
-    ...    :IN: trace_info
-    ...    :OUT: trace_info
-    Variable Should Exist    ${trace_info}
-    ${trace_info} =    The Algorithm Inserts    ${trace_info}    ${scenario_name}    ${state_str}
 
 
 the graph of type ${type} is generated

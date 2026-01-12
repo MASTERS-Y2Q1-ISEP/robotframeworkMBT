@@ -4,6 +4,7 @@ from robotmbt.visualise.models import TraceInfo, ScenarioInfo, StateInfo
 from robotmbt.visualise.visualiser import Visualiser
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 import os
+import networkx as nx
 
 
 class ModelGenerator:
@@ -87,6 +88,26 @@ class ModelGenerator:
     @keyword(name='Get Graph')  # type:ignore
     def get_graph(self, trace_info: TraceInfo, graph_type: str) -> AbstractGraph:
         return Visualiser(graph_type=graph_type, trace_info=trace_info)._get_graph()
+    
+    @keyword(name='Graph Contains No Text')  # type:ignore
+    def graph_contains_no_text(self, graph: AbstractGraph, label: str) -> str:
+        return f"Graph contains {label}" if label in graph.networkx.nodes() else f"Graph does not contain {label}"
+    
+    @keyword(name='Graph Contains With Text')  # type:ignore
+    def graph_contains_with_text(self, graph: AbstractGraph, scenario: str, text: str) -> str:  
+        attr = nx.get_node_attributes(graph.networkx, 'label')
+        (_, state_info) = self.__convert_to_state_info(scenario, text)
+        parts = state_info.properties['attr']
+        for _, label in attr.items():          
+            if scenario in label:
+                count = 0
+                for s in parts:
+                    if f"{s}={parts[s]}" in label:
+                        count += 1
+                if count == len(parts):
+                    return f"Graph contains {scenario} with {text}"
+    
+        return f"Graph does not contain {scenario} with {text}"
 
     @keyword(name='Scenario Graph Contains Vertices')
     def scen_graph_contains_vertices(self, graph: AbstractGraph, vertices_str: str) -> str | None:
@@ -114,7 +135,7 @@ class ModelGenerator:
         """
         scenario_name = scenario_name.strip()
         if keyvaluestr is None:
-            return (ScenarioInfo(scenario_name), StateInfo._create_state_with_prop(scenario_name, []))
+            return (ScenarioInfo(scenario_name), StateInfo._create_state_with_prop("attr", []))
 
         keyvaluestr = keyvaluestr.strip()
 
@@ -129,11 +150,72 @@ class ModelGenerator:
 
         prev_key = split_eq[0]
         for index in range(1, len(split_eq)):
-            splits: list[str] = split_eq[index].split(" ")  # "value1 key2" for ex.
-            prev_value: str = " ".join(splits[:-1])
+            splits: list[str] = ModelGenerator.__split_top_level(split_eq[index])
+            splits = [s.strip() for s in splits]
+            prev_value: str = " ".join(splits[:-1]) if len(splits) > 1 else splits[0]
             new_key: str = splits[-1]
 
             keyvalues.append((prev_key, prev_value))
             prev_key = new_key
 
-        return (ScenarioInfo(scenario_name), StateInfo._create_state_with_prop(scenario_name, keyvalues))
+        return (ScenarioInfo(scenario_name), StateInfo._create_state_with_prop("attr", keyvalues))
+
+    @staticmethod
+    def __split_top_level(text):
+        parts = []
+        buf = []
+
+        depth = 0
+        string_char = None
+        escape = False
+
+        i = 0
+        n = len(text)
+
+        while i < n:
+            ch = text[i]
+
+            # Inside string
+            if string_char:
+                buf.append(ch)
+                if escape:
+                    escape = False
+                elif ch == "\\":
+                    escape = True
+                elif ch == string_char:
+                    string_char = None
+                i += 1
+                continue
+
+            # Start of string
+            if ch in ("'", '"'):
+                string_char = ch
+                buf.append(ch)
+                i += 1
+                continue
+
+            # Nesting
+            if ch in "([{":
+                depth += 1
+                buf.append(ch)
+                i += 1
+                continue
+
+            if ch in ")]}":
+                depth -= 1
+                buf.append(ch)
+                i += 1
+                continue
+
+            # Split condition: ", " at top level
+            if ch == "," and i + 1 < n and text[i + 1] == " " and depth == 0:
+                parts.append("".join(buf))
+                buf.clear()
+                i += 2  # skip ", "
+                continue
+
+            buf.append(ch)
+            i += 1
+
+        parts.append("".join(buf))
+        return parts

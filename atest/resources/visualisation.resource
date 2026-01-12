@@ -50,7 +50,8 @@ graph ${name} contains vertex '${scenario}' with text "${text}"
     Variable Should Exist    ${graph}
 
     ${result} =     Graph Contains With Text        ${graph}      ${scenario}       ${text}
-    Should be Equal     ${result}       Graph contains ${scenario} with ${text}
+    Run Keyword If      ${result} != True
+    ...    Fail     Fail: Graph does not contain ${scenario} with ${text}
 
 graph ${name} does not contain vertex '${scenario}' with text "${text}"
     [Documentation]    *model_info*
@@ -59,8 +60,9 @@ graph ${name} does not contain vertex '${scenario}' with text "${text}"
     Variable Should Exist    ${graph}
 
     ${result} =     Graph Contains With Text        ${graph}      ${scenario}       ${text}
-    Should be Equal     ${result}       Graph does not contain ${scenario} with ${text}
-
+    Run Keyword If      ${result} != False
+    ...    Fail     Fail: Graph contains ${scenario} with ${text}
+    
 
 
 

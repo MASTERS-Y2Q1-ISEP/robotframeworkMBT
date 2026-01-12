@@ -71,7 +71,7 @@ class Visualiser:
             model = snap.model
             self.trace_info.update_trace(ScenarioInfo(scenario), StateInfo(model), trace_len)
 
-     def _get_graph(self) -> AbstractGraph:
+    def _get_graph(self) -> AbstractGraph:
         if self.graph_type == 'scenario':
             graph: AbstractGraph = ScenarioGraph(self.trace_info)
         elif self.graph_type == 'state':

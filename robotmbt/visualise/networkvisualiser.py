@@ -77,6 +77,7 @@ class NetworkVisualiser:
 
         # Set up a Bokeh figure
         self.plot = Plot(width=OUTER_WINDOW_WIDTH, height=OUTER_WINDOW_HEIGHT)
+        self.plot.output_backend = "svg"
 
         # Create Sugiyama layout
         nodes, edges = self._create_layout()
@@ -244,7 +245,7 @@ class NetworkVisualiser:
 
         # A JS callback to scale text and arrows, and change aspect ratio.
         resize_cb = CustomJS(args=dict(xr=self.plot.x_range, yr=self.plot.y_range, plot=self.plot, arrows=self.arrows),
-                           code=f"""
+                             code=f"""
     // Initialize initial scale tag
     if (!plot.tags || plot.tags.length === 0) {{
         plot.tags = [{{
@@ -295,7 +296,7 @@ class NetworkVisualiser:
         if (!a.properties.end._value.properties.size._value.value) continue;
         if (a._base_end_size == null)
             a._base_end_size = a.properties.end._value.properties.size._value.value;
-        a.properties.end._value.properties.size._value.value = a._base_end_size * scale;
+        a.properties.end._value.properties.size._value.value = a._base_end_size * Math.sqrt(scale);
         a.change.emit();
     }}""")
 
@@ -406,7 +407,7 @@ def _get_connection_coordinates(nodes: list[Node], node_id: str) -> list[tuple[f
 
 
 def _minimize_distance(from_pos: list[tuple[float, float]], to_pos: list[tuple[float, float]]) -> tuple[
-    float, float, float, float]:
+        float, float, float, float]:
     """
     Find a pair of positions that minimizes their distance.
     """

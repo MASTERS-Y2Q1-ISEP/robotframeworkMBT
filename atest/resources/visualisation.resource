@@ -129,115 +129,9 @@ the algorithm backtracks by ${n} step
     Run Keyword If      ${b} + 1 != ${j}
     ...    Fail     Fail: Backtracking did not add new trace to all traces
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-the algorithm inserts ${scenario_name}
-    [Documentation]    *model info*
-    ...    :IN: trace_info
-    ...    :OUT: trace_info
-    Variable Should Exist    ${trace_info}
-    ${trace_info} =    The Algorithm Inserts    ${trace_info}    ${scenario_name}
-
-
-
-the graph of type ${type} is generated
-    [Documentation]    *model info*
-    ...    :IN: trace_info
-    ...    :OUT: trace_info
-    Variable Should Exist    ${trace_info}
-    ${graph} =    Generate Graph    ${trace_info}    ${type}
-    Set Suite Variable    ${graph}
-    Set Suite Variable    ${graph_type}
-
-the scenario graph contains vertices ${vertices}
-    [Documentation]    *model info*
-    ...    :IN: None
-    ...    :OUT: None
-    Variable Should Exist    ${graph}
-    Variable Should Exist    ${graph_type}
-
-    Should Be Equal    ${graph_type}    scenario
-    Log    TODO!
-        
-
-trace info ${trace} has current trace ${current}
-    [Documentation]     *model info*
-    ...     :IN: trace_info
-    ...     :OUT: trace_info.current_trace=[]
-    Variable Should Exist    ${trace_info}
-
-current trace ${current_trace} has a tuple 'scenario ${scenario}, state ${state}'
-    [Documentation]    *model info*
-    ...     :IN: trace_info.current_trace
-    ...     :OUT: trace_info.current_trace.append((${scenario}, ${state}))
-    Variable Should Exist   ${trace_info}
-
-    ${trace_info} =         The Algorithm Inserts  ${trace_info}   ${scenario}     ${state}
-    Set Suite Variable  ${trace_info}
-
-trace info ${trace} has all traces ${all}
-    [Documentation]     *model info*
-    ...     :IN: trace_info
-    ...     :OUT: trace_info.all_traces=[]
-    Variable Should Exist    ${trace_info}
-
-all traces ${all} has list ${list}
-    [Documentation]    *model info*
-    ...     :IN: trace_info
-    ...     :OUT: trace_info.all_traces.append([])
-    Variable Should Exist   ${trace_info}
-
-    ${trace_info} =         All Traces Contains List  ${trace_info}
-    Set Suite Variable  ${trace_info}
-
-list ${list} has a tuple 'scenario ${scenario}, state ${state}'
-    [Documentation]    *model info*
-    ...     :IN: trace_info.all_traces
-    ...     :OUT: trace_info.all_traces.append((${scenario}, ${state}))
-    Variable Should Exist   ${trace_info}
-
-    ${trace_info} =         All Traces Contains  ${trace_info}   ${scenario}     ${state}
-    Set Suite Variable  ${trace_info}
-
-test suite ${suite} contains trace info ${ti}
-    [Documentation]     *model info*
-    ...     :IN: suite, trace_info
-    ...     :OUT: suite, trace_info
-    Variable Should Exist   ${suite}
-    Variable Should Exist   ${trace_info}
-
 test suite ${suite} is exported to json
     [Documentation]     *model info*
-    ...     :IN: suite, trace_info
+    ...     :IN: trace_info.current_trace, trace_info.all_traces>0
     ...     :OUT: new filepath
     Variable Should Exist   ${suite}
     Variable Should Exist   ${trace_info}
@@ -247,16 +141,17 @@ test suite ${suite} is exported to json
 
 the file ${filename} exists
     [Documentation]     *model info*
-    ...     :IN: suite, filepath
-    ...     :OUT: suite, filepath 
+    ...     :IN: filepath
+    ...     :OUT: filepath 
     Variable Should Exist   ${filepath}
 
     ${result} =     Check File Exists   ${filepath}
-    Should Be Equal     ${result}   file exists
+    Run Keyword If    ${result} == False
+    ...     Fail    Fail: File does not exist
 
 ${filename} is imported
     [Documentation]     *model info*
-    ...     :IN: suite, filepath
+    ...     :IN: filepath
     ...     :OUT: new new_trace_info
     Variable Should Exist   ${filepath}
     
@@ -271,7 +166,14 @@ trace info from ${filename} is the same as trace info ${trace}
     Variable Should Exist   ${new_trace_info}
 
     ${result} =     Compare Trace Info   ${trace_info}      ${new_trace_info}
-    Should Be Equal     ${result}   imported model equals exported model
+    Run Keyword If    ${result} == False
+    ...     Fail    Fail: Exported and Imported trace info are not the same
+
+${file} has been imported
+    [Documentation]     *model info*
+    ...     :IN: flag_cleanup
+    ...     :OUT: flag_cleanup
+    No operation
 
 ${filename} is deleted
     [Documentation]     *model info*
@@ -288,16 +190,5 @@ ${filename} does not exist
     Variable Should Exist   ${filepath}
 
     ${result} =     Check File Exists   ${filepath}
-    Should Be Equal     ${result}   file does not exist
-
-flag cleanup is set
-    [Documentation]     *model info*
-    ...     :IN: suite
-    ...     :OUT: suite
-    Set Suite Variable      ${flag_cleanup}     True
-
-flag cleanup has been set
-    [Documentation]     *model info*
-    ...     :IN: flag_cleanup
-    ...     :OUT: flag_cleanup
-    Variable Should Exist   ${flag_cleanup}
+        Run Keyword If    ${result} == True
+    ...     Fail    Fail: File exist

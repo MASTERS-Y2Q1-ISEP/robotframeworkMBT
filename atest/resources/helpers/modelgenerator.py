@@ -59,27 +59,12 @@ class ModelGenerator:
         return visualiser.trace_info
 
     @keyword(name='Check File Exists')  # type:ignore
-    def check_file_exists(self, filepath: str) -> str:
-        '''
-        Checks if file exists
-
-        Returns string for .resource error message in case values are not equal
-        Expected != result
-        '''
-
-        return 'file exists' if os.path.exists(filepath) else 'file does not exist'
+    def check_file_exists(self, filepath: str) -> bool:
+        return os.path.exists(filepath)
 
     @keyword(name='Compare Trace Info')  # type:ignore
-    def compare_trace_info(self, t1: TraceInfo, t2: TraceInfo) -> str:
-        '''
-        Checks if current trace and all traces of t1 and t2 are equal.
-
-        Returns string for .resource error message in case values are not equal
-        Expected != result
-        '''
-        succes = 'imported model equals exported model'
-        fail = 'imported models differs from exported model'
-        return succes if repr(t1) == repr(t2) else fail
+    def compare_trace_info(self, t1: TraceInfo, t2: TraceInfo) -> bool:
+        return repr(t1) == repr(t2)
 
     @keyword(name='Delete File')  # type:ignore
     def delete_file(self, filepath: str):

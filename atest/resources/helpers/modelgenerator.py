@@ -5,6 +5,7 @@ from robotmbt.visualise.visualiser import Visualiser
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 import os
 import networkx as nx
+from robotmbt.visualise.networkvisualiser import NetworkVisualiser, RawNodeInfo
 
 
 class ModelGenerator:
@@ -46,6 +47,10 @@ class ModelGenerator:
     def generate_graph(self, trace_info: TraceInfo, graph_type: str) -> AbstractGraph:
         return Visualiser(graph_type=graph_type, trace_info=trace_info)._get_graph()
 
+    @keyword(name="Generate Network Graph")
+    def generate_networkgraph(self, graph: AbstractGraph) -> NetworkVisualiser:
+        return NetworkVisualiser(graph=graph, suite_name="", seed="")
+
     @keyword(name='Export Graph')  # type:ignore
     def export_graph(self, suite: str, trace_info: TraceInfo) -> str:
         return trace_info.export_graph(suite, True)
@@ -69,10 +74,6 @@ class ModelGenerator:
     @keyword(name='Delete File')  # type:ignore
     def delete_file(self, filepath: str):
         os.remove(filepath)
-
-    @keyword(name='Get Graph')  # type:ignore
-    def get_graph(self, trace_info: TraceInfo, graph_type: str) -> AbstractGraph:
-        return Visualiser(graph_type=graph_type, trace_info=trace_info)._get_graph()
 
     @keyword(name='Graph Contains No Text')  # type:ignore
     def graph_contains_no_text(self, graph: AbstractGraph, label: str) -> str:
@@ -106,40 +107,60 @@ class ModelGenerator:
 
         return None
 
-    @keyword(name="Vertices Are Connected")
+    @keyword(name="Vertices Are Connected")  # type:ignore
     def vertices_connected(self, graph: AbstractGraph, node_key1: str | None, node_key2: str | None) -> bool:
         if node_key1 is None or node_key2 is None:
             return False
         return graph.networkx.has_edge(node_key1, node_key2)
 
-    @keyword(name='Scenario Graph Contains Vertices')
-    def scen_graph_contains_vertices(self, graph: AbstractGraph, vertices_str: str) -> str | None:
-        """
-        Returns error msg if not satisfied, else None
-        """
+    @keyword(name="Get Vertex Y Position")  # type:ignore
+    def get_y(self, graph: AbstractGraph, network_vis: NetworkVisualiser, node_title: str) -> int | None:
+        id: str | None = self.graph_contains_vertex_with_text(graph, node_title, text=None)
+        if id is None:
+            return None
 
-        vertices = [v.strip() for v in vertices_str.split(",")]
+        try:
+            raw_node_info: RawNodeInfo | None = network_vis.raw_node_info[id]
+            return raw_node_info.y
+        except KeyError:
+            return None
 
-        for vertex_name in vertices:
-            if vertex_name not in graph.networkx.nodes:
-                return f"Vertex {vertex_name} is not in the graph nodes: {graph.networkx.nodes}"
+    @keyword(name='Graph Contains Vertices')  # type:ignore
+    def scen_graph_contains_vertices(self, graph: AbstractGraph, vertices_str: str) -> bool | str:
+        attr: dict[str, str] = nx.get_node_attributes(graph.networkx, "label")
 
-        return None
-    
-    @keyword(name='Backtrack')
+        vertices = vertices_str.split(" ")
+        for i in range(len(vertices)):
+            v = vertices[i]
+            if not v.startswith("'") or not v.endswith("'"):
+                return "vertices string was not properly formatted. Format: "'v1' 'v2' 'v3' 'v4'""
+            vertices[i] = vertices[i][1:-1]  # strip away quotes
+
+        for vname in vertices:
+            found = False
+            for _, label in attr.items():
+                if label.startswith(vname):
+                    found = True
+                    break
+
+            if not found:
+                return False
+
+        return True
+
+    @keyword(name='Backtrack')  # type:ignore
     def backtrack(self, trace_info: TraceInfo, steps: int) -> TraceInfo:
         trace_info.pushed = True
         trace_info._pop(steps)
         return trace_info
-    
-    @keyword(name='Get Length Current Trace')
+
+    @keyword(name='Get Length Current Trace')  # type:ignore
     def get_length_current_trace(self, trace_info: TraceInfo) -> int:
         return len(trace_info.current_trace)
-    
-    @keyword(name='Get Length All Traces')
+
+    @keyword(name='Get Length All Traces')  # type:ignore
     def get_length_all_traces(self, trace_info: TraceInfo) -> int:
         return len(trace_info.all_traces)
-
 
     # ============= #
     # == HELPERS == #

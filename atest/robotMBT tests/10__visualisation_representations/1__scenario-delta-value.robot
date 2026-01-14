@@ -18,3 +18,10 @@ Edge Scenario-Delta-Value graph
     And graph g does not have an edge from 'start' to 'A2'
     And graph g does not have an edge from 'A2' to 'A1'
     And graph g does not have an edge from 'A2' to 'start'
+
+Visual location of vertices scenario-delta-value
+    Given test suite s has a trace with 2 steps
+    When scenario-delta-value graph g is generated
+    Then graph g has vertices 'start' 'A1' 'A2'
+    And vertex 'start' is placed above 'A1'
+    And vertex 'A1' is placed above 'A2'

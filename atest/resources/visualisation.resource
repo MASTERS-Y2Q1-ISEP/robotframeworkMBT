@@ -50,8 +50,10 @@ ${graph_type} graph ${name} is generated
     ...    :OUT: graph.name=${name}, graph.type=${graph_type}
     Variable Should Exist    ${trace_info}
 
-    ${graph} =  Get Graph   ${trace_info}   ${graph_type}
+    ${graph} =  Generate Graph   ${trace_info}   ${graph_type}
+    ${network_visualiser} =    Generate Network Graph    ${graph}
     Set Suite Variable  ${graph}
+    Set Suite Variable    ${network_visualiser}
 
 graph ${name} contains vertex '${scenario}'
     [Documentation]    *model info*
@@ -108,7 +110,29 @@ graph ${name} does not have an edge from ${vertex}'${start_title}' to ${vertex}'
     ${result} =    Vertices Are Connected    ${graph}    ${start_node}    ${end_node}
     Run Keyword If    ${result} == True
     ...     Fail    Fail: Edges '${start_title}' and '${end_title}' exist in graph and are connected, but shouldn't be!
+
+graph ${name} has vertices ${vertices_string}
+    [Documentation]    *model_info*
+    ...    :IN: graph.name=${name}
+    ...    :OUT: graph.name=${name}
+    Variable Should Exist    ${graph}
+    ${result} =    Graph Contains Vertices    ${graph}    ${vertices_string}
+    Run Keyword If    ${result} != True
+    ...    Fail    Graph did not contain all vertices ${vertices_string}
+
+vertex '${start_vertex}' is placed above '${end_vertex}'
+    [Documentation]    *model_info*
+    ...    :IN: None
+    ...    :OUT: None
+    Variable Should Exist    ${graph}
+    Variable Should Exist    ${network_visualiser}
+    ${result1} =    Get Vertex Y position   ${graph}    ${network_visualiser}    ${start_vertex}
+    ${result2} =    Get Vertex Y position   ${graph}    ${network_visualiser}    ${end_vertex}
     
+    # higher y is lower.... yeah I know. Confusing.
+    Run Keyword If    ${result1} > ${result2}
+    ...    Fail    Vertex '${start_vertex}' is below '${end_vertex}'
+
 the algorithm backtracks by ${n} step
     [Documentation]    *model info*
     ...    :IN: trace_info.current_trace

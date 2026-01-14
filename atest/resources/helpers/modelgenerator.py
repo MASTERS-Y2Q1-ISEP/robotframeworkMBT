@@ -42,7 +42,7 @@ class ModelGenerator:
 
         return trace_info
 
-    @keyword(name='Generate Graph')
+    @keyword(name='Generate Graph')  # type:ignore
     def generate_graph(self, trace_info: TraceInfo, graph_type: str) -> AbstractGraph:
         return Visualiser(graph_type=graph_type, trace_info=trace_info)._get_graph()
 
@@ -54,7 +54,7 @@ class ModelGenerator:
     def import_graph(self, filepath: str) -> TraceInfo:
         with open(filepath, 'r') as f:
             string = f.read()
-            decoded_instance = jsonpickle.decode(string)
+            decoded_instance: TraceInfo = jsonpickle.decode(string)  # type: ignore
         visualiser = Visualiser('state', trace_info=decoded_instance)
         return visualiser.trace_info
 
@@ -88,26 +88,44 @@ class ModelGenerator:
     @keyword(name='Get Graph')  # type:ignore
     def get_graph(self, trace_info: TraceInfo, graph_type: str) -> AbstractGraph:
         return Visualiser(graph_type=graph_type, trace_info=trace_info)._get_graph()
-    
+
     @keyword(name='Graph Contains No Text')  # type:ignore
     def graph_contains_no_text(self, graph: AbstractGraph, label: str) -> str:
         return f"Graph contains {label}" if label in graph.networkx.nodes() else f"Graph does not contain {label}"
-    
-    @keyword(name='Graph Contains With Text')  # type:ignore
-    def graph_contains_with_text(self, graph: AbstractGraph, scenario: str, text: str) -> str:  
-        attr = nx.get_node_attributes(graph.networkx, 'label')
-        (_, state_info) = self.__convert_to_state_info(scenario, text)
-        parts = state_info.properties[text.split(":")[0]]
-        for _, label in attr.items():          
-            if scenario in label:
+
+    @keyword(name='Graph Contains Vertex With Text')  # type:ignore
+    def graph_contains_vertex_with_text(self, graph: AbstractGraph, title: str, text: str | None = None) -> str | None:
+        """
+        Returns the label of the complete node or None if it doesn't exist
+        """
+        ATTRIBUTE = "label"
+        attr = nx.get_node_attributes(graph.networkx, ATTRIBUTE)
+
+        (_, state_info) = self.__convert_to_state_info(title, text)
+        parts = state_info.properties[text.split(":")[0]] \
+            if text is not None else []
+
+        for nodename, label in attr.items():
+            if title in label:
+                if text is None:
+                    # we sanitise because newlines in text go badly with eval() in Robot framework
+                    return nodename
+
                 count = 0
                 for s in parts:
                     if f"{s}={parts[s]}" in label:
                         count += 1
                 if count == len(parts):
-                    return "True"
-    
-        return "False"
+                    # we sanitise because newlines in text go badly with eval() in Robot framework
+                    return nodename
+
+        return None
+
+    @keyword(name="Vertices Are Connected")
+    def vertices_connected(self, graph: AbstractGraph, node_key1: str | None, node_key2: str | None) -> bool:
+        if node_key1 is None or node_key2 is None:
+            return False
+        return graph.networkx.has_edge(node_key1, node_key2)
 
     @keyword(name='Scenario Graph Contains Vertices')
     def scen_graph_contains_vertices(self, graph: AbstractGraph, vertices_str: str) -> str | None:

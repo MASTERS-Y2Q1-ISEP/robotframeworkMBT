@@ -36,8 +36,8 @@ ${graph_type} graph ${name} is generated
 
 graph ${name} contains vertex '${scenario}'
     [Documentation]    *model_info*
-    ...    :IN: graph.name={name}
-    ...    :OUT: graph.name={name}
+    ...    :IN: graph.name=${name}
+    ...    :OUT: graph.name=${name}
     Variable Should Exist    ${graph}
 
     ${result} =     Graph Contains No Text        ${graph}      ${scenario}
@@ -45,30 +45,50 @@ graph ${name} contains vertex '${scenario}'
 
 graph ${name} contains vertex '${scenario}' with text "${text}"
     [Documentation]    *model_info*
-    ...    :IN: graph.name={name}
-    ...    :OUT: graph.name={name}
+    ...    :IN: graph.name=${name}
+    ...    :OUT: graph.name=${name}
     Variable Should Exist    ${graph}
 
-    ${result} =     Graph Contains With Text        ${graph}      ${scenario}       ${text}
-    Run Keyword If      ${result} != True
-    ...    Fail     Fail: Graph does not contain ${scenario} with ${text}
+    ${result} =     Graph Contains Vertex With Text        ${graph}      ${scenario}       ${text}
+    Run Keyword If      "${result}" == "None"
+    ...    Fail     Fail: Graph does not contain '${scenario}' with "${text}"
 
 graph ${name} does not contain vertex '${scenario}' with text "${text}"
     [Documentation]    *model_info*
-    ...    :IN: graph.name={name}
-    ...    :OUT: graph.name={name}
+    ...    :IN: graph.name=${name}
+    ...    :OUT: graph.name=${name}
     Variable Should Exist    ${graph}
 
-    ${result} =     Graph Contains With Text        ${graph}      ${scenario}       ${text}
-    Run Keyword If      ${result} != False
-    ...    Fail     Fail: Graph contains ${scenario} with ${text}
+    ${result} =     Graph Contains Vertex With Text        ${graph}      ${scenario}       ${text}
+    Run Keyword If      "${result}" != "None"
+    ...    Fail     Fail: Graph contains '${scenario}' with "${text}"
     
+graph ${name} has an edge from vertex '${start_title}' to ${vertex}'${end_title}'
+    [Documentation]    *model_info*
+    ...    :IN: graph.name=${name}
+    ...    :OUT: graph.name=${name}
+    Variable Should Exist    ${graph}
+    ${start_node} =    Graph Contains Vertex With Text    ${graph}    ${start_title}
+    ${end_node} =    Graph Contains Vertex With Text    ${graph}    ${end_title}
+    
+    Should Not Be Equal    ${start_node}    ${None}    Start node with title '${start_title}' not found
+    Should Not Be Equal    ${end_node}    ${None}    End node with title '${end_title}' not found
+    
+    ${result} =    Vertices Are Connected    ${graph}    ${start_node}    ${end_node}
+    Run Keyword If    ${result} != True
+    ...     Fail    Fail: Edges '${start_title}' and '${end_title}' exist in graph but are not connected!
 
-
-
-
-
-
+graph ${name} does not have an edge from ${vertex}'${start_title}' to ${vertex}'${end_title}'
+    [Documentation]    *model_info*
+    ...    :IN: graph.name=${name}
+    ...    :OUT: graph.name=${name}
+    Variable Should Exist    ${graph}
+    ${start_node} =    Graph Contains Vertex With Text    ${graph}    ${start_title}
+    ${end_node} =    Graph Contains Vertex With Text    ${graph}    ${end_title}
+    
+    ${result} =    Vertices Are Connected    ${graph}    ${start_node}    ${end_node}
+    Run Keyword If    ${result} == True
+    ...     Fail    Fail: Edges '${start_title}' and '${end_title}' exist in graph and are connected, but shouldn't be!
 
 
 

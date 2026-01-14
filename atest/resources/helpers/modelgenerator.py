@@ -140,6 +140,21 @@ class ModelGenerator:
                 return f"Vertex {vertex_name} is not in the graph nodes: {graph.networkx.nodes}"
 
         return None
+    
+    @keyword(name='Backtrack')
+    def backtrack(self, trace_info: TraceInfo, steps: int) -> TraceInfo:
+        trace_info.pushed = True
+        trace_info._pop(steps)
+        return trace_info
+    
+    @keyword(name='Get Length Current Trace')
+    def get_length_current_trace(self, trace_info: TraceInfo) -> int:
+        return len(trace_info.current_trace)
+    
+    @keyword(name='Get Length All Traces')
+    def get_length_all_traces(self, trace_info: TraceInfo) -> int:
+        return len(trace_info.all_traces)
+
 
     # ============= #
     # == HELPERS == #

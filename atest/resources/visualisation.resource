@@ -7,27 +7,46 @@ Library           Collections
 *** Keywords ***
 test suite ${suite}
     [Documentation]     *model info*
-    ...     :IN: None
-    ...     :OUT: trace_info.length=0
+    ...     :IN: new trace_info | trace_info.current_trace=0 | trace_info.all_traces=0
+    ...     :OUT: None
+    ${trace_info} =     Generate Trace Information
+    Set Suite Variable  ${trace_info}
+
+test suite ${suite} has trace info ${trace}
+    [Documentation]     *model info*
+    ...     :IN: new trace_info | trace_info.current_trace=0 | trace_info.all_traces=0
+    ...     :OUT: None
     ${trace_info} =     Generate Trace Information
     Set Suite Variable  ${trace_info}
 
 the algorithm inserts '${scenario_name}' with state "${state_str}"
-    [Documentation]    *model_info*
-    ...    :IN: trace_info.length=0
-    ...    :OUT: trace_info.length=2
+    [Documentation]    *model info*
+    ...    :IN: trace_info
+    ...    :OUT: trace_info.current_trace+=1
     Variable Should Exist    ${trace_info}
     ${trace_info} =    The Algorithm Inserts    ${trace_info}    ${scenario_name}    ${state_str}
 
 test suite ${suite} has a trace with ${n} steps
-    [Documentation]    *model_info*
-    ...    :IN: trace_info.length=${n}
-    ...    :OUT: trace_info.length=${n}
+    [Documentation]    *model info*
+    ...    :IN: trace_info.current_trace==${n}
+    ...    :OUT: trace_info.current_trace==${n}
+    No operation
+
+test suite ${suite} has ${n} steps in its current trace 
+    [Documentation]    *model info*
+    ...    :IN: trace_info.current_trace==${n}
+    ...    :OUT: trace_info.current_trace==${n}
+    No operation
+
+test suite ${suite} has ${n} total traces
+    [Documentation]    *model info*
+    ...    :IN: trace_info.current_trace | trace_info.all_traces==${n}-1
+    ...    :OUT: trace_info.current_trace | trace_info.all_traces==${n}-1
     No operation
 
 ${graph_type} graph ${name} is generated
-    [Documentation]    *model_info*
-    ...    :IN: None
+    [Documentation]    *model info*
+    ...    :IN: trace_info
     ...    :OUT: graph.name=${name}, graph.type=${graph_type}
     Variable Should Exist    ${trace_info}
 
@@ -35,7 +54,7 @@ ${graph_type} graph ${name} is generated
     Set Suite Variable  ${graph}
 
 graph ${name} contains vertex '${scenario}'
-    [Documentation]    *model_info*
+    [Documentation]    *model info*
     ...    :IN: graph.name=${name}
     ...    :OUT: graph.name=${name}
     Variable Should Exist    ${graph}
@@ -44,7 +63,7 @@ graph ${name} contains vertex '${scenario}'
     Should be Equal     ${result}       Graph contains ${scenario}
 
 graph ${name} contains vertex '${scenario}' with text "${text}"
-    [Documentation]    *model_info*
+    [Documentation]    *model info*
     ...    :IN: graph.name=${name}
     ...    :OUT: graph.name=${name}
     Variable Should Exist    ${graph}
@@ -54,7 +73,7 @@ graph ${name} contains vertex '${scenario}' with text "${text}"
     ...    Fail     Fail: Graph does not contain '${scenario}' with "${text}"
 
 graph ${name} does not contain vertex '${scenario}' with text "${text}"
-    [Documentation]    *model_info*
+    [Documentation]    *model info*
     ...    :IN: graph.name=${name}
     ...    :OUT: graph.name=${name}
     Variable Should Exist    ${graph}
@@ -89,6 +108,26 @@ graph ${name} does not have an edge from ${vertex}'${start_title}' to ${vertex}'
     ${result} =    Vertices Are Connected    ${graph}    ${start_node}    ${end_node}
     Run Keyword If    ${result} == True
     ...     Fail    Fail: Edges '${start_title}' and '${end_title}' exist in graph and are connected, but shouldn't be!
+    
+the algorithm backtracks by ${n} step
+    [Documentation]    *model info*
+    ...    :IN: trace_info.current_trace
+    ...    :OUT: trace_info.current_trace | trace_info.all_traces+=1
+    Variable Should Exist    ${trace_info}
+
+    ${a} =      Get Length Current Trace        ${trace_info}
+    ${b} =      Get Length All Traces        ${trace_info}
+
+    ${trace_info} =     Backtrack       ${trace_info}       ${n}
+
+    ${i} =      Get Length Current Trace        ${trace_info}
+    ${j} =      Get Length All Traces        ${trace_info}
+
+    Run Keyword If      ${a} - ${n} != ${i}
+    ...    Fail     Fail: Backtracking did not shorten current trace correctly
+
+    Run Keyword If      ${b} + 1 != ${j}
+    ...    Fail     Fail: Backtracking did not add new trace to all traces
 
 
 
@@ -114,17 +153,15 @@ graph ${name} does not have an edge from ${vertex}'${start_title}' to ${vertex}'
 
 
 
-test suite ${suite} has trace info ${trace}
-    [Documentation]     *model info*
-    ...     :IN: suite
-    ...     :OUT: new trace_info
-    Variable Should Exist    ${suite}
 
-    ${trace_info} =         Generate Trace Information
-    Set Suite Variable  ${trace_info}
+
+
+
+
+
 
 the algorithm inserts ${scenario_name}
-    [Documentation]    *model_info*
+    [Documentation]    *model info*
     ...    :IN: trace_info
     ...    :OUT: trace_info
     Variable Should Exist    ${trace_info}
@@ -133,7 +170,7 @@ the algorithm inserts ${scenario_name}
 
 
 the graph of type ${type} is generated
-    [Documentation]    *model_info*
+    [Documentation]    *model info*
     ...    :IN: trace_info
     ...    :OUT: trace_info
     Variable Should Exist    ${trace_info}
@@ -142,7 +179,7 @@ the graph of type ${type} is generated
     Set Suite Variable    ${graph_type}
 
 the scenario graph contains vertices ${vertices}
-    [Documentation]    *model_info*
+    [Documentation]    *model info*
     ...    :IN: None
     ...    :OUT: None
     Variable Should Exist    ${graph}

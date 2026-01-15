@@ -5,10 +5,10 @@ from robotmbt.visualise.visualiser import Visualiser
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 import os
 import networkx as nx
+from robotmbt.visualise.networkvisualiser import NetworkVisualiser, RawNodeInfo
 
 
 class ModelGenerator:
-    @keyword(name='Generate Trace Information')  # type:ignore
     @keyword(name='Generate Trace Information')  # type:ignore
     def generate_trace_information(self) -> TraceInfo:
         return TraceInfo()
@@ -43,9 +43,13 @@ class ModelGenerator:
 
         return trace_info
 
-    @keyword(name='Generate Graph')
+    @keyword(name='Generate Graph')  # type:ignore
     def generate_graph(self, trace_info: TraceInfo, graph_type: str) -> AbstractGraph:
         return Visualiser(graph_type=graph_type, trace_info=trace_info)._get_graph()
+
+    @keyword(name="Generate Network Graph")
+    def generate_networkgraph(self, graph: AbstractGraph) -> NetworkVisualiser:
+        return NetworkVisualiser(graph=graph, suite_name="", seed="")
 
     @keyword(name='Export Graph')  # type:ignore
     def export_graph(self, suite: str, trace_info: TraceInfo) -> str:
@@ -55,74 +59,108 @@ class ModelGenerator:
     def import_graph(self, filepath: str) -> TraceInfo:
         with open(filepath, 'r') as f:
             string = f.read()
-            decoded_instance = jsonpickle.decode(string)
+            decoded_instance: TraceInfo = jsonpickle.decode(string)  # type: ignore
         visualiser = Visualiser('state', trace_info=decoded_instance)
         return visualiser.trace_info
 
     @keyword(name='Check File Exists')  # type:ignore
-    def check_file_exists(self, filepath: str) -> str:
-        '''
-        Checks if file exists
-
-        Returns string for .resource error message in case values are not equal
-        Expected != result
-        '''
-
-        return 'file exists' if os.path.exists(filepath) else 'file does not exist'
+    def check_file_exists(self, filepath: str) -> bool:
+        return os.path.exists(filepath)
 
     @keyword(name='Compare Trace Info')  # type:ignore
-    def compare_trace_info(self, t1: TraceInfo, t2: TraceInfo) -> str:
-        '''
-        Checks if current trace and all traces of t1 and t2 are equal.
-
-        Returns string for .resource error message in case values are not equal
-        Expected != result
-        '''
-        succes = 'imported model equals exported model'
-        fail = 'imported models differs from exported model'
-        return succes if repr(t1) == repr(t2) else fail
+    def compare_trace_info(self, t1: TraceInfo, t2: TraceInfo) -> bool:
+        return repr(t1) == repr(t2)
 
     @keyword(name='Delete File')  # type:ignore
     def delete_file(self, filepath: str):
         os.remove(filepath)
 
-    @keyword(name='Get Graph')  # type:ignore
-    def get_graph(self, trace_info: TraceInfo, graph_type: str) -> AbstractGraph:
-        return Visualiser(graph_type=graph_type, trace_info=trace_info)._get_graph()
-    
     @keyword(name='Graph Contains No Text')  # type:ignore
     def graph_contains_no_text(self, graph: AbstractGraph, label: str) -> str:
         return f"Graph contains {label}" if label in graph.networkx.nodes() else f"Graph does not contain {label}"
-    
-    @keyword(name='Graph Contains With Text')  # type:ignore
-    def graph_contains_with_text(self, graph: AbstractGraph, scenario: str, text: str) -> str:  
-        attr = nx.get_node_attributes(graph.networkx, 'label')
-        (_, state_info) = self.__convert_to_state_info(scenario, text)
-        parts = state_info.properties[text.split(":")[0]]
-        for _, label in attr.items():          
-            if scenario in label:
+
+    @keyword(name='Graph Contains Vertex With Text')  # type:ignore
+    def graph_contains_vertex_with_text(self, graph: AbstractGraph, title: str, text: str | None = None) -> str | None:
+        """
+        Returns the label of the complete node or None if it doesn't exist
+        """
+        ATTRIBUTE = "label"
+        attr = nx.get_node_attributes(graph.networkx, ATTRIBUTE)
+
+        (_, state_info) = self.__convert_to_state_info(title, text)
+        parts = state_info.properties[text.split(":")[0]] \
+            if text is not None else []
+
+        for nodename, label in attr.items():
+            if title in label:
+                if text is None:
+                    # we sanitise because newlines in text go badly with eval() in Robot framework
+                    return nodename
+
                 count = 0
                 for s in parts:
                     if f"{s}={parts[s]}" in label:
                         count += 1
                 if count == len(parts):
-                    return "True"
-    
-        return "False"
-
-    @keyword(name='Scenario Graph Contains Vertices')
-    def scen_graph_contains_vertices(self, graph: AbstractGraph, vertices_str: str) -> str | None:
-        """
-        Returns error msg if not satisfied, else None
-        """
-
-        vertices = [v.strip() for v in vertices_str.split(",")]
-
-        for vertex_name in vertices:
-            if vertex_name not in graph.networkx.nodes:
-                return f"Vertex {vertex_name} is not in the graph nodes: {graph.networkx.nodes}"
+                    # we sanitise because newlines in text go badly with eval() in Robot framework
+                    return nodename
 
         return None
+
+    @keyword(name="Vertices Are Connected")  # type:ignore
+    def vertices_connected(self, graph: AbstractGraph, node_key1: str | None, node_key2: str | None) -> bool:
+        if node_key1 is None or node_key2 is None:
+            return False
+        return graph.networkx.has_edge(node_key1, node_key2)
+
+    @keyword(name="Get Vertex Y Position")  # type:ignore
+    def get_y(self, graph: AbstractGraph, network_vis: NetworkVisualiser, node_title: str) -> int | None:
+        id: str | None = self.graph_contains_vertex_with_text(graph, node_title, text=None)
+        if id is None:
+            return None
+
+        try:
+            raw_node_info: RawNodeInfo | None = network_vis.raw_node_info[id]
+            return raw_node_info.y
+        except KeyError:
+            return None
+
+    @keyword(name='Graph Contains Vertices')  # type:ignore
+    def scen_graph_contains_vertices(self, graph: AbstractGraph, vertices_str: str) -> bool | str:
+        attr: dict[str, str] = nx.get_node_attributes(graph.networkx, "label")
+
+        vertices = vertices_str.split(" ")
+        for i in range(len(vertices)):
+            v = vertices[i]
+            if not v.startswith("'") or not v.endswith("'"):
+                return "vertices string was not properly formatted. Format: "'v1' 'v2' 'v3' 'v4'""
+            vertices[i] = vertices[i][1:-1]  # strip away quotes
+
+        for vname in vertices:
+            found = False
+            for _, label in attr.items():
+                if label.startswith(vname):
+                    found = True
+                    break
+
+            if not found:
+                return False
+
+        return True
+
+    @keyword(name='Backtrack')  # type:ignore
+    def backtrack(self, trace_info: TraceInfo, steps: int) -> TraceInfo:
+        trace_info.pushed = True
+        trace_info._pop(steps)
+        return trace_info
+
+    @keyword(name='Get Length Current Trace')  # type:ignore
+    def get_length_current_trace(self, trace_info: TraceInfo) -> int:
+        return len(trace_info.current_trace)
+
+    @keyword(name='Get Length All Traces')  # type:ignore
+    def get_length_all_traces(self, trace_info: TraceInfo) -> int:
+        return len(trace_info.all_traces)
 
     # ============= #
     # == HELPERS == #

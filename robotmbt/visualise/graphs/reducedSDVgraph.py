@@ -42,16 +42,16 @@ class ReducedSDVGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, str]]], N
         # TODO make generated label more obvious to be equivalence class
         nodes = self.networkx.nodes
 
-        new_networkx = networkx.DiGraph()
+        new_networkx: networkx.DiGraph = networkx.DiGraph()
 
         for node_id in self.networkx.nodes:
-            new_id = self._frozenset_id_to_str(node_id)
+            new_id: tuple[str, ...] = tuple(sorted(node_id))
             new_networkx.add_node(new_id)
             new_networkx.nodes[new_id]['label'] = self.networkx.nodes[node_id]['label']
 
         for (from_id, to_id) in self.networkx.edges:
-            new_from_id = self._frozenset_id_to_str(from_id)
-            new_to_id = self._frozenset_id_to_str(to_id)
+            new_from_id: tuple[str, ...] = tuple(sorted(from_id))
+            new_to_id: tuple[str, ...] = tuple(sorted(to_id))
             new_networkx.add_edge(new_from_id, new_to_id)
             new_networkx.edges[(new_from_id, new_to_id)]['label'] = self.networkx.edges[(from_id, to_id)]['label']
 
@@ -59,14 +59,10 @@ class ReducedSDVGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, str]]], N
             current_node = self.final_trace[i]
             for new_node in nodes:
                 if current_node in new_node:
-                    self.final_trace[i] = self._frozenset_id_to_str(new_node)
+                    self.final_trace[i] = tuple(sorted(new_node))
 
         self.networkx = new_networkx
-        self.start_node = self._frozenset_id_to_str(frozenset(['start']))
-
-    @staticmethod
-    def _frozenset_id_to_str(frozen: frozenset[str]) -> str:
-        return str(sorted(frozen))
+        self.start_node: tuple[str, ...] = tuple(['start'])
 
     @staticmethod
     def select_node_info(pairs: list[tuple[ScenarioInfo, StateInfo]], index: int) \

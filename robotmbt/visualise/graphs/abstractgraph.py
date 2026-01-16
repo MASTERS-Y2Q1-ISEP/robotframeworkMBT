@@ -12,7 +12,7 @@ EdgeInfo = TypeVar('EdgeInfo')
 class AbstractGraph(ABC, Generic[NodeInfo, EdgeInfo]):
     def __init__(self, info: TraceInfo):
         """
-        Note that networkx's ids have to be of a serializable type after construction.
+        Note that networkx's ids have to be of a serializable and hashable type after construction.
         """
         # The underlying storage - a NetworkX DiGraph
         self.networkx: nx.DiGraph = nx.DiGraph()

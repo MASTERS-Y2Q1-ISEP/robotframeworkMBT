@@ -5,19 +5,18 @@ Library           Collections
 
 
 *** Keywords ***
-test suite ${suite}
+test suite ${suite} has trace info ${trace}
     [Documentation]     *model info*
-    ...     :IN: new trace_info | trace_info.current_trace=0 | trace_info.all_traces=0
+    ...     :IN: new trace_info | trace_info.current_trace=0 | trace_info.all_traces=0 | trace_info.name = ${trace}
     ...     :OUT: None
     ${trace_info} =     Generate Trace Information
     Set Suite Variable  ${trace_info}
 
-test suite ${suite} has trace info ${trace}
-    [Documentation]     *model info*
-    ...     :IN: new trace_info | trace_info.current_trace=0 | trace_info.all_traces=0
-    ...     :OUT: None
-    ${trace_info} =     Generate Trace Information
-    Set Suite Variable  ${trace_info}
+trace info ${trace}
+        [Documentation]     *model info*
+    ...     :IN: trace_info.name == ${trace}
+    ...     :OUT: trace_info.name == ${trace}
+    No operation
 
 the algorithm inserts '${scenario_name}' with state "${state_str}"
     [Documentation]    *model info*
@@ -25,12 +24,6 @@ the algorithm inserts '${scenario_name}' with state "${state_str}"
     ...    :OUT: trace_info.current_trace+=1
     Variable Should Exist    ${trace_info}
     ${trace_info} =    The Algorithm Inserts    ${trace_info}    ${scenario_name}    ${state_str}
-
-test suite ${suite} has a trace with ${n} steps
-    [Documentation]    *model info*
-    ...    :IN: trace_info.current_trace==${n}
-    ...    :OUT: trace_info.current_trace==${n}
-    No operation
 
 test suite ${suite} has ${n} steps in its current trace 
     [Documentation]    *model info*
@@ -143,10 +136,10 @@ vertex '${start_vertex}' is placed above '${end_vertex}'
     Run Keyword If    ${result1} < ${result2}
     ...    Fail    Vertex '${start_vertex}' is below '${end_vertex}'
 
-the algorithm backtracks by ${n} step
+the algorithm backtracks by ${n} step(s)
     [Documentation]    *model info*
-    ...    :IN: trace_info.current_trace
-    ...    :OUT: trace_info.current_trace | trace_info.all_traces+=1
+    ...    :IN: trace_info.current_trace >= ${n}
+    ...    :OUT: trace_info.current_trace-=${n} | trace_info.all_traces+=1
     Variable Should Exist    ${trace_info}
 
     ${a} =      Get Length Current Trace        ${trace_info}

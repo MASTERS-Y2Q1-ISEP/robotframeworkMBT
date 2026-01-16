@@ -5,7 +5,7 @@ from robotmbt.visualise.visualiser import Visualiser
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 import os
 import networkx as nx
-from robotmbt.visualise.networkvisualiser import NetworkVisualiser, RawNodeInfo
+from robotmbt.visualise.networkvisualiser import NetworkVisualiser, Node
 
 
 class ModelGenerator:
@@ -120,8 +120,8 @@ class ModelGenerator:
             return None
 
         try:
-            raw_node_info: RawNodeInfo | None = network_vis.raw_node_info[id]
-            return raw_node_info.y
+            node: Node | None = network_vis.node_dict[id]
+            return node.y
         except KeyError:
             return None
 

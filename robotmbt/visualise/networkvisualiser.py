@@ -38,16 +38,6 @@ MAJOR_FONT_SIZE: int = 16
 MINOR_FONT_SIZE: int = 8
 
 
-class RawNodeInfo:
-    def __init__(self, id: tuple[str, ...] | str, label: str, x: int, y: int, w: float, h: float):
-        self.id = id
-        self.label = label
-        self.x = x
-        self.y = y
-        self.w = w
-        self.h = h
-
-
 class Node:
     """
     Contains the information we need to add a node to the graph.
@@ -91,12 +81,15 @@ class NetworkVisualiser:
 
         # Create Sugiyama layout
         nodes, edges = self._create_layout()
+        self.node_dict: dict[str, Node] = {}
+        for node in nodes:
+            self.node_dict[node.node_id] = node
 
         # Keep track of arrows in the graph for scaling
         self.arrows = []
 
         # Add the nodes to the graph
-        self.raw_node_info: dict[str, RawNodeInfo] = self._add_nodes(nodes)
+        self._add_nodes(nodes)
 
         # Add the edges to the graph
         self._add_edges(nodes, edges)
@@ -113,7 +106,7 @@ class NetworkVisualiser:
         """
         return file_html(self.plot, 'inline', "graph")
 
-    def _add_nodes(self, nodes: list[Node]) -> dict[str, RawNodeInfo]:
+    def _add_nodes(self, nodes: list[Node]):
         """
         Add the nodes to the graph in the form of Rect and Text glyphs.
         """
@@ -124,10 +117,8 @@ class NetworkVisualiser:
             {'id': [], 'x': [], 'y': [], 'label': []})
 
         # Add all nodes to the column data sources
-        raw_node_info: dict[str, RawNodeInfo] = {}
         for node in nodes:
-            raw_node_info[node.node_id] = \
-                _add_node_to_sources(node, self.final_trace, node_source, node_label_source)
+            _add_node_to_sources(node, self.final_trace, node_source, node_label_source)
 
         # Add the glyphs for nodes and their labels
         node_glyph = Rect(x='x', y='y', width='w', height='h', fill_color='color')
@@ -137,8 +128,6 @@ class NetworkVisualiser:
                                 text_font_size=f'{MAJOR_FONT_SIZE}pt', text_font=value("Courier New"))
         node_label_glyph.tags = [f"scalable_text{MAJOR_FONT_SIZE}"]
         self.plot.add_glyph(node_label_source, node_label_glyph)
-
-        return raw_node_info
 
     def _add_edges(self, nodes: list[Node], edges: list[Edge]):
         """
@@ -546,7 +535,7 @@ def _add_self_loop_to_sources(nodes: list[Node], edge: Edge, in_final_trace: boo
 
 
 def _add_node_to_sources(node: Node, final_trace: list[str], node_source: ColumnDataSource,
-                         node_label_source: ColumnDataSource) -> RawNodeInfo:
+                         node_label_source: ColumnDataSource):
     """
     Add a node to the ColumnDataSources.
     """
@@ -562,16 +551,6 @@ def _add_node_to_sources(node: Node, final_trace: list[str], node_source: Column
     node_label_source.data['x'].append(node.x - node.width / 2 + HORIZONTAL_PADDING_WITHIN_NODES)
     node_label_source.data['y'].append(-node.y)
     node_label_source.data['label'].append(node.label)
-
-    return RawNodeInfo(
-        id=node.node_id,
-        label=node.label,
-        x=node.x,
-        y=node.y,
-        w=node.width,
-        h=node.height
-    )
-
 
 def _calculate_dimensions(label: str) -> tuple[float, float]:
     """

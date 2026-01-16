@@ -38,16 +38,6 @@ MAJOR_FONT_SIZE: int = 16
 MINOR_FONT_SIZE: int = 8
 
 
-class RawNodeInfo:
-    def __init__(self, id: tuple[str, ...] | str, label: str, x: int, y: int, w: float, h: float):
-        self.id = id
-        self.label = label
-        self.x = x
-        self.y = y
-        self.w = w
-        self.h = h
-
-
 class Node:
     """
     Contains the information we need to add a node to the graph.
@@ -91,12 +81,15 @@ class NetworkVisualiser:
 
         # Create Sugiyama layout
         nodes, edges = self._create_layout()
+        self.node_dict: dict[str, Node] = {}
+        for node in nodes:
+            self.node_dict[node.node_id] = node
 
         # Keep track of arrows in the graph for scaling
         self.arrows = []
 
         # Add the nodes to the graph
-        self.raw_node_info: dict[str, RawNodeInfo] = self._add_nodes(nodes)
+        self._add_nodes(nodes)
 
         # Add the edges to the graph
         self._add_edges(nodes, edges)
@@ -113,7 +106,7 @@ class NetworkVisualiser:
         """
         return file_html(self.plot, 'inline', "graph")
 
-    def _add_nodes(self, nodes: list[Node]) -> dict[str, RawNodeInfo]:
+    def _add_nodes(self, nodes: list[Node]):
         """
         Add the nodes to the graph in the form of Rect and Text glyphs.
         """
@@ -124,10 +117,8 @@ class NetworkVisualiser:
             {'id': [], 'x': [], 'y': [], 'label': []})
 
         # Add all nodes to the column data sources
-        raw_node_info: dict[str, RawNodeInfo] = {}
         for node in nodes:
-            raw_node_info[node.node_id] = \
-                _add_node_to_sources(node, self.final_trace, node_source, node_label_source)
+            _add_node_to_sources(node, self.final_trace, node_source, node_label_source)
 
         # Add the glyphs for nodes and their labels
         node_glyph = Rect(x='x', y='y', width='w', height='h', fill_color='color')
@@ -137,8 +128,6 @@ class NetworkVisualiser:
                                 text_font_size=f'{MAJOR_FONT_SIZE}pt', text_font=value("Courier New"))
         node_label_glyph.tags = [f"scalable_text{MAJOR_FONT_SIZE}"]
         self.plot.add_glyph(node_label_source, node_label_glyph)
-
-        return raw_node_info
 
     def _add_edges(self, nodes: list[Node], edges: list[Edge]):
         """
@@ -460,16 +449,6 @@ def _add_edge_to_sources(nodes: list[Node], edge: Edge, final_trace: list[str], 
     start_x, start_y = 0, 0
     end_x, end_y = 0, 0
 
-    if isinstance(edge.from_node, frozenset):
-        from_id = tuple(sorted(edge.from_node))
-    else:
-        from_id = edge.from_node
-
-    if isinstance(edge.to_node, frozenset):
-        to_id = tuple(sorted(edge.to_node))
-    else:
-        to_id = edge.to_node
-
     # Add edges going through the calculated points
     for i in range(len(edge.points) - 1):
         start_x, start_y = edge.points[i]
@@ -491,8 +470,8 @@ def _add_edge_to_sources(nodes: list[Node], edge: Edge, final_trace: list[str], 
 
         if i < len(edge.points) - 2:
             # Middle part of edge without arrow
-            edge_part_source.data['from'].append(from_id)
-            edge_part_source.data['to'].append(to_id)
+            edge_part_source.data['from'].append(edge.from_node)
+            edge_part_source.data['to'].append(edge.to_node)
             edge_part_source.data['start_x'].append(start_x)
             edge_part_source.data['start_y'].append(-start_y)
             edge_part_source.data['end_x'].append(end_x)
@@ -500,8 +479,8 @@ def _add_edge_to_sources(nodes: list[Node], edge: Edge, final_trace: list[str], 
             edge_part_source.data['color'].append(FINAL_TRACE_EDGE_COLOR if in_final_trace else OTHER_EDGE_COLOR)
         else:
             # End of edge with arrow
-            edge_arrow_source.data['from'].append(from_id)
-            edge_arrow_source.data['to'].append(to_id)
+            edge_arrow_source.data['from'].append(edge.from_node)
+            edge_arrow_source.data['to'].append(edge.to_node)
             edge_arrow_source.data['start_x'].append(start_x)
             edge_arrow_source.data['start_y'].append(-start_y)
             edge_arrow_source.data['end_x'].append(end_x)
@@ -509,8 +488,8 @@ def _add_edge_to_sources(nodes: list[Node], edge: Edge, final_trace: list[str], 
             edge_arrow_source.data['color'].append(FINAL_TRACE_EDGE_COLOR if in_final_trace else OTHER_EDGE_COLOR)
 
     # Add the label
-    edge_label_source.data['from'].append(from_id)
-    edge_label_source.data['to'].append(to_id)
+    edge_label_source.data['from'].append(edge.from_node)
+    edge_label_source.data['to'].append(edge.to_node)
     edge_label_source.data['x'].append((start_x + end_x) / 2)
     edge_label_source.data['y'].append(- (start_y + end_y) / 2)
     edge_label_source.data['label'].append(edge.label)
@@ -523,21 +502,11 @@ def _add_self_loop_to_sources(nodes: list[Node], edge: Edge, in_final_trace: boo
     """
     connection = _get_connection_coordinates(nodes, edge.from_node)
 
-    if isinstance(edge.from_node, frozenset):
-        from_id = tuple(sorted(edge.from_node))
-    else:
-        from_id = edge.from_node
-
-    if isinstance(edge.to_node, frozenset):
-        to_id = tuple(sorted(edge.to_node))
-    else:
-        to_id = edge.to_node
-
     right_x, right_y = connection[1]
 
     # Add the Bézier curve
-    edge_bezier_source.data['from'].append(from_id)
-    edge_bezier_source.data['to'].append(to_id)
+    edge_bezier_source.data['from'].append(edge.from_node)
+    edge_bezier_source.data['to'].append(edge.to_node)
     edge_bezier_source.data['start_x'].append(right_x)
     edge_bezier_source.data['start_y'].append(-right_y + 5)
     edge_bezier_source.data['end_x'].append(right_x)
@@ -549,8 +518,8 @@ def _add_self_loop_to_sources(nodes: list[Node], edge: Edge, in_final_trace: boo
     edge_bezier_source.data['color'].append(FINAL_TRACE_EDGE_COLOR if in_final_trace else OTHER_EDGE_COLOR)
 
     # Add the arrow
-    edge_arrow_source.data['from'].append(from_id)
-    edge_arrow_source.data['to'].append(to_id)
+    edge_arrow_source.data['from'].append(edge.from_node)
+    edge_arrow_source.data['to'].append(edge.to_node)
     edge_arrow_source.data['start_x'].append(right_x + 0.001)
     edge_arrow_source.data['start_y'].append(-right_y - 5.001)
     edge_arrow_source.data['end_x'].append(right_x)
@@ -558,25 +527,19 @@ def _add_self_loop_to_sources(nodes: list[Node], edge: Edge, in_final_trace: boo
     edge_arrow_source.data['color'].append(FINAL_TRACE_EDGE_COLOR if in_final_trace else OTHER_EDGE_COLOR)
 
     # Add the label
-    edge_label_source.data['from'].append(from_id)
-    edge_label_source.data['to'].append(to_id)
+    edge_label_source.data['from'].append(edge.from_node)
+    edge_label_source.data['to'].append(edge.to_node)
     edge_label_source.data['x'].append(right_x + 25)
     edge_label_source.data['y'].append(-right_y)
     edge_label_source.data['label'].append(edge.label)
 
 
 def _add_node_to_sources(node: Node, final_trace: list[str], node_source: ColumnDataSource,
-                         node_label_source: ColumnDataSource) -> RawNodeInfo:
+                         node_label_source: ColumnDataSource):
     """
     Add a node to the ColumnDataSources.
     """
-    node_id: str | tuple[str, ...]
-    if isinstance(node.node_id, frozenset):
-        node_id = tuple(sorted(node.node_id))
-    else:
-        node_id = node.node_id
-
-    node_source.data['id'].append(node_id)
+    node_source.data['id'].append(node.node_id)
     node_source.data['x'].append(node.x)
     node_source.data['y'].append(-node.y)
     node_source.data['w'].append(node.width)
@@ -584,20 +547,10 @@ def _add_node_to_sources(node: Node, final_trace: list[str], node_source: Column
     node_source.data['color'].append(
         FINAL_TRACE_NODE_COLOR if node.node_id in final_trace else OTHER_NODE_COLOR)
 
-    node_label_source.data['id'].append(node_id)
+    node_label_source.data['id'].append(node.node_id)
     node_label_source.data['x'].append(node.x - node.width / 2 + HORIZONTAL_PADDING_WITHIN_NODES)
     node_label_source.data['y'].append(-node.y)
     node_label_source.data['label'].append(node.label)
-
-    return RawNodeInfo(
-        id=node_id,
-        label=node.label,
-        x=node.x,
-        y=node.y,
-        w=node.width,
-        h=node.height
-    )
-
 
 def _calculate_dimensions(label: str) -> tuple[float, float]:
     """

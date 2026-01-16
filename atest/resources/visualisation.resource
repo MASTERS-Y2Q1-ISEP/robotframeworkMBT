@@ -61,8 +61,9 @@ graph ${name} contains vertex '${scenario}'
     ...    :OUT: graph.name=${name}
     Variable Should Exist    ${graph}
 
-    ${result} =     Graph Contains No Text        ${graph}      ${scenario}
-    Should be Equal     ${result}       Graph contains ${scenario}
+    ${result} =     Graph Contains Vertex With No Text        ${graph}      ${scenario}
+    Run Keyword If      ${result} == False
+    ...    Fail     Fail: Graph does not contain '${scenario}'
 
 graph ${name} contains vertex '${scenario}' with text "${text}"
     [Documentation]    *model info*
@@ -116,7 +117,7 @@ graph ${name} has vertices ${vertices_string}
     ...    :IN: graph.name=${name}
     ...    :OUT: graph.name=${name}
     Variable Should Exist    ${graph}
-    ${result} =    Graph Contains Vertices    ${graph}    ${vertices_string}
+    ${result} =    Graph Contains Vertices Starting With   ${graph}    ${vertices_string}
     Run Keyword If    ${result} != True
     ...    Fail    Graph did not contain all vertices ${vertices_string}
 
@@ -140,12 +141,12 @@ the algorithm backtracks by ${n} step
     Variable Should Exist    ${trace_info}
 
     ${a} =      Get Length Current Trace        ${trace_info}
-    ${b} =      Get Length All Traces        ${trace_info}
+    ${b} =      Get Number of Backtracked Traces        ${trace_info}
 
     ${trace_info} =     Backtrack       ${trace_info}       ${n}
 
     ${i} =      Get Length Current Trace        ${trace_info}
-    ${j} =      Get Length All Traces        ${trace_info}
+    ${j} =      Get Number of Backtracked Traces        ${trace_info}
 
     Run Keyword If      ${a} - ${n} != ${i}
     ...    Fail     Fail: Backtracking did not shorten current trace correctly

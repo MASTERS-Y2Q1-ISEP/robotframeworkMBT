@@ -22,6 +22,6 @@ Edge Scenario-Delta-Value graph
 Visual location of vertices scenario-delta-value
     Given test suite s has a trace with 2 steps
     When scenario-delta-value graph g is generated
-    Then graph g has vertices 'start' 'A1' 'A2'
+    Then graph g has vertices 'start', 'A1', 'A2'
     And vertex 'start' is placed above 'A1'
     And vertex 'A1' is placed above 'A2'

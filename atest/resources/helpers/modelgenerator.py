@@ -20,7 +20,7 @@ class ModelGenerator:
         "name: key=value key2=value2 ..."
         '''
 
-        (scen_info, state_info) = self.__convert_to_state_info(scenario_name, state_str)
+        (scen_info, state_info) = self.__convert_to_info_tuple(scenario_name, state_str)
         trace_info.update_trace(scen_info, state_info, trace_info.previous_length+1)
 
         return trace_info
@@ -36,7 +36,7 @@ class ModelGenerator:
         State should be of format
         "scenario: key=value"
         '''
-        (scen_info, state_info) = self.__convert_to_state_info(scenario_name, state_str)
+        (scen_info, state_info) = self.__convert_to_info_tuple(scenario_name, state_str)
 
         for trace in trace_info.all_traces:
             trace.append((scen_info, state_info))
@@ -75,9 +75,9 @@ class ModelGenerator:
     def delete_file(self, filepath: str):
         os.remove(filepath)
 
-    @keyword(name='Graph Contains No Text')  # type:ignore
-    def graph_contains_no_text(self, graph: AbstractGraph, label: str) -> str:
-        return f"Graph contains {label}" if label in graph.networkx.nodes() else f"Graph does not contain {label}"
+    @keyword(name='Graph Contains Vertex With No Text')  # type:ignore
+    def graph_contains_no_text(self, graph: AbstractGraph, label: str) -> bool:
+        return label in graph.networkx.nodes()
 
     @keyword(name='Graph Contains Vertex With Text')  # type:ignore
     def graph_contains_vertex_with_text(self, graph: AbstractGraph, title: str, text: str | None = None) -> str | None:
@@ -87,7 +87,7 @@ class ModelGenerator:
         ATTRIBUTE = "label"
         attr = nx.get_node_attributes(graph.networkx, ATTRIBUTE)
 
-        (_, state_info) = self.__convert_to_state_info(title, text)
+        (_, state_info) = self.__convert_to_info_tuple(title, text)
         parts = state_info.properties[text.split(":")[0]] \
             if text is not None else []
 
@@ -125,21 +125,18 @@ class ModelGenerator:
         except KeyError:
             return None
 
-    @keyword(name='Graph Contains Vertices')  # type:ignore
-    def scen_graph_contains_vertices(self, graph: AbstractGraph, vertices_str: str) -> bool | str:
+    @keyword(name='Graph Contains Vertices Starting With')  # type:ignore
+    def scen_graph_contains_vertices_starting_with(self, graph: AbstractGraph, vertices_str: str) -> bool | str:
+        '''
+        vertices_str should be of format "'vertex1', 'vertex2'" etc
+        '''
         attr: dict[str, str] = nx.get_node_attributes(graph.networkx, "label")
 
-        vertices = vertices_str.split(" ")
-        for i in range(len(vertices)):
-            v = vertices[i]
-            if not v.startswith("'") or not v.endswith("'"):
-                return "vertices string was not properly formatted. Format: "'v1' 'v2' 'v3' 'v4'""
-            vertices[i] = vertices[i][1:-1]  # strip away quotes
-
-        for vname in vertices:
+        vertices = vertices_str.split("'")
+        for i in range(len(vertices), 2):
             found = False
             for _, label in attr.items():
-                if label.startswith(vname):
+                if label.startswith(vertices[i]):
                     found = True
                     break
 
@@ -150,16 +147,16 @@ class ModelGenerator:
 
     @keyword(name='Backtrack')  # type:ignore
     def backtrack(self, trace_info: TraceInfo, steps: int) -> TraceInfo:
-        trace_info.pushed = True
-        trace_info._pop(steps)
+        scenario, state = trace_info.current_trace[-steps - 1]
+        trace_info.update_trace(scenario, state, len(trace_info.current_trace) - steps)
         return trace_info
 
     @keyword(name='Get Length Current Trace')  # type:ignore
     def get_length_current_trace(self, trace_info: TraceInfo) -> int:
         return len(trace_info.current_trace)
 
-    @keyword(name='Get Length All Traces')  # type:ignore
-    def get_length_all_traces(self, trace_info: TraceInfo) -> int:
+    @keyword(name='Get Number of Backtracked Traces')  # type:ignore
+    def get_number_of_backtracked_traces(self, trace_info: TraceInfo) -> int:
         return len(trace_info.all_traces)
 
     # ============= #
@@ -167,10 +164,10 @@ class ModelGenerator:
     # ============= #
 
     @staticmethod
-    def __convert_to_state_info(scenario_name: str, keyvaluestr: str | None) -> tuple[ScenarioInfo, StateInfo]:
+    def __convert_to_info_tuple(scenario_name: str, keyvaluestr: str | None) -> tuple[ScenarioInfo, StateInfo]:
         """
         Format:
-        "scenario1: key1=value1 key2=value2"
+        "domain1: key1=value1, key2=value2"
         """
         scenario_name = scenario_name.strip()
         if keyvaluestr is None:

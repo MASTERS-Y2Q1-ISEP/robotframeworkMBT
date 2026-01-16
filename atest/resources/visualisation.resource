@@ -127,8 +127,18 @@ vertex '${start_vertex}' is placed above '${end_vertex}'
     ...    :OUT: None
     Variable Should Exist    ${graph}
     Variable Should Exist    ${network_visualiser}
-    ${result1} =    Get Vertex Y position   ${graph}    ${network_visualiser}    ${start_vertex}
-    ${result2} =    Get Vertex Y position   ${graph}    ${network_visualiser}    ${end_vertex}
+    ${node1} =      Get NodeID      ${graph}    ${start_vertex}
+    
+    Run Keyword If    "${node1}" == "None"
+    ...    Fail    Vertex '${start_vertex}' does not exist
+
+    ${node2} =      Get NodeID      ${graph}    ${end_vertex}
+
+    Run Keyword If    "${node2}" == "None"
+    ...    Fail    Vertex '${end_vertex}' does not exist
+
+    ${result1} =    Get Vertex Y position   ${network_visualiser}    ${node1}
+    ${result2} =    Get Vertex Y position   ${network_visualiser}    ${node2}
     
     # higher y is lower.... yeah I know. Confusing.
     Run Keyword If    ${result1} > ${result2}

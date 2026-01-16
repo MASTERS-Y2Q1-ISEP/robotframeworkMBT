@@ -112,13 +112,13 @@ class ModelGenerator:
         if node_key1 is None or node_key2 is None:
             return False
         return graph.networkx.has_edge(node_key1, node_key2)
+    
+    @keyword(name="Get NodeID")  # type:ignore
+    def get_nodeid(self, graph: AbstractGraph, node_title:str) -> str | None:
+        return self.graph_contains_vertex_with_text(graph, node_title, text=None)
 
     @keyword(name="Get Vertex Y Position")  # type:ignore
-    def get_y(self, graph: AbstractGraph, network_vis: NetworkVisualiser, node_title: str) -> int | None:
-        id: str | None = self.graph_contains_vertex_with_text(graph, node_title, text=None)
-        if id is None:
-            return None
-
+    def get_y(self, network_vis: NetworkVisualiser, id: str) -> int | None:
         try:
             node: Node | None = network_vis.node_dict[id]
             return node.y

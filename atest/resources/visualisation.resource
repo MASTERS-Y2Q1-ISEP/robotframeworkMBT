@@ -140,8 +140,7 @@ vertex '${start_vertex}' is placed above '${end_vertex}'
     ${result1} =    Get Vertex Y position   ${network_visualiser}    ${node1}
     ${result2} =    Get Vertex Y position   ${network_visualiser}    ${node2}
     
-    # higher y is lower.... yeah I know. Confusing.
-    Run Keyword If    ${result1} > ${result2}
+    Run Keyword If    ${result1} < ${result2}
     ...    Fail    Vertex '${start_vertex}' is below '${end_vertex}'
 
 the algorithm backtracks by ${n} step

@@ -133,7 +133,7 @@ class ModelGenerator:
         attr: dict[str, str] = nx.get_node_attributes(graph.networkx, "label")
 
         vertices = vertices_str.split("'")
-        for i in range(len(vertices), 2):
+        for i in range(1, len(vertices), 2):
             found = False
             for _, label in attr.items():
                 if label.startswith(vertices[i]):

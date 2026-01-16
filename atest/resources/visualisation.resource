@@ -93,7 +93,7 @@ graph ${name} has an edge from '${start_title}' to '${end_title}'
     Run Keyword If    ${result} != True
     ...     Fail    Fail: Edges '${start_title}' and '${end_title}' exist in graph but are not connected!
 
-graph ${name} does not have an edge from ${vertex}'${start_title}' to ${vertex}'${end_title}'
+graph ${name} does not have an edge from '${start_title}' to '${end_title}'
     [Documentation]    *model_info*
     ...    :IN: graph.name=${name}
     ...    :OUT: graph.name=${name}

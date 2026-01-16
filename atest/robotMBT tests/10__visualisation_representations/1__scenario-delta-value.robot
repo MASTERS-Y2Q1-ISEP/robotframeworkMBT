@@ -13,8 +13,8 @@ Vertex Scenario-Delta-Value graph
 Edge Scenario-Delta-Value graph
     Given test suite s has a trace with 2 steps
     When scenario-delta-value graph g is generated
-    Then graph g has an edge from vertex 'start' to vertex 'A1'
-    And graph g has an edge from vertex 'A1' to 'A2'
+    Then graph g has an edge from 'start' to 'A1'
+    And graph g has an edge from 'A1' to 'A2'
     And graph g does not have an edge from 'start' to 'A2'
     And graph g does not have an edge from 'A2' to 'A1'
     And graph g does not have an edge from 'A2' to 'start'

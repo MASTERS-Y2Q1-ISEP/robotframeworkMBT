@@ -85,7 +85,7 @@ graph ${name} does not contain vertex '${scenario}' with text "${text}"
     Run Keyword If      "${result}" != "None"
     ...    Fail     Fail: Graph contains '${scenario}' with "${text}"
     
-graph ${name} has an edge from vertex '${start_title}' to ${vertex}'${end_title}'
+graph ${name} has an edge from '${start_title}' to '${end_title}'
     [Documentation]    *model_info*
     ...    :IN: graph.name=${name}
     ...    :OUT: graph.name=${name}

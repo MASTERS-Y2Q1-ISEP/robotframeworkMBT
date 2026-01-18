@@ -1,5 +1,32 @@
+import jsonpickle  # type: ignore
 from robot.api.deco import keyword  # type:ignore
+from robotmbt.visualise.models import TraceInfo, ScenarioInfo, StateInfo
+from robotmbt.visualise.visualiser import Visualiser
 import os
+import networkx as nx
+from robotmbt.visualise.networkvisualiser import NetworkVisualiser, Node
+
+visualisation_deps_present = True
+try:
+    import jsonpickle  # type: ignore
+    import networkx as nx
+    from robotmbt.visualise.models import TraceInfo, ScenarioInfo, StateInfo
+    from robotmbt.visualise.visualiser import Visualiser
+    from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
+    from robotmbt.visualise.networkvisualiser import NetworkVisualiser, Node
+
+except ImportError:
+    visualisation_deps_present = False
+
+    jsonpickle = None
+    nx = None
+    TraceInfo = None
+    ScenarioInfo = None
+    StateInfo = None
+    Visualiser = None
+    AbstractGraph = None
+    NetworkVisualiser = None
+    Node = None
 
 visualisation_deps_present = True
 try:

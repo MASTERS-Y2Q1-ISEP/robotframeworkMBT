@@ -54,7 +54,8 @@ graph ${name} contains vertex '${scenario}'
     ...    :OUT: graph.name=${name}
     Variable Should Exist    ${graph}
 
-    ${result} =     Graph Contains Vertex With No Text        ${graph}      ${scenario}
+    ${id} =     Get NodeID      ${graph}        ${scenario}
+    ${result} =     Graph Contains Vertex With No Text        ${graph}      ${id}
     Run Keyword If      ${result} == False
     ...    Fail     Fail: Graph does not contain '${scenario}'
 
@@ -67,6 +68,17 @@ graph ${name} contains vertex '${scenario}' with text "${text}"
     ${result} =     Graph Contains Vertex With Text        ${graph}      ${scenario}       ${text}
     Run Keyword If      "${result}" == "None"
     ...    Fail     Fail: Graph does not contain '${scenario}' with "${text}"
+
+graph ${name} does not contain vertex '${scenario}'
+    [Documentation]    *model info*
+    ...    :IN: graph.name=${name}
+    ...    :OUT: graph.name=${name}
+    Variable Should Exist    ${graph}
+
+    ${id} =     Get NodeID      ${graph}        ${scenario}
+    ${result} =     Graph Contains Vertex With No Text        ${graph}      ${id}
+    Run Keyword If      "${result}" != "None"
+    ...    Fail     Fail: Graph contains '${scenario}'"
 
 graph ${name} does not contain vertex '${scenario}' with text "${text}"
     [Documentation]    *model info*

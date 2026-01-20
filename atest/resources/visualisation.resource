@@ -11,7 +11,7 @@ check requirements
     ...    :OUT: None
     ${result} =    Requirements Present
     Run Keyword If    ${result} == ${False}
-    ...    Fail    Visualisation requirements not installed. Please read the README for information on how to do this.
+    ...    Skip    Visualisation requirements not installed. Please read the README for information on how to do this.    
 
 test suite ${suite} has trace info ${trace}
     [Documentation]     *model info*

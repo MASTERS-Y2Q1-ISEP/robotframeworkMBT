@@ -1,11 +1,11 @@
 *** Settings ***
 Documentation     
-Suite Setup       do test setup
+Suite Setup       Enter test suite
 Resource          ../../resources/visualisation.resource
 Library           robotmbt
 
 *** Keywords ***
-do test setup
+Enter test suite
     check requirements
     Treat this test suite Model-based
 

@@ -6,7 +6,7 @@ Library           Collections
 
 *** Keywords ***
 check requirements
-    [Documentation]    *model_info*
+    [Documentation]    *model info*
     ...    :IN: None
     ...    :OUT: None
     ${result} =    Requirements Present

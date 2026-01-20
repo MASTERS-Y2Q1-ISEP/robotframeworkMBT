@@ -265,6 +265,9 @@ try:
             return parts
 
 except ImportError:
+    # we cannot really get around this one, just hope that the user has at least installed Robot.
+    from robot.api.deco import keyword  # type:ignore
+
     class ModelGenerator:
         @keyword(name='Requirements Present')  # type: ignore
         def check_requirements(self) -> bool:

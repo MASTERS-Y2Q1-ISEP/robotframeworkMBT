@@ -2,12 +2,12 @@
 Documentation     Export and import a test suite from and to JSON
 ...               and check that the imported suite equals the 
 ...               exported suite.
-Suite Setup       do test setup
+Suite Setup       Enter test suite
 Resource          ../../resources/visualisation.resource
 Library           robotmbt
 
 *** Keywords ***
-do test setup
+Enter test suite
     check requirements
     Treat this test suite Model-based
 

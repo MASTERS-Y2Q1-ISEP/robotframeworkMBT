@@ -7,5 +7,5 @@ Library           robotmbt    processor=flatten
 
 *** Keywords ***
 Enter test suite
-    check requirements
+    Check requirements
     Treat this test suite Model-based

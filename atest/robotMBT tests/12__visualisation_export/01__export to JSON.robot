@@ -8,7 +8,7 @@ Library           robotmbt
 
 *** Keywords ***
 Enter test suite
-    check requirements
+    Check requirements
     Treat this test suite Model-based
 
 *** Test Cases ***

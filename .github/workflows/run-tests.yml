@@ -24,17 +24,17 @@ jobs:
       with:
         python-version: "3.10"
     
-    - name: Install dependencies (without extra visualisation deps)
+    - name: Install dependencies (without extra visualisation dependencies)
       run: |
         python -m pip install --upgrade pip           # upgrade pip to latest version
-        pip install .                                 # no additional [visualization] deps
+        pip install .                                 # no additional [visualization] dependencies
     
-    - name: Run tests (without visualisation deps)
+    - name: Run tests (without visualisation dependencies)
       run:  python run_tests.py
     
     - name: Install extra visualisation dependencies
-      run:  pip install ".[visualization]"            # extra [visualization] deps in pyproject.toml
+      run:  pip install ".[visualization]"            # extra [visualization] dependencies in pyproject.toml
     
-    - name: Run Tests (with visualisation deps)
+    - name: Run Tests (with visualisation dependencies)
       run:  python run_tests.py
 

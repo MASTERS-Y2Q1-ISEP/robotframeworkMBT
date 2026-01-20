@@ -5,7 +5,7 @@ Library           Collections
 
 
 *** Keywords ***
-check requirements
+Check requirements
     [Documentation]    *model info*
     ...    :IN: None
     ...    :OUT: None

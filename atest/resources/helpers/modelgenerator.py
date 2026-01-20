@@ -1,7 +1,7 @@
 from robot.api.deco import keyword  # type:ignore
 import os
 
-vis_deps_present = True
+visualisation_deps_present = True
 try:
     import jsonpickle  # type: ignore
     import networkx as nx
@@ -11,7 +11,7 @@ try:
     from robotmbt.visualise.networkvisualiser import NetworkVisualiser, Node
 
 except ImportError:
-    vis_deps_present = False
+    visualisation_deps_present = False
 
     jsonpickle = None
     nx = None
@@ -27,7 +27,7 @@ except ImportError:
 class ModelGenerator:
     @keyword(name='Requirements Present')  # type: ignore
     def check_requirements(self) -> bool:
-        return vis_deps_present
+        return visualisation_deps_present
 
     @keyword(name='Generate Trace Information')  # type:ignore
     def generate_trace_information(self) -> TraceInfo:

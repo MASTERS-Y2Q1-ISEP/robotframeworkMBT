@@ -205,6 +205,10 @@ class NetworkVisualiser:
         g = GGraph(vertices, edges)
 
         sugiyama = SugiyamaLayout(g.C[0])
+        sugiyama.xspace = 10
+        sugiyama.yspace = 10
+        sugiyama.dw = 1
+        sugiyama.dy = 1
         sugiyama.init_all(roots=[start], inverted_edges=flips)
         sugiyama.draw()
 

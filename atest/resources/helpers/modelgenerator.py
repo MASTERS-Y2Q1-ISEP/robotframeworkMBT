@@ -1,4 +1,3 @@
-import jsonpickle  # type: ignore
 from robot.api.deco import keyword  # type:ignore
 from robotmbt.visualise.models import TraceInfo, ScenarioInfo, StateInfo
 from robotmbt.visualise.visualiser import Visualiser

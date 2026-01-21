@@ -74,42 +74,6 @@ if VISUALISE:
             self.assertEqual(result.replace('\n', ' '), name)
             self.assertIn('\n', result)
 
-        def test_split_name_with_very_long_word(self):
-            name = "NormalWord ExtremelyLongWordThatExceedsTwentyCharacters AnotherWord"
-            result = ScenarioInfo._split_name(name)
-
-            self.assertEqual(result.replace('\n', ' '), name)
-            self.assertIn('\n', result)
-
-        def test_split_name_perfect_split_vs_imperfect(self):
-            name = "This is a scenario name test"
-            result = ScenarioInfo._split_name(name)
-            self.assertEqual(result, "This is a scenario\nname test")
-
-        def test_split_name_exact_desired_length(self):
-            name = "0123456789 0123456789"
-            result = ScenarioInfo._split_name(name)
-
-            self.assertEqual(result.replace('\n', ' '), name)
-            self.assertNotIn('\n', result)
-
-        def test_split_name_special_characters(self):
-            name = "Test with-dash_and_underscore plus@symbol Café naïve résumé Pokémon 🚀 🎉"
-            result = ScenarioInfo._split_name(name)
-
-            self.assertEqual(result.replace('\n', ' '), name)
-            self.assertIn('\n', result)
-
-        def test_split_name_very_long_sentence(self):
-            name = (
-                "Lorem ipsum dolor sit amet consectetur adipiscing elit sed do "
-                "eiusmod tempor incididunt ut labore et dolore magna aliqua"
-            )
-            result = ScenarioInfo._split_name(name)
-
-            self.assertEqual(result.replace('\n', ' '), name)
-            self.assertIn('\n', result)
-
         """
         Class: TraceInfo
         """

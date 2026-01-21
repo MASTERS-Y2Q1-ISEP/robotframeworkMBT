@@ -25,7 +25,7 @@ class Visualiser:
         # just calls __init__, but without having underscores etc.
         return cls(graph_type)
 
-    def __init__(self, graph_type: str, suite_name: str = "", export: bool = False,
+    def __init__(self, graph_type: str, suite_name: str = "", export: str = '',
                  trace_info: TraceInfo = None):
         if graph_type != 'scenario' and graph_type != 'state' and graph_type != 'scenario-state' \
                 and graph_type != 'scenario-delta-value' and graph_type != 'reduced-sdv' \
@@ -88,7 +88,7 @@ class Visualiser:
 
     def generate_visualisation(self) -> str:
         if self.export:
-            self.trace_info.export_graph(self.suite_name)
+            self.trace_info.export_graph(self.suite_name, self.export)
 
         graph: AbstractGraph = self._get_graph()
 

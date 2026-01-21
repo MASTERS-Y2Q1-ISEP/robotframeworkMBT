@@ -110,7 +110,7 @@ class SuiteProcessors:
         traceinfo = traceinfo.import_graph(from_json)
         self.visualiser = Visualiser(graph, suite_name, trace_info=traceinfo)
 
-    def _run_test_suite(self, seed: Any, graph: str, suite_name: str, to_json: str):
+    def _run_test_suite(self, seed: Any, graph: str, suite_name: str, export_dir: str):
         for id, scenario in enumerate(self.flat_suite.scenarios, start=1):
             scenario.src_id = id
         self.scenarios = self.flat_suite.scenarios[:]
@@ -122,14 +122,14 @@ class SuiteProcessors:
         random.shuffle(self.shuffled)  # Keep a single shuffle for all TraceStates (non-essential)
 
         self.visualiser = None
-        if graph != '' and visualisation_deps_present:
+        if visualisation_deps_present:
             try:
-                self.visualiser = Visualiser(graph, suite_name, to_json)
+                self.visualiser = Visualiser(graph, suite_name, export_dir)
             except Exception as e:
                 self.visualiser = None
                 logger.warn(f'Could not initialise visualiser due to error!\n{e}')
 
-        elif graph != '' and not visualisation_deps_present:
+        elif (not graph or not export_dir) and not visualisation_deps_present:
             logger.warn(f'Visualisation {graph} requested, but required dependencies are not installed. '
                         'Refer to the README on how to install these dependencies. ')
 

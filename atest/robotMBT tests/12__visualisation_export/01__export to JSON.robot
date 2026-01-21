@@ -9,7 +9,7 @@ Library           robotmbt
 *** Keywords ***
 Enter test suite
     Check requirements
-    Treat this test suite Model-based
+    Treat this test suite Model-based   export_graph_data=json/
 
 *** Test Cases ***
 Setup

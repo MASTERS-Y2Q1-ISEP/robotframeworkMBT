@@ -88,18 +88,18 @@ class SuiteProcessors:
         return out_suite
 
     def process_test_suite(self, in_suite: Suite, *, seed: Any = 'new', graph: str = '',
-                           to_json: str = '', from_json: str = '') -> Suite:
+                           export_graph_data: str = '', import_graph_data: str = '') -> Suite:
         self.out_suite = Suite(in_suite.name)
         self.out_suite.filename = in_suite.filename
         self.out_suite.parent = in_suite.parent
         self._fail_on_step_errors(in_suite)
         self.flat_suite = self.flatten(in_suite)
 
-        if from_json != '':
-            self._load_graph(graph, in_suite.name, from_json)
+        if import_graph_data != '':
+            self._load_graph(graph, in_suite.name, import_graph_data)
 
         else:
-            self._run_test_suite(seed, graph, in_suite.name, to_json)
+            self._run_test_suite(seed, graph, in_suite.name, export_graph_data)
 
         self.__write_visualisation()
 

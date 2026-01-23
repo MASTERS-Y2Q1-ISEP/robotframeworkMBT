@@ -142,7 +142,8 @@ class NetworkVisualiser:
         edge_bezier_source: ColumnDataSource = ColumnDataSource(
             {'from': [], 'to': [], 'start_x': [], 'start_y': [], 'end_x': [], 'end_y': [], 'control1_x': [],
              'control1_y': [], 'control2_x': [], 'control2_y': [], 'color': [], 'display': []})
-        edge_label_source: ColumnDataSource = ColumnDataSource({'from': [], 'to': [], 'x': [], 'y': [], 'label': [], 'display': []})
+        edge_label_source: ColumnDataSource = ColumnDataSource(
+            {'from': [], 'to': [], 'x': [], 'y': [], 'label': [], 'display': []})
 
         for edge in edges:
             _add_edge_to_sources(nodes, edge, self.final_trace, edge_part_source, edge_arrow_source, edge_bezier_source,

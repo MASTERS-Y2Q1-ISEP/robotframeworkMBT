@@ -6,7 +6,7 @@ from robotmbt.visualise.graphs.scenariodeltavaluegraph import ScenarioDeltaValue
 from robotmbt.visualise.models import ScenarioInfo, StateInfo, TraceInfo
 
 
-class ReducedSDVGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, str]]], None, StateInfo]):
+class ReducedSDVGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, str]]], None]):
     """
     The reduced Scenario-delta-Value graph keeps track of both the scenarios and state updates encountered.
     It is produced by taking the Scenario-delta-Value graph and merging nodes that have the same Scenario associated,
@@ -76,16 +76,12 @@ class ReducedSDVGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, str]]], N
         return None
 
     @staticmethod
-    def select_description_info(trace: list[tuple[ScenarioInfo, StateInfo]], index: int) -> StateInfo:
-        return trace[index][1]
+    def create_node_description(trace: list[tuple[ScenarioInfo, StateInfo]], index: int) -> str:
+        return str(trace[index][1]).replace('\n', '<br>')
 
     @staticmethod
     def create_node_label(info: tuple[ScenarioInfo, set[tuple[str, str]]]) -> str:
         return ScenarioDeltaValueGraph.create_node_label(info)
-
-    @staticmethod
-    def create_node_description(info: StateInfo) -> str:
-        return str(info).replace('\n', '<br>')
 
     @staticmethod
     def create_edge_label(info: None) -> str:

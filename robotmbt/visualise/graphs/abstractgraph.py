@@ -6,11 +6,10 @@ import networkx as nx
 
 
 NodeInfo = TypeVar('NodeInfo')
-DescriptionInfo = TypeVar('DescriptionInfo')
 EdgeInfo = TypeVar('EdgeInfo')
 
 
-class AbstractGraph(ABC, Generic[NodeInfo, EdgeInfo, DescriptionInfo]):
+class AbstractGraph(ABC, Generic[NodeInfo, EdgeInfo]):
     def __init__(self, info: TraceInfo):
         """
         Note that networkx's ids have to be of a serializable and hashable type after construction.
@@ -19,7 +18,7 @@ class AbstractGraph(ABC, Generic[NodeInfo, EdgeInfo, DescriptionInfo]):
         self.networkx: nx.DiGraph = nx.DiGraph()
 
         # Keep track of node IDs
-        self.ids: dict[str, tuple[NodeInfo, DescriptionInfo]] = {}
+        self.ids: dict[str, tuple[NodeInfo, str]] = {}
 
         # Add the start node
         self.networkx.add_node('start', label='start', description='')
@@ -31,12 +30,12 @@ class AbstractGraph(ABC, Generic[NodeInfo, EdgeInfo, DescriptionInfo]):
                 if i > 0:
                     from_node = self._get_or_create_id(
                         self.select_node_info(trace, i - 1),
-                        self.select_description_info(trace, i - 1))
+                        self.create_node_description(trace, i - 1))
                 else:
                     from_node = 'start'
                 to_node = self._get_or_create_id(
                     self.select_node_info(trace, i),
-                    self.select_description_info(trace, i))
+                    self.create_node_description(trace, i))
                 self._add_node(from_node)
                 self._add_node(to_node)
                 self._add_edge(from_node, to_node,
@@ -48,12 +47,12 @@ class AbstractGraph(ABC, Generic[NodeInfo, EdgeInfo, DescriptionInfo]):
             if i > 0:
                 from_node = self._get_or_create_id(
                     self.select_node_info(info.current_trace, i - 1),
-                    self.select_description_info(info.current_trace, i - 1))
+                    self.create_node_description(info.current_trace, i - 1))
             else:
                 from_node = 'start'
             to_node = self._get_or_create_id(
                 self.select_node_info(info.current_trace, i),
-                self.select_description_info(info.current_trace, i))
+                self.create_node_description(info.current_trace, i))
             self.final_trace.append(to_node)
             self._add_node(from_node)
             self._add_node(to_node)
@@ -67,7 +66,7 @@ class AbstractGraph(ABC, Generic[NodeInfo, EdgeInfo, DescriptionInfo]):
         """
         return self.final_trace
 
-    def _get_or_create_id(self, info: NodeInfo, description: DescriptionInfo) -> str:
+    def _get_or_create_id(self, info: NodeInfo, description: str) -> str:
         """
         Get the ID for a state that has been added before, or create and store a new one.
         """
@@ -85,7 +84,7 @@ class AbstractGraph(ABC, Generic[NodeInfo, EdgeInfo, DescriptionInfo]):
         """
         if node not in self.networkx.nodes:
             self.networkx.add_node(
-                node, label=self.create_node_label(self.ids[node][0]), description=self.create_node_description(self.ids[node][1]))
+                node, label=self.create_node_label(self.ids[node][0]), description=self.ids[node][1])
 
     def _add_edge(self, from_node: str, to_node: str, label: str):
         """
@@ -124,7 +123,7 @@ class AbstractGraph(ABC, Generic[NodeInfo, EdgeInfo, DescriptionInfo]):
 
     @staticmethod
     @abstractmethod
-    def select_description_info(trace: list[tuple[ScenarioInfo, StateInfo]], index: int) -> DescriptionInfo:
+    def create_node_description(trace: list[tuple[ScenarioInfo, StateInfo]], index: int) -> str:
         """
         Select the info to use to generate the description for each node for a specific graph type.
         """
@@ -135,14 +134,6 @@ class AbstractGraph(ABC, Generic[NodeInfo, EdgeInfo, DescriptionInfo]):
     def create_node_label(info: NodeInfo) -> str:
         """
         Create the label for a node given its chosen information.
-        """
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def create_node_description(info: DescriptionInfo) -> str:
-        """
-        Create the description to be shown in a tooltip for a node given its chosen information.
         """
         pass
 

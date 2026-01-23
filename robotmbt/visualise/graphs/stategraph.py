@@ -2,7 +2,7 @@ from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 from robotmbt.visualise.models import StateInfo, ScenarioInfo
 
 
-class StateGraph(AbstractGraph[StateInfo, ScenarioInfo, None]):
+class StateGraph(AbstractGraph[StateInfo, ScenarioInfo]):
     """
     The state graph is a more advanced representation of trace exploration, allowing you to see the internal state.
     It represents states as nodes, and scenarios as edges.
@@ -17,16 +17,12 @@ class StateGraph(AbstractGraph[StateInfo, ScenarioInfo, None]):
         return pair[0]
 
     @staticmethod
-    def select_description_info(trace: list[tuple[ScenarioInfo, StateInfo]], index: int) -> None:
-        return None
+    def create_node_description(trace: list[tuple[ScenarioInfo, StateInfo]], index: int) -> str:
+        return ''
 
     @staticmethod
     def create_node_label(info: StateInfo) -> str:
         return str(info)
-
-    @staticmethod
-    def create_node_description(info: None) -> str:
-        return ''
 
     @staticmethod
     def create_edge_label(info: ScenarioInfo) -> str:

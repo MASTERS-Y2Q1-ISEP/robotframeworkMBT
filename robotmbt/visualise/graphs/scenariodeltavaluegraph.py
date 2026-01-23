@@ -4,7 +4,7 @@ from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 from robotmbt.visualise.models import ScenarioInfo, StateInfo
 
 
-class ScenarioDeltaValueGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, str]]], None, StateInfo]):
+class ScenarioDeltaValueGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, str]]], None]):
     """
     The Scenario-delta-Value graph keeps track of both the scenarios and state updates encountered.
     Its nodes are scenarios together with the property assignments after the scenario has run.
@@ -24,8 +24,8 @@ class ScenarioDeltaValueGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, s
         return None
 
     @staticmethod
-    def select_description_info(trace: list[tuple[ScenarioInfo, StateInfo]], index: int) -> StateInfo:
-        return trace[index][1]
+    def create_node_description(trace: list[tuple[ScenarioInfo, StateInfo]], index: int) -> str:
+        return str(trace[index][1]).replace('\n', '<br>')
 
     @staticmethod
     def create_node_label(info: tuple[ScenarioInfo, set[tuple[str, str]]]) -> str:
@@ -33,10 +33,6 @@ class ScenarioDeltaValueGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, s
         for assignment in info[1]:
             res += "\n\n"+assignment[0]+":"+assignment[1]
         return f"{info[0].name}{res}"
-
-    @staticmethod
-    def create_node_description(info: StateInfo) -> str:
-        return str(info).replace('\n', '<br>')
 
     @staticmethod
     def create_edge_label(info: None) -> str:

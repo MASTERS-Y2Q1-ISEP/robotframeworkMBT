@@ -123,7 +123,7 @@ class SuiteProcessors:
         random.shuffle(self.shuffled)  # Keep a single shuffle for all TraceStates (non-essential)
 
         self.visualiser = None
-        if visualisation_deps_present:
+        if visualisation_deps_present and (graph or export_dir):
             try:
                 self.visualiser = Visualiser(graph, suite_name, export_dir)
             except Exception as e:
@@ -194,7 +194,8 @@ class SuiteProcessors:
     def __write_visualisation(self):
         if self.visualiser is not None:
             try:
-                logger.info(self.visualiser.generate_visualisation(), html=True)
+                text, html = self.visualiser.generate_visualisation()
+                logger.info(text, html=html)
             except Exception as e:
                 logger.warn(f'Could not generate visualisation due to error!\n{e}')
 

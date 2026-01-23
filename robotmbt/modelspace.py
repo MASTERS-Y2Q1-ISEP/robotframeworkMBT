@@ -215,3 +215,19 @@ class RecursiveScope:
 
     def __bool__(self):
         return any(True for _ in self)
+
+    def __eq__(self, other):
+        for i in self:
+            if i not in other:
+                return False
+        for j in other:
+            if j not in self:
+                return False
+        return True
+
+    def __str__(self):
+        res = "{"
+        for k, v in self:
+            res += f"{k}={v}, "
+        res += "}"
+        return res

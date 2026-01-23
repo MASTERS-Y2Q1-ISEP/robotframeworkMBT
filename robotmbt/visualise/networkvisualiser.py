@@ -89,6 +89,22 @@ class NetworkVisualiser:
         # Keep track of arrows in the graph for scaling
         self.arrows = []
 
+        # Create the hover tool to show tooltips
+        tooltip_name = graph.get_tooltip_name()
+        if tooltip_name:
+            self.hover = HoverTool()
+            tooltips = f"""
+                <div>
+                    <h>{tooltip_name}</h>
+                    <div>
+                        <span>@description{{safe}}</span>
+                    </div>
+                </div>
+                """
+            self.hover.tooltips = tooltips
+        else:
+            self.hover = None
+
         # Add the nodes to the graph
         self._add_nodes(nodes)
 
@@ -99,7 +115,7 @@ class NetworkVisualiser:
         self._add_legend(graph)
 
         # Add our features to the graph (e.g. tools)
-        self._add_features(suite_name, graph.get_tooltip_name())
+        self._add_features(suite_name)
 
     def generate_html(self):
         """
@@ -113,9 +129,9 @@ class NetworkVisualiser:
         """
         # The ColumnDataSources to store our nodes and edges in Bokeh's format
         node_source: ColumnDataSource = ColumnDataSource(
-            {'id': [], 'x': [], 'y': [], 'w': [], 'h': [], 'color': [], 'description': [], 'display': []})
+            {'id': [], 'x': [], 'y': [], 'w': [], 'h': [], 'color': [], 'description': []})
         node_label_source: ColumnDataSource = ColumnDataSource(
-            {'id': [], 'x': [], 'y': [], 'label': [], 'display': []})
+            {'id': [], 'x': [], 'y': [], 'label': []})
 
         # Add all nodes to the column data sources
         for node in nodes:
@@ -123,7 +139,10 @@ class NetworkVisualiser:
 
         # Add the glyphs for nodes and their labels
         node_glyph = Rect(x='x', y='y', width='w', height='h', fill_color='color')
-        self.plot.add_glyph(node_source, node_glyph)
+        node_glyph_renderer = self.plot.add_glyph(node_source, node_glyph)
+
+        if self.hover is not None:
+            self.hover.renderers = [node_glyph_renderer]
 
         node_label_glyph = Text(x='x', y='y', text='label', text_align='left', text_baseline='middle',
                                 text_font_size=f'{MAJOR_FONT_SIZE}pt', text_font=value("Courier New"))
@@ -136,14 +155,13 @@ class NetworkVisualiser:
         """
         # The ColumnDataSources to store our edges in Bokeh's format
         edge_part_source: ColumnDataSource = ColumnDataSource(
-            {'from': [], 'to': [], 'start_x': [], 'start_y': [], 'end_x': [], 'end_y': [], 'color': [], 'display': []})
+            {'from': [], 'to': [], 'start_x': [], 'start_y': [], 'end_x': [], 'end_y': [], 'color': []})
         edge_arrow_source: ColumnDataSource = ColumnDataSource(
-            {'from': [], 'to': [], 'start_x': [], 'start_y': [], 'end_x': [], 'end_y': [], 'color': [], 'display': []})
+            {'from': [], 'to': [], 'start_x': [], 'start_y': [], 'end_x': [], 'end_y': [], 'color': []})
         edge_bezier_source: ColumnDataSource = ColumnDataSource(
             {'from': [], 'to': [], 'start_x': [], 'start_y': [], 'end_x': [], 'end_y': [], 'control1_x': [],
-             'control1_y': [], 'control2_x': [], 'control2_y': [], 'color': [], 'display': []})
-        edge_label_source: ColumnDataSource = ColumnDataSource(
-            {'from': [], 'to': [], 'x': [], 'y': [], 'label': [], 'display': []})
+             'control1_y': [], 'control2_x': [], 'control2_y': [], 'color': []})
+        edge_label_source: ColumnDataSource = ColumnDataSource({'from': [], 'to': [], 'x': [], 'y': [], 'label': []})
 
         for edge in edges:
             _add_edge_to_sources(nodes, edge, self.final_trace, edge_part_source, edge_arrow_source, edge_bezier_source,
@@ -240,7 +258,7 @@ class NetworkVisualiser:
 
         return ns, es
 
-    def _add_features(self, suite_name: str, tooltip_name: str):
+    def _add_features(self, suite_name: str):
         """
         Add our features to the graph such as tools, titles, and JavaScript callbacks.
         """
@@ -253,18 +271,8 @@ class NetworkVisualiser:
                             FullscreenTool(), ZoomInTool(factor=0.4), ZoomOutTool(factor=0.4))
         self.plot.toolbar.active_scroll = wheel_zoom
 
-        if tooltip_name:
-            tooltips = f"""
-                <div style="display: @display;">
-                    <h>{tooltip_name}</h>
-                    <div>
-                        <span>@description{{safe}}</span>
-                    </div>
-                </div>
-                """
-            hover = HoverTool()
-            hover.tooltips = tooltips
-            self.plot.add_tools(hover)
+        if self.hover:
+            self.plot.add_tools(self.hover)
 
         # Specify the default range - these values represent the aspect ratio of the actual view in the window
         self.plot.x_range = Range1d(-INNER_WINDOW_WIDTH / 2, INNER_WINDOW_WIDTH / 2)
@@ -503,7 +511,6 @@ def _add_edge_to_sources(nodes: list[Node], edge: Edge, final_trace: list[str], 
             edge_part_source.data['end_x'].append(end_x)
             edge_part_source.data['end_y'].append(end_y)
             edge_part_source.data['color'].append(FINAL_TRACE_EDGE_COLOR if in_final_trace else OTHER_EDGE_COLOR)
-            edge_part_source.data['display'].append('none')
         else:
             # End of edge with arrow
             edge_arrow_source.data['from'].append(edge.from_node)
@@ -513,7 +520,6 @@ def _add_edge_to_sources(nodes: list[Node], edge: Edge, final_trace: list[str], 
             edge_arrow_source.data['end_x'].append(end_x)
             edge_arrow_source.data['end_y'].append(end_y)
             edge_arrow_source.data['color'].append(FINAL_TRACE_EDGE_COLOR if in_final_trace else OTHER_EDGE_COLOR)
-            edge_arrow_source.data['display'].append('none')
 
     # Add the label
     edge_label_source.data['from'].append(edge.from_node)
@@ -521,7 +527,6 @@ def _add_edge_to_sources(nodes: list[Node], edge: Edge, final_trace: list[str], 
     edge_label_source.data['x'].append((start_x + end_x) / 2)
     edge_label_source.data['y'].append((start_y + end_y) / 2)
     edge_label_source.data['label'].append(edge.label)
-    edge_label_source.data['display'].append('none')
 
 
 def _add_self_loop_to_sources(nodes: list[Node], edge: Edge, in_final_trace: bool, edge_arrow_source: ColumnDataSource,
@@ -545,7 +550,6 @@ def _add_self_loop_to_sources(nodes: list[Node], edge: Edge, in_final_trace: boo
     edge_bezier_source.data['control2_x'].append(right_x + 25)
     edge_bezier_source.data['control2_y'].append(right_y - 25)
     edge_bezier_source.data['color'].append(FINAL_TRACE_EDGE_COLOR if in_final_trace else OTHER_EDGE_COLOR)
-    edge_bezier_source.data['display'].append('none')
 
     # Add the arrow
     edge_arrow_source.data['from'].append(edge.from_node)
@@ -555,7 +559,6 @@ def _add_self_loop_to_sources(nodes: list[Node], edge: Edge, in_final_trace: boo
     edge_arrow_source.data['end_x'].append(right_x)
     edge_arrow_source.data['end_y'].append(right_y - 5)
     edge_arrow_source.data['color'].append(FINAL_TRACE_EDGE_COLOR if in_final_trace else OTHER_EDGE_COLOR)
-    edge_bezier_source.data['display'].append('none')
 
     # Add the label
     edge_label_source.data['from'].append(edge.from_node)
@@ -563,7 +566,6 @@ def _add_self_loop_to_sources(nodes: list[Node], edge: Edge, in_final_trace: boo
     edge_label_source.data['x'].append(right_x + 25)
     edge_label_source.data['y'].append(right_y)
     edge_label_source.data['label'].append(edge.label)
-    edge_bezier_source.data['display'].append('none')
 
 
 def _add_node_to_sources(node: Node, final_trace: list[str], node_source: ColumnDataSource,
@@ -579,13 +581,11 @@ def _add_node_to_sources(node: Node, final_trace: list[str], node_source: Column
     node_source.data['color'].append(
         FINAL_TRACE_NODE_COLOR if node.node_id in final_trace else OTHER_NODE_COLOR)
     node_source.data['description'].append(node.description)
-    node_source.data['display'].append('inline')
 
     node_label_source.data['id'].append(node.node_id)
     node_label_source.data['x'].append(node.x - node.width / 2 + HORIZONTAL_PADDING_WITHIN_NODES)
     node_label_source.data['y'].append(node.y)
     node_label_source.data['label'].append(node.label)
-    node_label_source.data['display'].append('none')
 
 
 def _calculate_dimensions(label: str) -> tuple[float, float]:

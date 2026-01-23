@@ -20,6 +20,7 @@ GRAPHS = {
     'reduced-sdv': ReducedSDVGraph,
 }
 
+
 class Visualiser:
     """
     The Visualiser class bridges the different concerns to provide

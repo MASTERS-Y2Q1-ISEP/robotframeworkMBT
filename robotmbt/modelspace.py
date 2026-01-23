@@ -218,9 +218,9 @@ class RecursiveScope:
 
     def __eq__(self, other):
         self_set = set([(attr, getattr(self, attr)) for attr in dir(self._outer_scope) + dir(self)
-                     if not attr.startswith('__') and attr != '_outer_scope'])
+                        if not attr.startswith('__') and attr != '_outer_scope'])
         other_set = set([(attr, getattr(other, attr)) for attr in dir(other._outer_scope) + dir(other)
-                     if not attr.startswith('__') and attr != '_outer_scope'])
+                        if not attr.startswith('__') and attr != '_outer_scope'])
         return self_set == other_set
 
     def __str__(self):

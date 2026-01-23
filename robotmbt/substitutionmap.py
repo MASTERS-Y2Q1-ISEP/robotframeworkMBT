@@ -120,7 +120,7 @@ class Constraint:
         try:
             # Keep the items in optionset unique. Refrain from using Python sets
             # due to non-deterministic behaviour when using random seeding.
-            self.optionset: list[Any] | None= list(dict.fromkeys(constraint))
+            self.optionset: list[Any] | None = list(dict.fromkeys(constraint))
         except:
             self.optionset: list[Any] | None = None
         if not self.optionset or isinstance(constraint, str):

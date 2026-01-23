@@ -125,7 +125,7 @@ class AbstractGraph(ABC, Generic[NodeInfo, EdgeInfo]):
     @abstractmethod
     def create_node_description(trace: list[tuple[ScenarioInfo, StateInfo]], index: int) -> str:
         """
-        Select the info to use to generate the description for each node for a specific graph type.
+        Create the description to be shown in a tooltip for a node given the full trace and its index.
         """
         pass
 

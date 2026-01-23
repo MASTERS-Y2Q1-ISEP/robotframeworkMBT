@@ -84,6 +84,10 @@ class Visualiser:
         return GRAPHS[self.graph_type](self.trace_info)
 
     def generate_visualisation(self) -> tuple[str, bool]:
+        """
+        Finalize the visualisation. Exports the graph to JSON if requested, and generates HTML if requested.
+        The boolean signals whether the output is in HTML format or not.
+        """
         if self.export:
             self.trace_info.export_graph(self.suite_name, self.export)
 

@@ -31,7 +31,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import copy
-from typing import Literal
+from typing import Literal, Any
 
 from robot.running.arguments.argumentspec import ArgumentSpec
 from robot.running.arguments.argumentvalidator import ArgumentValidator
@@ -197,8 +197,6 @@ class Step:
             elif arg.kind == ArgKind.FREE_NAMED:
                 for name, value in arg.value.items():
                     result.append(f"{name}={value}")
-            else:
-                continue
         return tuple(result)
 
     @property

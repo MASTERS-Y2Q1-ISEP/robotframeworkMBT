@@ -3,22 +3,26 @@ from robotmbt.visualise.models import StateInfo, ScenarioInfo
 from robotmbt.modelspace import ModelSpace
 
 
-class DeltaValueGraph(AbstractGraph[set[tuple[str, str]], ScenarioInfo]):
+class DeltaValueGraph(AbstractGraph[set[tuple[str, str]], ScenarioInfo, StateInfo]):
     """
     The state graph is a more advanced representation of trace exploration, allowing you to see the internal state.
     It represents states as nodes, and scenarios as edges.
     """
 
     @staticmethod
-    def select_node_info(pairs: list[tuple[ScenarioInfo, StateInfo]], index: int) -> set[tuple[str, str]]:
+    def select_node_info(trace: list[tuple[ScenarioInfo, StateInfo]], index: int) -> set[tuple[str, str]]:
         if index == 0:
-            return StateInfo(ModelSpace()).difference(pairs[0][1])
+            return StateInfo(ModelSpace()).difference(trace[0][1])
         else:
-            return pairs[index-1][1].difference(pairs[index][1])
+            return trace[index-1][1].difference(trace[index][1])
 
     @staticmethod
     def select_edge_info(pair: tuple[ScenarioInfo, StateInfo]) -> ScenarioInfo:
         return pair[0]
+
+    @staticmethod
+    def select_description_info(trace: list[tuple[ScenarioInfo, StateInfo]], index: int) -> StateInfo:
+        return trace[index][1]
 
     @staticmethod
     def create_node_label(info: set[tuple[str, str]]) -> str:
@@ -26,6 +30,10 @@ class DeltaValueGraph(AbstractGraph[set[tuple[str, str]], ScenarioInfo]):
         for assignment in info:
             res += "\n"+assignment[0]+":"+assignment[1]
         return f"{res}"
+
+    @staticmethod
+    def create_node_description(info: StateInfo) -> str:
+        return str(info).replace('\n', '<br>')
 
     @staticmethod
     def create_edge_label(info: ScenarioInfo) -> str:
@@ -46,3 +54,7 @@ class DeltaValueGraph(AbstractGraph[set[tuple[str, str]], ScenarioInfo]):
     @staticmethod
     def get_legend_info_other_edge() -> str:
         return "Executed Scenario (backtracked)"
+
+    @staticmethod
+    def get_tooltip_name() -> str:
+        return "Full state"

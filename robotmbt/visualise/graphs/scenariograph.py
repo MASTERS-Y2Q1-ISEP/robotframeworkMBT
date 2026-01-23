@@ -2,23 +2,31 @@ from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 from robotmbt.visualise.models import ScenarioInfo, StateInfo
 
 
-class ScenarioGraph(AbstractGraph[ScenarioInfo, None]):
+class ScenarioGraph(AbstractGraph[ScenarioInfo, None, None]):
     """
     The scenario graph is the most basic representation of trace exploration.
     It represents scenarios as nodes, and the trace as edges.
     """
 
     @staticmethod
-    def select_node_info(pairs: list[tuple[ScenarioInfo, StateInfo]], index: int) -> ScenarioInfo:
-        return pairs[index][0]
+    def select_node_info(trace: list[tuple[ScenarioInfo, StateInfo]], index: int) -> ScenarioInfo:
+        return trace[index][0]
 
     @staticmethod
     def select_edge_info(pair: tuple[ScenarioInfo, StateInfo]) -> None:
         return None
 
     @staticmethod
+    def select_description_info(trace: list[tuple[ScenarioInfo, StateInfo]], index: int) -> None:
+        return None
+
+    @staticmethod
     def create_node_label(info: ScenarioInfo) -> str:
         return info.name
+
+    @staticmethod
+    def create_node_description(info: None) -> str:
+        return ''
 
     @staticmethod
     def create_edge_label(info: None) -> str:
@@ -39,3 +47,7 @@ class ScenarioGraph(AbstractGraph[ScenarioInfo, None]):
     @staticmethod
     def get_legend_info_other_edge() -> str:
         return "Execution Flow (backtracked)"
+
+    @staticmethod
+    def get_tooltip_name() -> str:
+        return ""

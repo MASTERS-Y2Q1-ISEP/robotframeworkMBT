@@ -6,8 +6,7 @@ from robotmbt.visualise.graphs.scenariodeltavaluegraph import ScenarioDeltaValue
 from robotmbt.visualise.models import ScenarioInfo, StateInfo, TraceInfo
 
 
-# TODO add tests for this graph representation
-class ReducedSDVGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, str]]], None]):
+class ReducedSDVGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, str]]], None, StateInfo]):
     """
     The reduced Scenario-delta-Value graph keeps track of both the scenarios and state updates encountered.
     It is produced by taking the Scenario-delta-Value graph and merging nodes that have the same Scenario associated,
@@ -65,20 +64,28 @@ class ReducedSDVGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, str]]], N
         self.start_node: tuple[str, ...] = tuple(['start'])
 
     @staticmethod
-    def select_node_info(pairs: list[tuple[ScenarioInfo, StateInfo]], index: int) \
+    def select_node_info(trace: list[tuple[ScenarioInfo, StateInfo]], index: int) \
             -> tuple[ScenarioInfo, set[tuple[str, str]]]:
         if index == 0:
-            return pairs[0][0], StateInfo(ModelSpace()).difference(pairs[0][1])
+            return trace[0][0], StateInfo(ModelSpace()).difference(trace[0][1])
         else:
-            return pairs[index][0], pairs[index - 1][1].difference(pairs[index][1])
+            return trace[index][0], trace[index - 1][1].difference(trace[index][1])
 
     @staticmethod
     def select_edge_info(pair: tuple[ScenarioInfo, StateInfo]) -> None:
         return None
 
     @staticmethod
+    def select_description_info(trace: list[tuple[ScenarioInfo, StateInfo]], index: int) -> StateInfo:
+        return trace[index][1]
+
+    @staticmethod
     def create_node_label(info: tuple[ScenarioInfo, set[tuple[str, str]]]) -> str:
         return ScenarioDeltaValueGraph.create_node_label(info)
+
+    @staticmethod
+    def create_node_description(info: StateInfo) -> str:
+        return str(info).replace('\n', '<br>')
 
     @staticmethod
     def create_edge_label(info: None) -> str:
@@ -99,3 +106,7 @@ class ReducedSDVGraph(AbstractGraph[tuple[ScenarioInfo, set[tuple[str, str]]], N
     @staticmethod
     def get_legend_info_other_edge() -> str:
         return "Execution Flow (backtracked)"
+
+    @staticmethod
+    def get_tooltip_name() -> str:
+        return "Full state"

@@ -34,12 +34,14 @@ from robotmbt.visualise import networkvisualiser
 from robotmbt.visualise.graphs.scenariodeltavaluegraph import ScenarioDeltaValueGraph
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 from robotmbt.visualise.graphs.scenariograph import ScenarioGraph
+from robotmbt.visualise.graphs.naivegraph import NaiveGraph
 from robotmbt.visualise.models import TraceInfo, StateInfo, ScenarioInfo
 import html
 
 GRAPHS = {
     'scenario': ScenarioGraph,
     'scenario-delta-value': ScenarioDeltaValueGraph,
+    'naive': NaiveGraph
 }
 
 

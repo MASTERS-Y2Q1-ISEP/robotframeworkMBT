@@ -32,20 +32,18 @@ from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 from robotmbt.visualise.models import ScenarioInfo, StateInfo
 
 
-class NaiveGraph(AbstractGraph[list[ScenarioInfo], None]):
+class HeightGraph(AbstractGraph[tuple[ScenarioInfo, int], None]):
     """
-    The NaiveGraph representation identifies nodes with a given trace.
-    Nodes are labeled with the last scenario executed by their identifying trace.
-    Any path from the starting node to some other node represents an explored trace.
-    There is an edge from a node X to a node Y if the trace associated to X is
-    the trace associated with Y with the last element removed. Example: [1,2,3] -> [1,2,3,4]
-
-    This representation is useful for visualizing all the paths explored by the main algorithm.
+    The HeightGraph representation identifies its nodes by a scenario and an integer indicating at which step in the
+    trace the scenario was executed. There is an edge from node X to node Y if the scenario of X was executed at step n
+    and the scenario of Y was executed at step n+1 of the same trace during exploration.
+    HeightGraph is similar to NaiveGraph, except it does not distinguish nodes based on the trace leading up to the
+    executed scenario.
     """
 
     @staticmethod
-    def select_node_info(trace: list[tuple[ScenarioInfo, StateInfo]], index: int) -> list[ScenarioInfo]:
-        return list(map(lambda x: x[0], trace))[:index+1]
+    def select_node_info(trace: list[tuple[ScenarioInfo, StateInfo]], index: int) -> tuple[ScenarioInfo, int]:
+        return trace[index][0], index
 
     @staticmethod
     def select_edge_info(pair: tuple[ScenarioInfo, StateInfo]) -> None:
@@ -56,8 +54,8 @@ class NaiveGraph(AbstractGraph[list[ScenarioInfo], None]):
         return ''
 
     @staticmethod
-    def create_node_label(info: list[ScenarioInfo]) -> str:
-        return info[-1].name
+    def create_node_label(info: tuple[ScenarioInfo, int]) -> str:
+        return info[0].name
 
     @staticmethod
     def create_edge_label(info: None) -> str:

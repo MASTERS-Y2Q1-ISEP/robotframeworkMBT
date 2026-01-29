@@ -35,13 +35,15 @@ from robotmbt.visualise.graphs.scenariodeltavaluegraph import ScenarioDeltaValue
 from robotmbt.visualise.graphs.abstractgraph import AbstractGraph
 from robotmbt.visualise.graphs.scenariograph import ScenarioGraph
 from robotmbt.visualise.graphs.naivegraph import NaiveGraph
+from robotmbt.visualise.graphs.heightgraph import HeightGraph
 from robotmbt.visualise.models import TraceInfo, StateInfo, ScenarioInfo
 import html
 
 GRAPHS = {
     'scenario': ScenarioGraph,
     'scenario-delta-value': ScenarioDeltaValueGraph,
-    'naive': NaiveGraph
+    'naive': NaiveGraph,
+    'height': HeightGraph
 }
 
 

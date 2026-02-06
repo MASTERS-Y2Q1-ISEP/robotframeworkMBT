@@ -32,7 +32,7 @@ from types import SimpleNamespace
 import unittest
 
 try:
-    from robotmbt.visualise.models import ScenarioInfo, StateInfo, TraceInfo, ModelSpace
+    from robotmbt.visualise.models import ScenarioInfo, StateInfo, TraceInfo
 
     VISUALISE = True
 except ImportError:
@@ -88,39 +88,34 @@ if VISUALISE:
             self.assertIn('\n', result)
             self.assertLessEqual(max([len(line) for line in result.split('\n')]), 20)
 
-
     class TestStateInfo(unittest.TestCase):
         def test_stateInfo_empty(self):
-            s = StateInfo(ModelSpace())
+            modelspacestub = SimpleNamespace(ref_id=None, props={})
+            s = StateInfo(modelspacestub)
             self.assertEqual(str(s), '')
 
         def test_stateInfo_prop_empty(self):
-            space = ModelSpace()
-            space.props['prop1'] = ModelSpace()
-            s = StateInfo(space)
+            modelspacestub = SimpleNamespace(ref_id=None, props={})
+            s = StateInfo(modelspacestub)
             self.assertEqual(str(s), '')
 
         def test_stateInfo_prop_val(self):
-            space = ModelSpace()
-            prop1 = ModelSpace()
-            prop1.value = 1
-            space.props['prop1'] = prop1
-            s = StateInfo(space)
+            modelspacestub = SimpleNamespace(ref_id=None, props=dict(prop1=SimpleNamespace(value=1)))
+            s = StateInfo(modelspacestub)
             self.assertTrue('prop1:' in str(s))
             self.assertTrue('value=1' in str(s))
 
         def test_stateInfo_prop_val_empty(self):
-            space = ModelSpace()
-            prop1 = ModelSpace()
-            prop1.value = 1
-            prop2 = ModelSpace()
-            space.props['prop1'] = prop1
-            space.props['prop2'] = prop2
-            s = StateInfo(space)
+            class EmptyProp:
+                def __dir__(self):
+                    return {}
+
+            modelspacestub = SimpleNamespace(ref_id=None, props=dict(prop1=SimpleNamespace(value=1),
+                                                                     prop2=EmptyProp()))
+            s = StateInfo(modelspacestub)
             self.assertTrue('prop1:' in str(s))
             self.assertTrue('value=1' in str(s))
             self.assertFalse('prop2:' in str(s))
-
 
     class TestTraceInfo(unittest.TestCase):
         def test_trace_info_update_normal(self):

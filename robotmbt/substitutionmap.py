@@ -118,7 +118,7 @@ class Constraint:
             # Keep the items in optionset unique. Refrain from using Python sets
             # due to non-deterministic behaviour when using random seeding.
             self.optionset: list[Any] | None = list(dict.fromkeys(constraint))
-        except:
+        except TypeError:
             self.optionset: list[Any] | None = None
         if not self.optionset or isinstance(constraint, str):
             raise ValueError(f"Invalid option set for initial constraint: {constraint}")

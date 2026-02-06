@@ -28,8 +28,9 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from robot.api.deco import keyword  # type:ignore
 import os
+from types import SimpleNamespace
+from robot.api.deco import keyword  # type:ignore
 from robotmbt.suiteprocessors import SuiteProcessors
 
 visualisation_deps_present = True
@@ -217,9 +218,9 @@ class ModelGenerator:
         Format:
         "domain1: key1=value1, key2=value2"
         """
-        scenario_name = scenario_name.strip()
+        scenariostub = SimpleNamespace(name=scenario_name.strip(), src_id=scenario_name)
         if keyvaluestr is None:
-            return (ScenarioInfo(scenario_name), StateInfo._create_state_with_prop("", []))
+            return (ScenarioInfo(scenariostub), StateInfo._create_state_with_prop("", []))
 
         keyvaluestr = keyvaluestr.strip()
 
@@ -246,7 +247,7 @@ class ModelGenerator:
             keyvalues.append((prev_key, prev_value))
             prev_key = new_key
 
-        return (ScenarioInfo(scenario_name), StateInfo._create_state_with_prop(domain, keyvalues))
+        return (ScenarioInfo(scenariostub), StateInfo._create_state_with_prop(domain, keyvalues))
 
     @staticmethod
     def __split_top_level(text):

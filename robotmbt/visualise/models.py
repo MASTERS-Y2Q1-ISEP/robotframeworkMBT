@@ -49,15 +49,9 @@ class ScenarioInfo:
     - src_id
     """
 
-    def __init__(self, scenario: Scenario | str):
-        if isinstance(scenario, Scenario):
-            # default case
-            self.name = self._split_name(scenario.name)
-            self.src_id = scenario.src_id
-        else:
-            # unit tests
-            self.name = scenario
-            self.src_id = scenario
+    def __init__(self, scenario: Scenario):
+        self.name = self._split_name(scenario.name)
+        self.src_id = scenario.src_id
 
     def __str__(self):
         return f"Scenario {self.src_id}: {self.name}"

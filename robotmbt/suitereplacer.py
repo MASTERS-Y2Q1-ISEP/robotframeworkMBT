@@ -30,14 +30,18 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from collections.abc import Callable
+from typing import Any
+
 import robot.model
 import robot.running.model as rmodel
-from .suitedata import Suite, Scenario, Step
-from .suiteprocessors import SuiteProcessors
 from robot.api import logger
 from robot.api.deco import library, keyword
-from typing import Any
 from robot.libraries.BuiltIn import BuiltIn
+
+from .suitedata import Suite, Scenario, Step
+from .suiteprocessors import SuiteProcessors
+
 Robot = BuiltIn()
 
 
@@ -49,7 +53,7 @@ class SuiteReplacer:
         self.processor_lib_name: str | None = processor_lib
         self.processor_name: str = processor
         self._processor_lib: SuiteProcessors | None | object = None
-        self._processor_method: Any = None
+        self._processor_method: Callable[..., Suite] | None = None
         self.processor_options: dict[str, Any] = {}
 
     @property

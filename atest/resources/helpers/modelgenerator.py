@@ -61,8 +61,8 @@ class ModelGenerator:
         return visualisation_deps_present
 
     @keyword(name='Generate Trace Information')  # type:ignore
-    def generate_trace_information(self) -> TraceInfo:
-        return TraceInfo()
+    def generate_trace_information(self, suite_name) -> TraceInfo:
+        return TraceInfo(suite_name)
 
     @keyword(name='The Algorithm Inserts')  # type:ignore
     def insert_trace_info(self, trace_info: TraceInfo, scenario_name: str, state_str: str | None = None) -> TraceInfo:
@@ -103,13 +103,13 @@ class ModelGenerator:
         return NetworkVisualiser(graph=graph, suite_name="")
 
     @keyword(name='Export Graph')  # type:ignore
-    def export_graph(self, suite: str, trace_info: TraceInfo) -> str:
-        return trace_info.export_graph(suite, atest=True)
+    def export_graph(self, trace_info: TraceInfo) -> str:
+        return trace_info.export_graph(atest=True)
 
     @keyword(name='Import Graph')  # type:ignore
     def import_graph(self, filepath: str) -> TraceInfo:
         suiteprocessor = SuiteProcessors()
-        suiteprocessor._load_graph('scenario', 'atest', filepath)
+        suiteprocessor._load_graph('scenario', filepath)
         return suiteprocessor.visualiser.trace_info
 
     @keyword(name='Check File Exists')  # type:ignore

@@ -195,8 +195,11 @@ class TraceInfo:
     - all_traces: all valid traces encountered in trace exploration, up until the point they could not go any further
     - previous_length: used to identify backtracking
     """
+    ROBOTMBT_MODEL_VERSION = '1.0.0'
 
-    def __init__(self):
+    def __init__(self, name: str = ''):
+        self.ROBOTMBT_MODEL_VERSION: str = TraceInfo.ROBOTMBT_MODEL_VERSION
+        self.model_name: str = name
         self.current_trace: list[tuple[ScenarioInfo, StateInfo]] = []
         self.all_traces: list[list[tuple[ScenarioInfo, StateInfo]]] = []
         self.previous_length: int = 0
@@ -256,14 +259,14 @@ class TraceInfo:
             logger.warn(
                 f'TraceInfo got out of sync after {after}\nExpected state: {prev_state}\nActual state: {state}')
 
-    def export_graph(self, suite_name: str, dir: str = '', atest: bool = False) -> str | None:
+    def export_graph(self, dir: str = '', atest: bool = False) -> str | None:
         encoded_instance = jsonpickle.encode(self)
-        name = suite_name.lower().replace(' ', '_')
+        name = self.model_name.lower().replace(' ', '_')
         if atest:
             '''
             temporary file to not accidentally overwrite an existing file
             mkstemp() is not ideal but given Python's limitations this is the easiest solution
-            as temporary file, a different method, is problematic on Windows 
+            as temporary file, a different method, is problematic on Windows
             https://stackoverflow.com/a/57015383
             '''
             fd, dir = tempfile.mkstemp()
@@ -281,6 +284,22 @@ class TraceInfo:
         with open(f"{dir}{name}.json", "w") as f:
             f.write(encoded_instance)
         return None
+
+    @staticmethod
+    def import_graph_from_file(file_path: str) -> TraceInfo:
+        try:
+            with open(file_path, "r") as f:
+                traceinfo =  jsonpickle.decode(f.read())
+            traceinfo.ROBOTMBT_MODEL_VERSION  # trigger AttributeError if non-robotmbt data
+        except OSError:
+            raise
+        except Exception:
+            raise TypeError(f"Contents from '{file_path}' could not be loaded as RobotMBT graph data")
+
+        if str(traceinfo.ROBOTMBT_MODEL_VERSION).split('.')[0] != TraceInfo.ROBOTMBT_MODEL_VERSION.split('.')[0]:
+            # raise if major version differs
+            raise ValueError("Graph data is from an incompatible RobotMBT version")
+        return traceinfo
 
     @staticmethod
     def stringify_pair(pair: tuple[ScenarioInfo, StateInfo]) -> str:

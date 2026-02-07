@@ -63,12 +63,15 @@ class Visualiser:
         self.graph_type: str = graph_type
 
         if trace_info is None:
-            self.trace_info: TraceInfo = TraceInfo()
+            self.trace_info: TraceInfo = TraceInfo(suite_name)
         else:
             self.trace_info = trace_info
 
         self.suite_name = suite_name
         self.export = export
+
+    def load_from_file(self, file_path: str):
+        self.trace_info = TraceInfo.import_graph_from_file(file_path)
 
     def update_trace(self, trace: TraceState):
         """
@@ -110,7 +113,7 @@ class Visualiser:
         The boolean signals whether the output is in HTML format or not.
         """
         if self.export:
-            self.trace_info.export_graph(self.suite_name, self.export)
+            self.trace_info.export_graph(self.export)
 
         graph: AbstractGraph = self._get_graph()
         if graph is None and self.export:
@@ -118,6 +121,6 @@ class Visualiser:
         elif graph is None:
             raise ValueError(f"Unknown graph type: {self.graph_type}")
 
-        html_bokeh = networkvisualiser.NetworkVisualiser(graph, self.suite_name).generate_html()
+        html_bokeh = networkvisualiser.NetworkVisualiser(graph, self.trace_info.model_name).generate_html()
 
         return f'<iframe srcdoc="{html.escape(html_bokeh)}" width="{networkvisualiser.OUTER_WINDOW_WIDTH}px" height="{networkvisualiser.OUTER_WINDOW_HEIGHT}px"></iframe>', True

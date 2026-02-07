@@ -18,7 +18,7 @@ test suite ${suite} has trace info ${trace}
     ...     :IN: new trace_info | trace_info.current_trace=0 | trace_info.all_traces=0 | 
     ...     trace_info.name = ${trace} | new graph
     ...     :OUT: None
-    ${trace_info} =     Generate Trace Information
+    ${trace_info} =     Generate Trace Information    ${suite}
     Set Suite Variable  ${trace_info}
 
 trace info ${trace}
@@ -184,7 +184,7 @@ test suite ${suite} is exported to json
     Variable Should Exist   ${suite}
     Variable Should Exist   ${trace_info}
     
-    ${filepath} =   Export Graph      ${suite}    ${trace_info}
+    ${filepath} =   Export Graph    ${trace_info}
     Set Suite Variable  ${filepath}
 
 the file ${filename} exists

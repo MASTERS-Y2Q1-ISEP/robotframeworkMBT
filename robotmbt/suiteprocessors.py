@@ -44,7 +44,6 @@ from .tracestate import TraceState
 try:
     from .visualise.visualiser import Visualiser
     from .visualise.models import TraceInfo
-    import jsonpickle
     visualisation_deps_present = True
 except ImportError:
     Visualiser = None
@@ -94,7 +93,7 @@ class SuiteProcessors:
         self.flat_suite = self.flatten(in_suite)
 
         if import_graph_data != '':
-            self._load_graph(graph, in_suite.name, import_graph_data)
+            self._load_graph(graph, import_graph_data)
 
         else:
             self._run_test_suite(seed, graph, in_suite.name, export_graph_data)
@@ -103,16 +102,15 @@ class SuiteProcessors:
 
         return self.out_suite
 
-    def _load_graph(self, graph: str, suite_name: str, file_path: str):
+    def _load_graph(self, graph: str, file_path: str):
         """
         Imports a JSON encoding of a graph and reconstructs the graph from it. The reconstructed graph overrides the
         current graph instance this method is called on.
-        file_path: the relative path to the graph JSON.
+        file_path: the path to a previously exported graph.
         """
-        with open(file_path, "r") as f:
-            string = f.read()
-            traceinfo = jsonpickle.decode(string)
-        self.visualiser = Visualiser(graph, suite_name, trace_info=traceinfo)
+        if Visualiser:
+            self.visualiser = Visualiser(graph)
+            self.visualiser.load_from_file(file_path)
 
     def _run_test_suite(self, seed: str | int | bytes | bytearray, graph: str, suite_name: str, export_dir: str):
         for id, scenario in enumerate(self.flat_suite.scenarios, start=1):
@@ -251,7 +249,7 @@ class SuiteProcessors:
             logger.debug(f"model\n{progression.model.get_status_text()}\n")
 
     @staticmethod
-    def _init_randomiser(seed: str | int | bytes | bytearray):
+    def _init_randomiser(seed: str | int | bytes | bytearray | None):
         if isinstance(seed, str):
             seed = seed.strip()
         if str(seed).lower() == 'none':

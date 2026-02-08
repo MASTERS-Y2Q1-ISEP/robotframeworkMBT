@@ -289,7 +289,7 @@ class TraceInfo:
     def import_graph_from_file(file_path: str) -> TraceInfo:
         try:
             with open(file_path, "r") as f:
-                traceinfo =  jsonpickle.decode(f.read())
+                traceinfo = jsonpickle.decode(f.read())
             traceinfo.ROBOTMBT_MODEL_VERSION  # trigger AttributeError if non-robotmbt data
         except OSError:
             raise

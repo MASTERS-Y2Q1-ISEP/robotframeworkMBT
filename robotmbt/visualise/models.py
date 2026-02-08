@@ -286,7 +286,7 @@ class TraceInfo:
         return None
 
     @staticmethod
-    def import_graph_from_file(file_path: str) -> TraceInfo:
+    def import_graph_from_file(file_path: str):
         try:
             with open(file_path, "r") as f:
                 traceinfo = jsonpickle.decode(f.read())

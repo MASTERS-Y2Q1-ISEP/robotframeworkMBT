@@ -3,7 +3,7 @@ Documentation     This suite takes the graph generated in the first suite in thi
 ...               and checks the content's properties.
 Library           ../graph_checker.py
 Library           Collections
-Suite Setup       Import graph data from    ${OUTPUT_DIR}\\run_model_with_graph.json
+Suite Setup       Import graph data from    ${OUTPUT_DIR}${/}run_model_with_graph.json
 
 *** Test Cases ***
 Scenarios are nodes in the graph

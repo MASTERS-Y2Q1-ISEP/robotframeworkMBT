@@ -5,7 +5,7 @@ Library           graph_checker.py
 Library           Collections
 
 *** Variables ***
-${prior_export}    ${OUTPUT_DIR}\\run_model_with_graph.json
+${prior_export}    ${OUTPUT_DIR}${/}run_model_with_graph.json
 
 *** Test Cases ***
 Import as any graph type

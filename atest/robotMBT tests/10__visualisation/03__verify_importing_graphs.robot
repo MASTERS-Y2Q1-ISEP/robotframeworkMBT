@@ -1,6 +1,7 @@
 *** Settings ***
 Documentation     This suite takes the graph generated earlier in the visualisation suite
 ...               and uses it to check import functionality.
+Library           robotmbt
 Library           graph_checker.py
 Library           Collections
 
@@ -13,9 +14,11 @@ Import as any graph type
     ...                has the advantage that different graph types can be reconstructed from the
     ...                data without rerunning the model.
     Import graph data from    ${prior_export}    graph_type=scenario
+    Show model graph from exported file    ${prior_export}    graph_style=scenario
     ${node_count}=    Number of graph nodes
     Should be equal    ${node_count}    ${4}
     Import graph data from    ${prior_export}    graph_type=scenario-delta-value
+    Show model graph from exported file    ${prior_export}    graph_style=scenario-delta-value
     ${node_count}=    Number of graph nodes
     Should be true    ${node_count} > ${4}
 

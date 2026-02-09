@@ -50,15 +50,16 @@ class Visualiser:
     and retrieved in HTML format.
     """
 
-    def __init__(self, graph_type: str, suite_name: str = "", trace_info: TraceInfo = None):
-        if not graph_type in GRAPHS.keys():
-            raise ValueError(f"Unknown graph type: {graph_type}")
-
-        self.graph_type: str = graph_type
+    def __init__(self, suite_name: str = "", trace_info: TraceInfo = None):
         self.trace_info: TraceInfo = trace_info if trace_info is not None else TraceInfo(suite_name)
         self.suite_name = suite_name
 
     def load_from_file(self, file_path: str):
+        """
+        Imports a JSON encoding of a graph and reconstructs the graph from it. The reconstructed
+        graph overrides the current graph instance this method is called on.
+        file_path: the path to a previously exported graph.
+        """
         self.trace_info = TraceInfo.import_graph_from_file(file_path)
 
     def export_to_file(self, file_path: str):
@@ -92,20 +93,20 @@ class Visualiser:
             model = snap.model
             self.trace_info.update_trace(ScenarioInfo(scenario), StateInfo(model), trace_len)
 
-    def _get_graph(self) -> AbstractGraph | None:
-        if self.graph_type not in GRAPHS.keys():
+    def _get_graph(self, graph_type) -> AbstractGraph | None:
+        if graph_type not in GRAPHS.keys():
             return None
 
-        return GRAPHS[self.graph_type](self.trace_info)
+        return GRAPHS[graph_type](self.trace_info)
 
-    def generate_visualisation(self) -> str:
+    def generate_visualisation(self, graph_type: str) -> str:
         """
         Finalize the visualisation. Exports the graph to JSON if requested, and generates HTML if requested.
         The boolean signals whether the output is in HTML format or not.
         """
-        graph: AbstractGraph = self._get_graph()
+        graph: AbstractGraph = self._get_graph(graph_type)
         if graph is None:
-            raise ValueError(f"Unknown graph type: {self.graph_type}")
+            raise ValueError(f"Unknown graph type: {graph_type}")
 
         html_bokeh = networkvisualiser.NetworkVisualiser(graph, self.trace_info.model_name).generate_html()
         return f'<iframe srcdoc="{html.escape(html_bokeh)}" width="{networkvisualiser.OUTER_WINDOW_WIDTH}px" height="{networkvisualiser.OUTER_WINDOW_HEIGHT}px"></iframe>'

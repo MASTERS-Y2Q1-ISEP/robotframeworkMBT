@@ -83,21 +83,16 @@ class SuiteProcessors:
         return out_suite
 
     def process_test_suite(self, in_suite: Suite, *, seed: str | int | bytes | bytearray = 'new',
-                           graph: str = '', export_graph_data: str = '', import_graph_data: str = '') -> Suite:
+                           graph: str = '', export_graph_data: str = '') -> Suite:
         self.out_suite = Suite(in_suite.name)
         self.out_suite.filename = in_suite.filename
         self.out_suite.parent = in_suite.parent
         self._fail_on_step_errors(in_suite)
         self.flat_suite = self.flatten(in_suite)
 
-        if import_graph_data != '':
-            self._load_graph(graph, import_graph_data)
-
-        else:
-            self._run_test_suite(seed, graph, in_suite.name, export_graph_data)
-
+        self._run_test_suite(seed, graph, in_suite.name, export_graph_data)
         if graph:
-            self.__write_visualisation()
+            self.__write_visualisation(graph)
         if export_graph_data:
             self._export_graph_data(export_graph_data)
 
@@ -111,15 +106,14 @@ class SuiteProcessors:
             except Exception as e:
                 logger.debug(f'Could not generate visualisation due to error!\n{e}')
 
-    def _load_graph(self, graph: str, file_path: str):
-        """
-        Imports a JSON encoding of a graph and reconstructs the graph from it. The reconstructed graph overrides the
-        current graph instance this method is called on.
-        file_path: the path to a previously exported graph.
-        """
-        if Visualiser:
-            self.visualiser = Visualiser(graph)
-            self.visualiser.load_from_file(file_path)
+    def draw_graph_from_export_file(self, file_path: str, graph_style: str):
+        if visualisation_deps_present:
+            visualiser = Visualiser()
+            visualiser.load_from_file(file_path)
+            logger.info(visualiser.generate_visualisation(graph_style), html=True)
+        else:
+            logger.warn(f'Visualisation requested, but required dependencies are not installed. '
+                        'Refer to the README on how to install these dependencies. ')
 
     def _run_test_suite(self, seed: str | int | bytes | bytearray, graph: str, suite_name: str, export_dir: str):
         for id, scenario in enumerate(self.flat_suite.scenarios, start=1):
@@ -135,7 +129,7 @@ class SuiteProcessors:
         self.visualiser = None
         if visualisation_deps_present and (graph or export_dir):
             try:
-                self.visualiser = Visualiser(graph, suite_name)
+                self.visualiser = Visualiser(suite_name)
             except Exception as e:
                 self.visualiser = None
                 logger.warn(f'Could not initialise visualiser due to error!\n{e}')
@@ -202,10 +196,10 @@ class SuiteProcessors:
             except Exception as e:
                 logger.warn(f'Could not update visualisation due to error!\n{e}')
 
-    def __write_visualisation(self):
+    def __write_visualisation(self, graph_style: str):
         if self.visualiser is not None:
             try:
-                text = self.visualiser.generate_visualisation()
+                text = self.visualiser.generate_visualisation(graph_style)
                 logger.info(text, html=True)
             except Exception as e:
                 logger.warn(f'Could not generate visualisation due to error!\n{e}')

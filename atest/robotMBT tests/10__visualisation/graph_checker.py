@@ -50,14 +50,15 @@ class GraphChecker:
                 raise OSError(f"Removing previous export file '{file_path}' failed")
 
     def import_graph_data_from(self, file_path: str, graph_type: str = 'scenario'):
-        self.visualiser = Visualiser(graph_type)
+        self.visualiser = Visualiser()
         self.visualiser.load_from_file(file_path)
-        self.graph = self.visualiser._get_graph().networkx
+        self.graph = self.visualiser._get_graph(graph_type)
+        self.nxgraph = self.graph.networkx
 
     @property
     def to_node(self) -> dict[str, str]:
         """scenario name to node id converter"""
-        node_dict = {self._label_to_scenario(node['label']): id for id, node in self.graph.nodes().items()}
+        node_dict = {self._label_to_scenario(node['label']): id for id, node in self.nxgraph.nodes().items()}
         if len(node_dict) < self.number_of_graph_nodes():
             print("Warning: Repeated scenario names present in graph")
         return node_dict
@@ -65,23 +66,23 @@ class GraphChecker:
     @property
     def from_node(self) -> dict[str, str]:
         """node id to scenario name converter"""
-        return {id: self._label_to_scenario(node['label']) for id, node in self.graph.nodes().items()}
+        return {id: self._label_to_scenario(node['label']) for id, node in self.nxgraph.nodes().items()}
 
     def number_of_graph_nodes(self) -> int:
-        return len(self.graph.nodes())
+        return len(self.nxgraph.nodes())
 
     def list_of_node_titles(self) -> list[str]:
         return list(self.to_node)
 
     def full_node_text_of_node(self, node_title: str) -> str:
         node = self.to_node[node_title]
-        return self.graph.nodes()[node]['label']
+        return self.nxgraph.nodes()[node]['label']
 
     def all_successors_to_node(self, node_title: str) -> list[str]:
-        return [self.from_node[node] for node in self.graph.successors(self.to_node[node_title])]
+        return [self.from_node[node] for node in self.nxgraph.successors(self.to_node[node_title])]
 
     def vertical_position_of_node(self, node_title: str) -> int:
-        nxvisual = NetworkVisualiser(self.visualiser._get_graph(), 'dummy')
+        nxvisual = NetworkVisualiser(self.graph, 'dummy')
         return nxvisual.node_dict[self.to_node[node_title]].y
 
     @keyword("Modify export file with future ${bump} version number")

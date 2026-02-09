@@ -50,28 +50,19 @@ class Visualiser:
     and retrieved in HTML format.
     """
 
-    # glue method to let us construct Visualiser objects in Robot tests.
-    @classmethod
-    def construct(cls, graph_type: str):
-        # just calls __init__, but without having underscores etc.
-        return cls(graph_type)
-
-    def __init__(self, graph_type: str, suite_name: str = "", export: str = '', trace_info: TraceInfo = None):
-        if not export and not graph_type in GRAPHS.keys():
+    def __init__(self, graph_type: str, suite_name: str = "", trace_info: TraceInfo = None):
+        if not graph_type in GRAPHS.keys():
             raise ValueError(f"Unknown graph type: {graph_type}")
 
         self.graph_type: str = graph_type
-
-        if trace_info is None:
-            self.trace_info: TraceInfo = TraceInfo(suite_name)
-        else:
-            self.trace_info = trace_info
-
+        self.trace_info: TraceInfo = trace_info if trace_info is not None else TraceInfo(suite_name)
         self.suite_name = suite_name
-        self.export = export
 
     def load_from_file(self, file_path: str):
         self.trace_info = TraceInfo.import_graph_from_file(file_path)
+
+    def export_to_file(self, file_path: str):
+        self.trace_info.export_graph(file_path)
 
     def update_trace(self, trace: TraceState):
         """
@@ -107,20 +98,14 @@ class Visualiser:
 
         return GRAPHS[self.graph_type](self.trace_info)
 
-    def generate_visualisation(self) -> tuple[str, bool]:
+    def generate_visualisation(self) -> str:
         """
         Finalize the visualisation. Exports the graph to JSON if requested, and generates HTML if requested.
         The boolean signals whether the output is in HTML format or not.
         """
-        if self.export:
-            self.trace_info.export_graph(self.export)
-
         graph: AbstractGraph = self._get_graph()
-        if graph is None and self.export:
-            return f"Successfully exported to {self.export}!", False
-        elif graph is None:
+        if graph is None:
             raise ValueError(f"Unknown graph type: {self.graph_type}")
 
         html_bokeh = networkvisualiser.NetworkVisualiser(graph, self.trace_info.model_name).generate_html()
-
-        return f'<iframe srcdoc="{html.escape(html_bokeh)}" width="{networkvisualiser.OUTER_WINDOW_WIDTH}px" height="{networkvisualiser.OUTER_WINDOW_HEIGHT}px"></iframe>', True
+        return f'<iframe srcdoc="{html.escape(html_bokeh)}" width="{networkvisualiser.OUTER_WINDOW_WIDTH}px" height="{networkvisualiser.OUTER_WINDOW_HEIGHT}px"></iframe>'

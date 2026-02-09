@@ -43,11 +43,9 @@ from .tracestate import TraceState
 
 try:
     from .visualise.visualiser import Visualiser
-    from .visualise.models import TraceInfo
     visualisation_deps_present = True
 except ImportError:
     Visualiser = None
-    TraceInfo = None
     visualisation_deps_present = False
 
 
@@ -98,9 +96,20 @@ class SuiteProcessors:
         else:
             self._run_test_suite(seed, graph, in_suite.name, export_graph_data)
 
-        self.__write_visualisation()
+        if graph:
+            self.__write_visualisation()
+        if export_graph_data:
+            self._export_graph_data(export_graph_data)
 
         return self.out_suite
+
+    def _export_graph_data(self, export_dir):
+        if self.visualiser is not None:
+            try:
+                file_name = self.visualiser.export_to_file(export_dir)
+                logger.info(f"Graph data stored in file: {file_name}")
+            except Exception as e:
+                logger.debug(f'Could not generate visualisation due to error!\n{e}')
 
     def _load_graph(self, graph: str, file_path: str):
         """
@@ -126,7 +135,7 @@ class SuiteProcessors:
         self.visualiser = None
         if visualisation_deps_present and (graph or export_dir):
             try:
-                self.visualiser = Visualiser(graph, suite_name, export_dir)
+                self.visualiser = Visualiser(graph, suite_name)
             except Exception as e:
                 self.visualiser = None
                 logger.warn(f'Could not initialise visualiser due to error!\n{e}')
@@ -196,8 +205,8 @@ class SuiteProcessors:
     def __write_visualisation(self):
         if self.visualiser is not None:
             try:
-                text, html = self.visualiser.generate_visualisation()
-                logger.info(text, html=html)
+                text = self.visualiser.generate_visualisation()
+                logger.info(text, html=True)
             except Exception as e:
                 logger.warn(f'Could not generate visualisation due to error!\n{e}')
 

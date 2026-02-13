@@ -34,19 +34,17 @@ import copy
 import random
 
 from robot.api import logger
+from robot.errors import TimeoutExceeded
 
 from . import modeller
 from .modelspace import ModelSpace
 from .suitedata import Suite, Scenario
 from .tracestate import TraceState
 
-
 try:
     from .visualise.visualiser import Visualiser
-    visualisation_deps_present = True
 except ImportError:
     Visualiser = None
-    visualisation_deps_present = False
 
 
 class SuiteProcessors:
@@ -84,38 +82,12 @@ class SuiteProcessors:
 
     def process_test_suite(self, in_suite: Suite, *, seed: str | int | bytes | bytearray = 'new',
                            graph: str = '', export_graph_data: str = '') -> Suite:
+        visualiser = self._init_visualiser(in_suite.name) if graph or export_graph_data else None
         self.out_suite = Suite(in_suite.name)
         self.out_suite.filename = in_suite.filename
         self.out_suite.parent = in_suite.parent
         self._fail_on_step_errors(in_suite)
         self.flat_suite = self.flatten(in_suite)
-
-        self._run_test_suite(seed, graph, in_suite.name, export_graph_data)
-        if graph:
-            self.__write_visualisation(graph)
-        if export_graph_data:
-            self._export_graph_data(export_graph_data)
-
-        return self.out_suite
-
-    def _export_graph_data(self, export_dir):
-        if self.visualiser is not None:
-            try:
-                file_name = self.visualiser.export_to_file(export_dir)
-                logger.info(f"Graph data stored in file: {file_name}")
-            except Exception as e:
-                logger.debug(f'Could not generate visualisation due to error!\n{e}')
-
-    def draw_graph_from_export_file(self, file_path: str, graph_style: str):
-        if visualisation_deps_present:
-            visualiser = Visualiser()
-            visualiser.load_from_file(file_path)
-            logger.info(visualiser.generate_visualisation(graph_style), html=True)
-        else:
-            logger.warn(f'Visualisation requested, but required dependencies are not installed. '
-                        'Refer to the README on how to install these dependencies. ')
-
-    def _run_test_suite(self, seed: str | int | bytes | bytearray, graph: str, suite_name: str, export_dir: str):
         for id, scenario in enumerate(self.flat_suite.scenarios, start=1):
             scenario.src_id = id
         self.scenarios: list[Scenario] = self.flat_suite.scenarios[:]
@@ -126,34 +98,31 @@ class SuiteProcessors:
         self.shuffled: list[int] = [s.src_id for s in self.scenarios]
         random.shuffle(self.shuffled)  # Keep a single shuffle for all TraceStates (non-essential)
 
-        self.visualiser = None
-        if visualisation_deps_present and (graph or export_dir):
-            try:
-                self.visualiser = Visualiser(suite_name)
-            except Exception as e:
-                self.visualiser = None
-                logger.warn(f'Could not initialise visualiser due to error!\n{e}')
-
-        elif graph and not visualisation_deps_present:
-            logger.warn(f'Visualisation {graph} requested, but required dependencies are not installed. '
-                        'Refer to the README on how to install these dependencies. ')
-        elif export_dir and not visualisation_deps_present:
-            logger.warn(f'Visualization export to {export_dir} requested, but required dependencies are not installed. '
-                        'Refer to the README on how to install these dependencies. ')
-
         # a short trace without the need for repeating scenarios is preferred
-        tracestate = self._try_to_reach_full_coverage(allow_duplicate_scenarios=False)
-
+        tracestate = self._try_to_reach_full_coverage(allow_duplicate_scenarios=False, visualiser=visualiser)
         if not tracestate.coverage_reached():
             logger.debug("Direct trace not available. Allowing repetition of scenarios")
-            tracestate = self._try_to_reach_full_coverage(allow_duplicate_scenarios=True)
-            if not tracestate.coverage_reached():
-                raise Exception("Unable to compose a consistent suite")
+            tracestate = self._try_to_reach_full_coverage(allow_duplicate_scenarios=True, visualiser=visualiser)
 
-        self.out_suite.scenarios = tracestate.get_trace()
+        if graph:
+            self._write_visualisation(visualiser, graph)
+        if export_graph_data:
+            self._export_graph_data(visualiser, export_graph_data)
+        if not tracestate.coverage_reached():
+            raise Exception("Unable to compose a consistent suite")
+
         self._report_tracestate_wrapup(tracestate)
+        self.out_suite.scenarios = tracestate.get_trace()
+        return self.out_suite
 
-    def _try_to_reach_full_coverage(self, allow_duplicate_scenarios: bool) -> TraceState:
+    def draw_graph_from_export_file(self, file_path: str, graph_style: str):
+        if visualiser := self._init_visualiser():
+            visualiser.load_from_file(file_path)
+            logger.info(visualiser.generate_visualisation(graph_style), html=True)
+        else:
+            logger.info(f'Visualisation disabled due to initialisation failure.')
+
+    def _try_to_reach_full_coverage(self, allow_duplicate_scenarios: bool, visualiser: Visualiser = None) -> TraceState:
         tracestate = TraceState(self.shuffled)
         while not tracestate.coverage_reached():
             candidate_id = tracestate.next_candidate(retry=allow_duplicate_scenarios)
@@ -167,11 +136,11 @@ class SuiteProcessors:
                 candidate = self._select_scenario_variant(candidate_id, tracestate)
                 if not candidate:  # No valid variant available in the current state
                     tracestate.reject_scenario(candidate_id)
-                    self.__update_visualisation(tracestate)
+                    self._update_visualisation(visualiser, tracestate)
                     continue
                 previous_len = len(tracestate)
                 modeller.try_to_fit_in_scenario(candidate, tracestate)
-                self.__update_visualisation(tracestate)
+                self._update_visualisation(visualiser, tracestate)
                 self._report_tracestate_to_user(tracestate)
                 if len(tracestate) > previous_len:
                     logger.debug(f"last state:\n{tracestate.model.get_status_text()}")
@@ -185,24 +154,9 @@ class SuiteProcessors:
                         modeller.rewind(tracestate, drought_recovery=True)
                         self._report_tracestate_to_user(tracestate)
                         logger.debug(f"last state:\n{tracestate.model.get_status_text()}")
-            self.__update_visualisation(tracestate)
-        self.__update_visualisation(tracestate)
+            self._update_visualisation(visualiser, tracestate)
+        self._update_visualisation(visualiser, tracestate)
         return tracestate
-
-    def __update_visualisation(self, tracestate: TraceState):
-        if self.visualiser is not None:
-            try:
-                self.visualiser.update_trace(tracestate)
-            except Exception as e:
-                logger.warn(f'Could not update visualisation due to error!\n{e}')
-
-    def __write_visualisation(self, graph_style: str):
-        if self.visualiser is not None:
-            try:
-                text = self.visualiser.generate_visualisation(graph_style)
-                logger.info(text, html=True)
-            except Exception as e:
-                logger.warn(f'Could not generate visualisation due to error!\n{e}')
 
     @staticmethod
     def __last_candidate_changed_nothing(tracestate: TraceState) -> bool:
@@ -289,3 +243,47 @@ class SuiteProcessors:
             words.append(string)
         seed = '-'.join(words)
         return seed
+
+    @staticmethod
+    def _init_visualiser(name: str = '') -> Visualiser | None:
+        global Visualiser
+        if Visualiser is None:
+            Visualiser = False
+            logger.warn(f'Visualisation requested, but required dependencies are not installed. '
+                        'Refer to the README on how to install these dependencies. ')
+        return Visualiser(name) if Visualiser else None
+
+    @staticmethod
+    def _update_visualisation(visualiser, tracestate: TraceState):
+        if visualiser:
+            try:
+                visualiser.update_trace(tracestate)
+            except TimeoutExceeded:
+                raise
+            except Exception as e:
+                logger.debug(f'Could not update visualisation due to error!\n{e}')
+
+    @staticmethod
+    def _write_visualisation(visualiser, graph_style: str):
+        if visualiser:
+            try:
+                text = visualiser.generate_visualisation(graph_style)
+                logger.info(text, html=True)
+            except TimeoutExceeded:
+                raise
+            except Exception as e:
+                logger.debug(f'Could not generate visualisation due to error!\n{e}')
+        else:
+            logger.info("Graph skipped due to prior failure")
+
+    @staticmethod
+    def _export_graph_data(visualiser, export_dir):
+        if visualiser:
+            try:
+                file_name = visualiser.export_to_file(export_dir)
+                logger.info(f"Graph data stored in file: {file_name}")
+            except TimeoutExceeded:
+                raise
+            except Exception as e:
+                logger.info("Could not export visualisation due to failure.")
+                logger.debug(f"Export error:\n{e}")

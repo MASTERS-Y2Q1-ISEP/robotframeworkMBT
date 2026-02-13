@@ -245,7 +245,7 @@ class SuiteProcessors:
         return seed
 
     @staticmethod
-    def _init_visualiser(name: str = '') -> Visualiser | None:
+    def _init_visualiser(name: str = '') -> Visualiser:
         global Visualiser
         if Visualiser is None:
             Visualiser = False

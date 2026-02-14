@@ -225,5 +225,5 @@ python --version
 
 It is recommended that you also include the optional dependencies for visualisation, e.g.:
 ```bash
-pip install ".[visualization]"
+pip install ".[visualisation]"
 ```

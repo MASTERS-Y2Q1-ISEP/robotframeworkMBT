@@ -210,7 +210,7 @@ Using `seed=new` will force generation of a new reusable seed and is identical t
 
 ### Graphs
 
-By default, no graphs are generated for test-runs. For development purposes, having a visual representation of the test-suite you are working on can be very useful. To have robotmbt generate a graph, ensure you have installed the optional dependencies (`pip install .[visualization]`) and pass the type as an argument:
+By default, no graphs are generated for test-runs. For development purposes, having a visual representation of the test-suite you are working on can be very useful. To have robotmbt generate a graph, ensure you have installed the optional dependencies (`pip install robotframework-mbt[visualisation]`) and pass the type as an argument:
 
 ```robotframework
 Treat this test suite Model-based  graph=<type>
